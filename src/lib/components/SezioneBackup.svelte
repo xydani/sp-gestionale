@@ -9,6 +9,8 @@
   } from "$lib/api";
   import { mostraAvviso } from "$lib/avvisi.svelte";
 
+  let { onRipristinato }: { onRipristinato: () => void } = $props();
+
   let cartellaBackupAutomatici = $state("");
   let percorsoBackupDaRipristinare = $state<string | null>(null);
   let passwordBackup = $state("");
@@ -49,6 +51,7 @@
       await ripristinaBackup(percorsoBackupDaRipristinare, passwordBackup);
       mostraAvviso("successo", "Backup ripristinato. I dati precedenti sono stati salvati.");
       percorsoBackupDaRipristinare = null;
+      onRipristinato();
     } catch (errore) {
       mostraAvviso("errore", messaggioErrore(errore));
     } finally {

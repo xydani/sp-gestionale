@@ -23,14 +23,28 @@
     }
   });
 
+  /** Le impostazioni valgono subito anche fuori da questa pagina (menu, blocco, scadenze). */
+  async function applica(nuove: Impostazioni) {
+    impostazioni = nuove;
+    palestra.nome = nuove.nomePalestra;
+    bloccoAutomatico.minuti = nuove.minutiBloccoAutomatico;
+    // I giorni di preavviso cambiano cosa è "in scadenza"
+    await aggiornaConteggioScadenze();
+  }
+
   async function salva(nuove: Impostazioni) {
     try {
-      impostazioni = await salvaImpostazioni(nuove);
-      palestra.nome = impostazioni.nomePalestra;
-      bloccoAutomatico.minuti = impostazioni.minutiBloccoAutomatico;
-      // I giorni di preavviso cambiano cosa è "in scadenza"
-      await aggiornaConteggioScadenze();
+      await applica(await salvaImpostazioni(nuove));
       mostraAvviso("successo", "Impostazioni salvate");
+    } catch (errore) {
+      mostraAvviso("errore", messaggioErrore(errore));
+    }
+  }
+
+  /** Dopo un ripristino le impostazioni sono quelle del backup: il modulo va ricaricato. */
+  async function ricaricaDopoRipristino() {
+    try {
+      await applica(await leggiImpostazioni());
     } catch (errore) {
       mostraAvviso("errore", messaggioErrore(errore));
     }
@@ -43,13 +57,15 @@
     {#if impostazioni}
       <section class="scheda">
         <h2>Palestra</h2>
-        <FormImpostazioni iniziale={impostazioni} etichettaConferma="Salva" onSalva={salva} />
+        {#key impostazioni}
+          <FormImpostazioni iniziale={impostazioni} etichettaConferma="Salva" onSalva={salva} />
+        {/key}
       </section>
     {/if}
     <SezioneLogo />
     <SezioneCambioPassword />
     <SezioneAvvioAutomatico />
-    <SezioneBackup />
+    <SezioneBackup onRipristinato={ricaricaDopoRipristino} />
     <SezioneAggiornamenti />
   </div>
 </div>
