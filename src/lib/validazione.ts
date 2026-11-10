@@ -67,12 +67,14 @@ export const erroreImportoEuro: Verifica = (testo) => {
 /** Somma mesi a una data ISO; se il giorno non esiste (31 febbraio) usa l'ultimo del mese. */
 export function aggiungiMesiIso(dataIso: string, mesi: number): string {
   const [anno, mese, giorno] = dataIso.split("-").map(Number);
-  const indiceMese = anno * 12 + (mese - 1) + mesi;
-  const nuovoAnno = Math.floor(indiceMese / 12);
-  const nuovoMese = (indiceMese % 12) + 1;
-  const ultimoGiorno = new Date(Date.UTC(nuovoAnno, nuovoMese, 0)).getUTCDate();
-  const giornoValido = Math.min(giorno, ultimoGiorno);
-  return `${String(nuovoAnno).padStart(4, "0")}-${String(nuovoMese).padStart(2, "0")}-${String(giornoValido).padStart(2, "0")}`;
+  const primoDelMese = new Date(anno, mese - 1 + mesi, 1);
+  const ultimoGiorno = giorniNelMese(primoDelMese);
+  primoDelMese.setDate(Math.min(giorno, ultimoGiorno));
+  return oggiIso(primoDelMese);
+}
+
+function giorniNelMese(data: Date): number {
+  return new Date(data.getFullYear(), data.getMonth() + 1, 0).getDate();
 }
 
 export interface LimitiData {

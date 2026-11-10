@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ask } from "@tauri-apps/plugin-dialog";
+  import { confermaEliminazioneIscrizione } from "$lib/conferma";
   import { onMount } from "svelte";
   import { elencaIscrizioni, eliminaIscrizione, messaggioErrore } from "$lib/api";
   import { mostraAvviso } from "$lib/avvisi.svelte";
@@ -28,13 +28,7 @@
   }
 
   async function elimina(iscrizione: Iscrizione) {
-    const confermato = await ask(
-      `Eliminare l'iscrizione ${formattaData(iscrizione.dataInizio)} – ` +
-        `${formattaData(iscrizione.dataFine)} (${formattaEuro(iscrizione.importoCent)})? ` +
-        "L'operazione non si può annullare.",
-      { title: "Elimina iscrizione", kind: "warning", okLabel: "Elimina", cancelLabel: "Annulla" },
-    );
-    if (!confermato) return;
+    if (!(await confermaEliminazioneIscrizione(iscrizione))) return;
     try {
       await eliminaIscrizione(iscrizione.id);
       mostraAvviso("successo", "Iscrizione eliminata");

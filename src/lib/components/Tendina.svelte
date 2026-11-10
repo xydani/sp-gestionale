@@ -65,31 +65,55 @@
   }
 
   function gestisciTasti(evento: KeyboardEvent) {
-    const tasto = evento.key;
-    if (!aperta) {
-      if (["ArrowDown", "ArrowUp", "Enter", " "].includes(tasto)) {
-        evento.preventDefault();
-        apri();
-      }
-      return;
+    if (aperta) {
+      gestisciTastiDaAperta(evento);
+    } else {
+      gestisciTastiDaChiusa(evento);
     }
-    const azioni: Record<string, () => void> = {
-      ArrowDown: () => evidenzia(indiceSuccessivo(opzioni, indiceEvidenziato, 1)),
-      ArrowUp: () => evidenzia(indiceSuccessivo(opzioni, indiceEvidenziato, -1)),
-      Home: () => evidenzia(indiceEstremo(opzioni, false)),
-      End: () => evidenzia(indiceEstremo(opzioni, true)),
-      Enter: () => scegli(indiceEvidenziato),
-      " ": () => scegli(indiceEvidenziato),
-      Escape: () => chiudi(),
-    };
+  }
+
+  /** Da chiusa, frecce, Invio e spazio aprono l'elenco. */
+  function gestisciTastiDaChiusa(evento: KeyboardEvent) {
+    if (["ArrowDown", "ArrowUp", "Enter", " "].includes(evento.key)) {
+      evento.preventDefault();
+      apri();
+    }
+  }
+
+  /** Da aperta si scorre con frecce, Inizio e Fine, si sceglie con Invio, si salta con una lettera. */
+  function gestisciTastiDaAperta(evento: KeyboardEvent) {
+    const tasto = evento.key;
     if (tasto === "Tab") {
       chiudi(false);
-    } else if (azioni[tasto]) {
+      return;
+    }
+    const azione = azionePerTasto(tasto);
+    if (azione) {
       evento.preventDefault();
       evento.stopPropagation();
-      azioni[tasto]();
+      azione();
     } else if (tasto.length === 1) {
       evidenzia(indicePerLettera(opzioni, tasto, indiceEvidenziato));
+    }
+  }
+
+  function azionePerTasto(tasto: string): (() => void) | null {
+    switch (tasto) {
+      case "ArrowDown":
+        return () => evidenzia(indiceSuccessivo(opzioni, indiceEvidenziato, 1));
+      case "ArrowUp":
+        return () => evidenzia(indiceSuccessivo(opzioni, indiceEvidenziato, -1));
+      case "Home":
+        return () => evidenzia(indiceEstremo(opzioni, false));
+      case "End":
+        return () => evidenzia(indiceEstremo(opzioni, true));
+      case "Enter":
+      case " ":
+        return () => scegli(indiceEvidenziato);
+      case "Escape":
+        return () => chiudi();
+      default:
+        return null;
     }
   }
 

@@ -22,6 +22,13 @@ export function totaleInScadenza(conteggio: ConteggioInScadenza): number {
 }
 
 /** "a", "a e b", "a, b e c". */
+/** "1 abbonamento", "3 abbonamenti"; null se zero, così non compare nel testo. */
+function descriviQuantita(numero: number, singolare: string, plurale: string): string | null {
+  if (numero === 0) return null;
+  const nome = numero === 1 ? singolare : plurale;
+  return `${numero} ${nome}`;
+}
+
 function unisciElenco(parti: string[]): string {
   if (parti.length <= 1) return parti.join("");
   return `${parti.slice(0, -1).join(", ")} e ${parti.at(-1)}`;
@@ -29,18 +36,11 @@ function unisciElenco(parti: string[]): string {
 
 /** Testo della notifica, oppure null se non c'è nulla di nuovo. */
 export function testoNotifica(nuovi: ConteggioInScadenza, giorniPreavviso?: number): string | null {
-  const parti: string[] = [];
-  if (nuovi.abbonamenti > 0) {
-    parti.push(`${nuovi.abbonamenti} ${nuovi.abbonamenti === 1 ? "abbonamento" : "abbonamenti"}`);
-  }
-  if (nuovi.iscrizioni > 0) {
-    parti.push(`${nuovi.iscrizioni} ${nuovi.iscrizioni === 1 ? "iscrizione" : "iscrizioni"}`);
-  }
-  if (nuovi.certificati > 0) {
-    parti.push(
-      `${nuovi.certificati} ${nuovi.certificati === 1 ? "certificato medico" : "certificati medici"}`,
-    );
-  }
+  const parti = [
+    descriviQuantita(nuovi.abbonamenti, "abbonamento", "abbonamenti"),
+    descriviQuantita(nuovi.iscrizioni, "iscrizione", "iscrizioni"),
+    descriviQuantita(nuovi.certificati, "certificato medico", "certificati medici"),
+  ].filter((parte) => parte !== null);
   if (parti.length === 0) return null;
   const periodo = giorniPreavviso ? ` nei prossimi ${giorniPreavviso} giorni` : "";
   return `In scadenza${periodo}: ${unisciElenco(parti)}. Apri "Scadenze" per i dettagli.`;

@@ -26,9 +26,22 @@
   const oggi = oggiIso();
   const meseCorrente = nomeMese(oggi);
 
-  /** Un abbonamento in scadenza è ancora valido: conta tra gli attivi. */
+  /** Ciò che è in scadenza è ancora valido: conta tra gli attivi. */
   const abbonamentiValidi = $derived(
     riepilogo ? riepilogo.abbonamenti.attivi + riepilogo.abbonamenti.inScadenza : 0,
+  );
+  const iscrizioniValide = $derived(
+    riepilogo ? riepilogo.iscrizioni.attivi + riepilogo.iscrizioni.inScadenza : 0,
+  );
+  const totaleInScadenza = $derived(
+    riepilogo
+      ? riepilogo.abbonamenti.inScadenza +
+          riepilogo.iscrizioni.inScadenza +
+          riepilogo.certificati.inScadenza
+      : 0,
+  );
+  const certificatiDaSistemare = $derived(
+    riepilogo ? riepilogo.certificati.assenti + riepilogo.certificati.scaduti : 0,
   );
   const variazioneIncassi = $derived(
     riepilogo
@@ -59,7 +72,7 @@
       href={resolve("/iscritti")}
     >
       {#snippet dettaglio()}
-        {riepilogo!.iscrizioni.attivi + riepilogo!.iscrizioni.inScadenza} con iscrizione valida
+        {iscrizioniValide} con iscrizione valida
       {/snippet}
     </RiquadroNumero>
 
@@ -71,11 +84,7 @@
 
     <RiquadroNumero
       etichetta="In scadenza"
-      valore={String(
-        riepilogo.abbonamenti.inScadenza +
-          riepilogo.iscrizioni.inScadenza +
-          riepilogo.certificati.inScadenza,
-      )}
+      valore={String(totaleInScadenza)}
       tono="in_scadenza"
       href={resolve("/scadenze")}
     >
@@ -98,10 +107,8 @@
 
     <RiquadroNumero
       etichetta="Certificati da sistemare"
-      valore={String(riepilogo.certificati.assenti + riepilogo.certificati.scaduti)}
-      tono={riepilogo.certificati.assenti + riepilogo.certificati.scaduti > 0
-        ? "scaduto"
-        : "attivo"}
+      valore={String(certificatiDaSistemare)}
+      tono={certificatiDaSistemare > 0 ? "scaduto" : "attivo"}
       href={resolve("/scadenze")}
     >
       {#snippet dettaglio()}

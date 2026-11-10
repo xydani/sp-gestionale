@@ -9,9 +9,12 @@
   let logoIllegibile = $state(false);
 
   // Finché non si sa se c'è un logo scelto non si mostra nulla, per evitare un cambio a vista
-  const sorgente = $derived(
-    caricato ? (palestra.logo && !logoIllegibile ? palestra.logo : LOGO_PREDEFINITO) : null,
-  );
+  const sorgente = $derived(caricato ? sceltaLogo() : null);
+
+  function sceltaLogo(): string {
+    if (palestra.logo && !logoIllegibile) return palestra.logo;
+    return LOGO_PREDEFINITO;
+  }
 
   onMount(async () => {
     await caricaLogoPalestra();

@@ -1,6 +1,6 @@
 import { ask } from "@tauri-apps/plugin-dialog";
 import { formattaData, formattaEuro } from "./format";
-import type { Iscritto, Pagamento } from "./types";
+import type { Iscritto, Iscrizione, Pagamento } from "./types";
 
 export function testoConfermaEliminazione(pagamento: Pagamento): string {
   return (
@@ -15,6 +15,23 @@ export function testoConfermaEliminazione(pagamento: Pagamento): string {
 export function confermaEliminazionePagamento(pagamento: Pagamento): Promise<boolean> {
   return ask(testoConfermaEliminazione(pagamento), {
     title: "Elimina pagamento",
+    kind: "warning",
+    okLabel: "Elimina",
+    cancelLabel: "Annulla",
+  });
+}
+
+export function testoConfermaEliminazioneIscrizione(iscrizione: Iscrizione): string {
+  return (
+    `Eliminare l'iscrizione ${formattaData(iscrizione.dataInizio)} – ` +
+    `${formattaData(iscrizione.dataFine)} (${formattaEuro(iscrizione.importoCent)})? ` +
+    "L'operazione non si può annullare."
+  );
+}
+
+export function confermaEliminazioneIscrizione(iscrizione: Iscrizione): Promise<boolean> {
+  return ask(testoConfermaEliminazioneIscrizione(iscrizione), {
+    title: "Elimina iscrizione",
     kind: "warning",
     okLabel: "Elimina",
     cancelLabel: "Annulla",

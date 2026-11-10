@@ -58,45 +58,53 @@ export function valutaRobustezzaPassword(password: string): Robustezza {
   if (caratteri.length < LUNGHEZZA_MINIMA_PASSWORD) {
     return { livello: 0, etichetta: ETICHETTE_ROBUSTEZZA[0], suggerimento: null };
   }
-  const bit = lunghezzaEfficace(caratteri, password) * Math.log2(ampiezzaAlfabeto(password));
-  const livello = (1 + SOGLIE_BIT.filter((soglia) => bit >= soglia).length) as LivelloRobustezza;
-  return {
-    livello,
-    etichetta: ETICHETTE_ROBUSTEZZA[livello],
-    suggerimento: livello >= 3 ? null : suggerisci(password),
-  };
+  const bit = lunghezzaEfficace(caratteri) * Math.log2(ampiezzaAlfabeto(password));
+  const livello = livelloPerBit(bit);
+  let suggerimento: string | null = null;
+  if (livello < 3) suggerimento = suggerisci(password);
+  return { livello, etichetta: ETICHETTE_ROBUSTEZZA[livello], suggerimento };
 }
 
+function livelloPerBit(bit: number): LivelloRobustezza {
+  if (bit >= SOGLIE_BIT[2]) return 4;
+  if (bit >= SOGLIE_BIT[1]) return 3;
+  if (bit >= SOGLIE_BIT[0]) return 2;
+  return 1;
+}
+
+/** Quanti simboli diversi potrebbero stare in ogni posizione, secondo i tipi di carattere usati. */
 function ampiezzaAlfabeto(password: string): number {
-  const gruppi: [RegExp, number][] = [
-    [/[a-z]/, 26],
-    [/[A-Z]/, 26],
-    [/[0-9]/, 10],
-    [/[^a-zA-Z0-9]/, 33],
-  ];
-  return gruppi.reduce(
-    (totale, [gruppo, ampiezza]) => totale + (gruppo.test(password) ? ampiezza : 0),
-    0,
-  );
+  let ampiezza = 0;
+  if (/[a-z]/.test(password)) ampiezza += 26;
+  if (/[A-Z]/.test(password)) ampiezza += 26;
+  if (/[0-9]/.test(password)) ampiezza += 10;
+  if (/[^a-zA-Z0-9]/.test(password)) ampiezza += 33;
+  return ampiezza;
 }
 
-function lunghezzaEfficace(caratteri: string[], password: string): number {
+/** Lunghezza che conta davvero: ripetizioni, sequenze (abc, 123) e parole comuni valgono poco. */
+function lunghezzaEfficace(caratteri: string[]): number {
   let lunghezza = 0;
-  caratteri.forEach((carattere, indice) => {
-    const distanza =
-      indice > 0 ? carattere.codePointAt(0)! - caratteri[indice - 1].codePointAt(0)! : 2;
-    lunghezza += Math.abs(distanza) <= 1 ? PESO_CARATTERE_PREVEDIBILE : 1;
-  });
-  const minuscola = password.toLowerCase();
-  for (const parola of PAROLE_COMUNI) {
-    if (minuscola.includes(parola)) lunghezza -= parola.length * (1 - PESO_CARATTERE_PREVEDIBILE);
+  let codicePrecedente: number | null = null;
+  for (const carattere of caratteri) {
+    const codice = carattere.codePointAt(0) ?? 0;
+    const prevedibile = codicePrecedente !== null && Math.abs(codice - codicePrecedente) <= 1;
+    lunghezza += prevedibile ? PESO_CARATTERE_PREVEDIBILE : 1;
+    codicePrecedente = codice;
+  }
+  for (const parola of paroleComuniContenute(caratteri.join(""))) {
+    lunghezza -= parola.length * (1 - PESO_CARATTERE_PREVEDIBILE);
   }
   return Math.max(lunghezza, 1);
 }
 
-function suggerisci(password: string): string {
+function paroleComuniContenute(password: string): string[] {
   const minuscola = password.toLowerCase();
-  if (PAROLE_COMUNI.some((parola) => minuscola.includes(parola))) {
+  return PAROLE_COMUNI.filter((parola) => minuscola.includes(parola));
+}
+
+function suggerisci(password: string): string {
+  if (paroleComuniContenute(password).length > 0) {
     return "Evita parole comuni come «password» o il nome della palestra";
   }
   if (!/[^a-zA-Z0-9]/.test(password) || !/[A-Z]/.test(password)) {

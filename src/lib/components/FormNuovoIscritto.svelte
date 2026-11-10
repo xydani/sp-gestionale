@@ -10,7 +10,14 @@
   import { centesimiInTestoEuro, euroInCentesimi, formattaEuro, oggiIso } from "$lib/format";
   import { totaleNuovoIscritto } from "$lib/iscrizione";
   import { OPZIONI_METODO } from "$lib/metodi-pagamento";
-  import type { DatiIscritto, Iscritto, MetodoPagamento, TipologiaAbbonamento } from "$lib/types";
+  import type {
+    DatiIscritto,
+    DatiIscrizione,
+    DatiPagamento,
+    Iscritto,
+    MetodoPagamento,
+    TipologiaAbbonamento,
+  } from "$lib/types";
   import {
     DURATA_ISCRIZIONE_MESI,
     DURATA_MASSIMA_ABBONAMENTO_MESI,
@@ -66,14 +73,41 @@
     if (tipologiaId === null) return;
     try {
       const proposta = await proponiPagamento(null, tipologiaId, dataInizioScelta);
-      if (dataInizioScelta === null)
+      if (dataInizioScelta === null) {
         importoAbbonamento = centesimiInTestoEuro(proposta.importoCent);
+      }
       inizioAbbonamento = proposta.dataInizio;
       scadenzaAbbonamento = proposta.dataScadenza;
       errore = null;
     } catch (erroreBackend) {
       errore = messaggioErrore(erroreBackend);
     }
+  }
+
+  function datiIscrizione(quotaCent: number): DatiIscrizione {
+    return {
+      iscrittoId: ID_DA_ASSEGNARE,
+      importoCent: quotaCent,
+      dataPagamento,
+      metodo,
+      dataInizio: inizioIscrizione,
+      dataFine: fineIscrizione,
+      note: null,
+    };
+  }
+
+  function datiPagamento(tipologiaId: number, importoCent: number): DatiPagamento {
+    return {
+      iscrittoId: ID_DA_ASSEGNARE,
+      tipologiaId,
+      importoCent,
+      dataPagamento,
+      metodo,
+      dataInizio: inizioAbbonamento,
+      dataScadenza: scadenzaAbbonamento,
+      note: null,
+      rinnovoDiId: null,
+    };
   }
 
   async function iscrivi(anagrafica: DatiIscritto): Promise<boolean> {
@@ -90,26 +124,8 @@
     try {
       const iscritto = await iscriviNuovoIscritto({
         anagrafica,
-        iscrizione: {
-          iscrittoId: ID_DA_ASSEGNARE,
-          importoCent: quotaCent,
-          dataPagamento,
-          metodo,
-          dataInizio: inizioIscrizione,
-          dataFine: fineIscrizione,
-          note: null,
-        },
-        pagamento: {
-          iscrittoId: ID_DA_ASSEGNARE,
-          tipologiaId,
-          importoCent,
-          dataPagamento,
-          metodo,
-          dataInizio: inizioAbbonamento,
-          dataScadenza: scadenzaAbbonamento,
-          note: null,
-          rinnovoDiId: null,
-        },
+        iscrizione: datiIscrizione(quotaCent),
+        pagamento: datiPagamento(tipologiaId, importoCent),
       });
       onIscritto(iscritto);
       return true;
