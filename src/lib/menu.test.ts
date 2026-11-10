@@ -19,3 +19,11 @@ describe("eVoceAttiva", () => {
     expect(eVoceAttiva(iscritti, "/iscrittiarchivio")).toBe(false);
   });
 });
+
+describe("VOCI_MENU", () => {
+  it("ha il listino separato dalle impostazioni, che restano in fondo", () => {
+    const percorsi = VOCI_MENU.map((voce) => voce.percorso);
+    expect(percorsi).toContain("/listino");
+    expect(percorsi.at(-1)).toBe("/impostazioni");
+  });
+});

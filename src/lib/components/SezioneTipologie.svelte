@@ -49,7 +49,6 @@
 </script>
 
 <section>
-  <h2>Listino abbonamenti</h2>
   <p class="nota">
     Le modifiche valgono per i nuovi pagamenti; lo storico mantiene i valori del momento. Una
     tipologia non più in uso si disattiva invece di cancellarla.
@@ -106,7 +105,6 @@
     margin-bottom: 1.5rem;
   }
 
-  h2,
   h3,
   p {
     margin: 0;
