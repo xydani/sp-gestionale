@@ -11,8 +11,8 @@ use zeroize::Zeroizing;
 
 use crate::db::backup::{
     crea_cartella, esegui_backup, esegui_backup_giornaliero, nome_backup_manuale,
-    nome_backup_pre_migrazione, nome_backup_pre_ripristino, sostituisci_database_con_backup,
-    verifica_backup,
+    nome_backup_pre_aggiornamento, nome_backup_pre_migrazione, nome_backup_pre_ripristino,
+    sostituisci_database_con_backup, verifica_backup,
 };
 use crate::db::crittografia::{apri_database_criptato, cambia_password, crea_database_criptato};
 use crate::db::impostazioni::{
@@ -160,6 +160,22 @@ impl StatoApp {
 
     pub fn tentativi_falliti(&self) -> u32 {
         *self.tentativi_bloccati()
+    }
+
+    /// Copia criptata nella cartella dei backup automatici, prima di installare un aggiornamento.
+    pub fn esegui_backup_pre_aggiornamento(
+        &self,
+        versione_installata: &str,
+    ) -> Result<PathBuf, ErroreApp> {
+        let connessione = self.connessione_bloccata();
+        let connessione = connessione.as_ref().ok_or_else(errore_database_bloccato)?;
+        crea_cartella(&self.cartella_backup)?;
+        let destinazione = self.cartella_backup.join(nome_backup_pre_aggiornamento(
+            versione_installata,
+            (self.adesso)(),
+        ));
+        esegui_backup(connessione, &destinazione)?;
+        Ok(destinazione)
     }
 
     /// Salva una copia criptata del database nella cartella scelta dall'utente.
@@ -376,6 +392,19 @@ mod test {
             .unwrap()
             .collect();
         assert_eq!(backup.len(), 1);
+    }
+
+    #[test]
+    fn il_backup_pre_aggiornamento_finisce_tra_i_backup_automatici() {
+        let (_cartella, stato) = stato_creato_e_bloccato();
+        assert!(stato.esegui_backup_pre_aggiornamento("0.1.0").is_err());
+        stato.sblocca_database(segreto(PASSWORD)).unwrap();
+        let percorso = stato.esegui_backup_pre_aggiornamento("0.1.0").unwrap();
+        assert!(percorso.starts_with(stato.cartella_backup()));
+        assert!(percorso.exists());
+        let nome = percorso.file_name().unwrap().to_string_lossy();
+        assert!(nome.starts_with("pre-aggiornamento-v0.1.0-"), "{nome}");
+        crate::db::backup::verifica_backup(&percorso, PASSWORD).unwrap();
     }
 
     #[test]

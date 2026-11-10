@@ -13,6 +13,7 @@ pub const PREFISSO_BACKUP_GIORNALIERO: &str = "backup-";
 pub const PREFISSO_BACKUP_PRE_MIGRAZIONE: &str = "pre-migrazione-";
 pub const PREFISSO_BACKUP_PRE_RIPRISTINO: &str = "pre-ripristino-";
 pub const PREFISSO_BACKUP_MANUALE: &str = "sp-gestionale-";
+pub const PREFISSO_BACKUP_PRE_AGGIORNAMENTO: &str = "pre-aggiornamento-";
 const ESTENSIONE_BACKUP: &str = ".db";
 const FORMATO_ISTANTE: &str = "%Y-%m-%d_%H-%M-%S";
 const FORMATO_GIORNO: &str = "%Y-%m-%d";
@@ -63,6 +64,13 @@ pub fn nome_backup_pre_migrazione(versione_corrente: u32, istante: NaiveDateTime
 pub fn nome_backup_pre_ripristino(istante: NaiveDateTime) -> String {
     format!(
         "{PREFISSO_BACKUP_PRE_RIPRISTINO}{}{ESTENSIONE_BACKUP}",
+        istante.format(FORMATO_ISTANTE)
+    )
+}
+
+pub fn nome_backup_pre_aggiornamento(versione_installata: &str, istante: NaiveDateTime) -> String {
+    format!(
+        "{PREFISSO_BACKUP_PRE_AGGIORNAMENTO}v{versione_installata}-{}{ESTENSIONE_BACKUP}",
         istante.format(FORMATO_ISTANTE)
     )
 }

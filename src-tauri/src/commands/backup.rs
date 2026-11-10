@@ -15,6 +15,15 @@ pub fn esegui_backup_manuale(
     stato.esegui_backup_manuale(&cartella_destinazione)
 }
 
+/// Backup prima di installare un aggiornamento: se qualcosa va storto i dati sono al sicuro.
+#[tauri::command]
+pub fn esegui_backup_pre_aggiornamento(
+    app: tauri::AppHandle,
+    stato: State<'_, StatoApp>,
+) -> Result<PathBuf, ErroreApp> {
+    stato.esegui_backup_pre_aggiornamento(&app.package_info().version.to_string())
+}
+
 #[tauri::command]
 pub fn ripristina_backup(
     stato: State<'_, StatoApp>,
