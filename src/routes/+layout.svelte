@@ -2,7 +2,9 @@
   import "../app.css";
   import { onMount, type Snippet } from "svelte";
   import { bloccaDatabase, leggiStatoDatabase } from "$lib/api";
+  import { adattaFinestra, modalitaFinestraPerStato } from "$lib/finestra";
   import BarraAvvisi from "$lib/components/BarraAvvisi.svelte";
+  import CorniceSenzaBordi from "$lib/components/CorniceSenzaBordi.svelte";
   import MenuLaterale from "$lib/components/MenuLaterale.svelte";
   import PrimoAvvio from "$lib/components/PrimoAvvio.svelte";
   import PulsanteSchermoIntero from "$lib/components/PulsanteSchermoIntero.svelte";
@@ -20,7 +22,11 @@
   let pulsanteSchermoIntero = $state<PulsanteSchermoIntero>();
 
   async function aggiornaStato() {
-    statoDatabase = await leggiStatoDatabase();
+    const nuovoStato = await leggiStatoDatabase();
+    // Prima si adatta la finestra, poi si cambia schermata: evita di vedere
+    // per un istante il layout principale nella finestra compatta
+    await adattaFinestra(modalitaFinestraPerStato(nuovoStato));
+    statoDatabase = nuovoStato;
   }
 
   async function blocca() {
@@ -57,9 +63,9 @@
     </main>
   </div>
 {:else if statoDatabase === "bloccato"}
-  <div class="centrato"><SchermataSblocco onSbloccato={aggiornaStato} /></div>
+  <CorniceSenzaBordi><SchermataSblocco onSbloccato={aggiornaStato} /></CorniceSenzaBordi>
 {:else if statoDatabase === "da_creare"}
-  <div class="centrato"><PrimoAvvio onCompletato={aggiornaStato} /></div>
+  <CorniceSenzaBordi><PrimoAvvio onCompletato={aggiornaStato} /></CorniceSenzaBordi>
 {/if}
 
 <style>
@@ -80,47 +86,35 @@
     margin-bottom: 0.5rem;
   }
 
-  .centrato {
-    min-height: 100vh;
-    display: grid;
-    place-items: center;
-    padding: 1rem;
-  }
-
   /* Stili condivisi dai riquadri di primo avvio e sblocco */
-  .centrato :global(.riquadro) {
-    width: min(420px, 100%);
+  :global(.riquadro) {
     display: grid;
     gap: 1rem;
-    background: var(--colore-superficie);
-    border: 1px solid var(--colore-bordo);
-    border-radius: var(--raggio);
-    padding: 2rem;
   }
 
-  .centrato :global(h1) {
+  :global(.riquadro h1) {
     margin: 0;
     font-size: 1.5rem;
   }
 
-  .centrato :global(p) {
+  :global(.riquadro p) {
     margin: 0;
     color: var(--colore-testo-secondario);
   }
 
-  .centrato :global(label) {
+  :global(.riquadro label) {
     display: grid;
     gap: 0.35rem;
     font-weight: 500;
   }
 
-  .centrato :global(input) {
+  :global(.riquadro input) {
     padding: 0.6rem 0.75rem;
     border: 1px solid var(--colore-bordo);
     border-radius: var(--raggio);
   }
 
-  .centrato :global(button) {
+  :global(.riquadro button) {
     padding: 0.7rem;
     border: none;
     border-radius: var(--raggio);
@@ -129,15 +123,15 @@
     font-weight: 600;
   }
 
-  .centrato :global(button:disabled) {
+  :global(.riquadro button:disabled) {
     opacity: 0.6;
   }
 
-  .centrato :global(.avviso) {
+  :global(.riquadro .avviso) {
     color: var(--colore-avviso);
   }
 
-  .centrato :global(.errore) {
+  :global(.riquadro .errore) {
     color: var(--colore-errore);
   }
 </style>
