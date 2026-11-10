@@ -1,0 +1,40 @@
+/* Token colore provvisori: verranno ricavati dal logo (Fase 13) */
+:root {
+  --colore-sfondo: #f5f6f8;
+  --colore-superficie: #ffffff;
+  --colore-testo: #1d2330;
+  --colore-testo-secondario: #5b6476;
+  --colore-bordo: #dde1e8;
+  --colore-primario: #1f6feb;
+  --colore-primario-testo: #ffffff;
+  --colore-errore: #c62828;
+  --colore-avviso: #b26a00;
+  --colore-menu: #1d2330;
+  --colore-menu-testo: #d7dbe3;
+  --colore-menu-attivo: #2f3a4f;
+  --raggio: 8px;
+  --larghezza-menu: 220px;
+  font-family: system-ui, "Segoe UI", Roboto, sans-serif;
+  font-size: 16px;
+  color: var(--colore-testo);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--colore-sfondo);
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+input {
+  font: inherit;
+}
