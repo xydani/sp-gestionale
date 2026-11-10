@@ -5,6 +5,7 @@ description = "Gestione abbonamenti palestra"
 authors = ["xydani"]
 license = "MIT"
 edition = "2024"
+default-run = "sp-gestionale"
 
 [lib]
 name = "sp_gestionale_lib"
@@ -19,6 +20,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 chrono = { version = "0.4.45", default-features = false, features = ["std", "serde", "clock"] }
 thiserror = "2.0.21"
+rusqlite = { version = "0.41.1", features = ["bundled-sqlcipher-vendored-openssl"] }
 
 [profile.release]
 codegen-units = 1
@@ -26,3 +28,6 @@ lto = true
 opt-level = 3
 panic = "abort"
 strip = true
+
+[dev-dependencies]
+tempfile = "3.27.0"
