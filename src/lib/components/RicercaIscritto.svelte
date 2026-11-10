@@ -12,7 +12,11 @@
   let testo = $state("");
   let risultati = $state<Iscritto[]>([]);
 
+  // Conta le ricerche: una risposta lenta non deve sovrascrivere quella di una ricerca successiva
+  let ultimaRicerca = 0;
+
   const cerca = ritarda(async () => {
+    const questaRicerca = ++ultimaRicerca;
     if (!testo.trim()) {
       risultati = [];
       return;
@@ -23,10 +27,12 @@
       statoAbbonamento: null,
       statoIscrizione: null,
     });
+    if (questaRicerca !== ultimaRicerca) return;
     risultati = trovati.elementi.slice(0, RISULTATI_MASSIMI);
   }, PAUSA_RICERCA_MS);
 
   function scegli(iscritto: Iscritto) {
+    ultimaRicerca++;
     testo = "";
     risultati = [];
     onScelto(iscritto);

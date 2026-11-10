@@ -29,10 +29,14 @@
   let nuovoIscrittoAperto = $state(false);
   let caricamento = $state(true);
 
+  // Conta i caricamenti: una risposta lenta non deve sovrascrivere quella di una ricerca successiva
+  let ultimoCaricamento = 0;
+
   /** Carica una pagina; cambiando i filtri si riparte dalla prima. */
   async function carica(numeroPagina = 1) {
+    const questoCaricamento = ++ultimoCaricamento;
     try {
-      pagina = await elencaIscritti(
+      const risultato = await elencaIscritti(
         {
           testo: testoRicerca,
           includiArchiviati,
@@ -42,6 +46,7 @@
         },
         numeroPagina,
       );
+      if (questoCaricamento === ultimoCaricamento) pagina = risultato;
     } catch (errore) {
       mostraAvviso("errore", messaggioErrore(errore));
     } finally {
