@@ -12,6 +12,7 @@
   "app": {
     "windows": [
       {
+        "label": "accesso",
         "title": "SP Gestionale",
         "width": 400,
         "height": 520,
@@ -19,7 +20,18 @@
         "decorations": false,
         "transparent": true,
         "shadow": false,
-        "maximized": false,
+        "center": true
+      },
+      {
+        "label": "principale",
+        "title": "SP Gestionale",
+        "visible": false,
+        "width": 1200,
+        "height": 800,
+        "minWidth": 900,
+        "minHeight": 600,
+        "resizable": true,
+        "maximized": true,
         "center": true
       }
     ],

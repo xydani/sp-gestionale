@@ -34,6 +34,12 @@ pub fn run() {
             commands::tipologie::modifica_tipologia,
             commands::tipologie::imposta_tipologia_attiva,
         ])
+        // Le due finestre (accesso e principale) vivono insieme: chiuderne una chiude il programma
+        .on_window_event(|finestra, evento| {
+            if let tauri::WindowEvent::CloseRequested { .. } = evento {
+                finestra.app_handle().exit(0);
+            }
+        })
         .run(tauri::generate_context!())
         .expect("errore durante l'avvio dell'applicazione");
 }

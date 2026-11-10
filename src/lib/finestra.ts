@@ -1,76 +1,74 @@
-import { LogicalSize, currentMonitor, getCurrentWindow } from "@tauri-apps/api/window";
-import type { StatoDatabase } from "./types";
+import { emit, listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { LogicalSize, Window, getCurrentWindow } from "@tauri-apps/api/window";
 
-/** Dimensioni della finestra compatta, senza bordi, usata prima dello sblocco. */
+/**
+ * L'app ha due finestre (vedi tauri.conf.json):
+ * - "accesso": compatta, arrotondata e senza bordi, per password e primo avvio;
+ * - "principale": normale, con bordi e pulsanti, massimizzata.
+ * Usare due finestre è più affidabile che togliere e rimettere i bordi a una sola.
+ */
+export const ETICHETTA_FINESTRA_ACCESSO = "accesso";
+export const ETICHETTA_FINESTRA_PRINCIPALE = "principale";
+
 export const DIMENSIONE_SBLOCCO = { larghezza: 400, altezza: 520 };
 export const DIMENSIONE_PRIMO_AVVIO = { larghezza: 440, altezza: 680 };
-/** Dimensione minima della finestra principale dopo lo sblocco. */
-export const DIMENSIONE_MINIMA_PRINCIPALE = { larghezza: 900, altezza: 600 };
-/**
- * Su Linux il gestore delle finestre applica il cambio "ridimensionabile" in modo asincrono:
- * una massimizzazione immediata verrebbe ignorata.
- */
-const ATTESA_PRIMA_DI_MASSIMIZZARE_MS = 100;
 
-export type ModalitaFinestra = "sblocco" | "primo_avvio" | "principale";
+/** Evento inviato a tutte le finestre quando il database viene sbloccato o bloccato. */
+const EVENTO_STATO_DATABASE_CAMBIATO = "stato-database-cambiato";
 
-export function modalitaFinestraPerStato(stato: StatoDatabase): ModalitaFinestra {
-  if (stato === "sbloccato") return "principale";
-  if (stato === "da_creare") return "primo_avvio";
-  return "sblocco";
+export function eFinestraDiAccesso(): boolean {
+  return getCurrentWindow().label === ETICHETTA_FINESTRA_ACCESSO;
 }
 
-/** Adatta la finestra alla schermata: compatta e senza bordi prima dello sblocco, massimizzata dopo. */
-export async function adattaFinestra(modalita: ModalitaFinestra): Promise<void> {
-  if (modalita === "principale") {
-    await apriFinestraPrincipale();
-  } else {
-    await riduciAFinestraCompatta(
-      modalita === "primo_avvio" ? DIMENSIONE_PRIMO_AVVIO : DIMENSIONE_SBLOCCO,
-    );
-  }
+/** Dati dell'evento: un eventuale avviso da mostrare nella finestra principale. */
+export interface CambioStatoDatabase {
+  avviso: string | null;
 }
 
-export function chiudiApp(): Promise<void> {
-  return getCurrentWindow().close();
+/** Dopo lo sblocco: mostra la finestra principale e nasconde quella di accesso. */
+export async function passaAllaFinestraPrincipale(avviso: string | null = null): Promise<void> {
+  await emit<CambioStatoDatabase>(EVENTO_STATO_DATABASE_CAMBIATO, { avviso });
+  const principale = await trovaFinestra(ETICHETTA_FINESTRA_PRINCIPALE);
+  await principale.show();
+  await principale.maximize();
+  await principale.setFocus();
+  await (await trovaFinestra(ETICHETTA_FINESTRA_ACCESSO)).hide();
 }
 
-async function apriFinestraPrincipale(): Promise<void> {
+/** Dopo il blocco: torna alla finestra di accesso e nasconde quella principale. */
+export async function passaAllaFinestraDiAccesso(): Promise<void> {
+  await emit<CambioStatoDatabase>(EVENTO_STATO_DATABASE_CAMBIATO, { avviso: null });
+  const principale = await trovaFinestra(ETICHETTA_FINESTRA_PRINCIPALE);
+  await principale.setFullscreen(false);
+  const accesso = await trovaFinestra(ETICHETTA_FINESTRA_ACCESSO);
+  await accesso.show();
+  await accesso.setFocus();
+  await principale.hide();
+}
+
+/** La finestra di accesso è più alta al primo avvio, per l'avviso sulla password. */
+export async function adattaFinestraDiAccesso(primoAvvio: boolean): Promise<void> {
+  const dimensione = primoAvvio ? DIMENSIONE_PRIMO_AVVIO : DIMENSIONE_SBLOCCO;
   const finestra = getCurrentWindow();
-  const minima = DIMENSIONE_MINIMA_PRINCIPALE;
-  await finestra.setResizable(true);
-  await finestra.setDecorations(true);
-  await finestra.setShadow(true);
-  await finestra.setMinSize(new LogicalSize(minima.larghezza, minima.altezza));
-  await attendi(ATTESA_PRIMA_DI_MASSIMIZZARE_MS);
-  await finestra.maximize();
-
-  // Se il sistema ha ignorato la richiesta, la finestra occupa comunque l'area utile dello schermo
-  if (!(await finestra.isMaximized())) {
-    const schermo = await currentMonitor();
-    if (schermo) {
-      await finestra.setSize(schermo.workArea.size);
-      await finestra.setPosition(schermo.workArea.position);
-    }
-  }
-}
-
-async function riduciAFinestraCompatta(dimensione: {
-  larghezza: number;
-  altezza: number;
-}): Promise<void> {
-  const finestra = getCurrentWindow();
-  await finestra.setFullscreen(false);
-  await finestra.unmaximize();
-  await finestra.setMinSize(null);
-  await finestra.setDecorations(false);
-  // Senza ombra di sistema gli angoli arrotondati della schermata restano puliti
-  await finestra.setShadow(false);
-  await finestra.setResizable(false);
   await finestra.setSize(new LogicalSize(dimensione.larghezza, dimensione.altezza));
   await finestra.center();
 }
 
-function attendi(millisecondi: number): Promise<void> {
-  return new Promise((risolvi) => setTimeout(risolvi, millisecondi));
+export function quandoCambiaStatoDatabase(
+  azione: (cambio: CambioStatoDatabase) => void,
+): Promise<UnlistenFn> {
+  return listen<CambioStatoDatabase>(EVENTO_STATO_DATABASE_CAMBIATO, (evento) =>
+    azione(evento.payload),
+  );
+}
+
+/** Chiudere una finestra chiude tutto il programma (gestito nel backend). */
+export function chiudiApp(): Promise<void> {
+  return getCurrentWindow().close();
+}
+
+async function trovaFinestra(etichetta: string): Promise<Window> {
+  const finestra = await Window.getByLabel(etichetta);
+  if (!finestra) throw new Error(`Finestra "${etichetta}" non trovata`);
+  return finestra;
 }

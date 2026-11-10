@@ -1,26 +1,30 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const finestra = {
-  setDecorations: vi.fn(),
-  setResizable: vi.fn(),
-  setShadow: vi.fn(),
-  setMinSize: vi.fn(),
-  maximize: vi.fn(),
-  isMaximized: vi.fn(),
-  unmaximize: vi.fn(),
-  setFullscreen: vi.fn(),
-  setSize: vi.fn(),
-  setPosition: vi.fn(),
-  center: vi.fn(),
-};
-const schermo = {
-  workArea: { size: { width: 1920, height: 1040 }, position: { x: 0, y: 40 } },
-};
-const currentMonitor = vi.fn();
+function finestraFinta(label: string) {
+  return {
+    label,
+    show: vi.fn(),
+    hide: vi.fn(),
+    maximize: vi.fn(),
+    setFocus: vi.fn(),
+    setFullscreen: vi.fn(),
+    setSize: vi.fn(),
+    center: vi.fn(),
+  };
+}
 
+const accesso = finestraFinta("accesso");
+const principale = finestraFinta("principale");
+let finestraCorrente = accesso;
+const emit = vi.fn();
+
+vi.mock("@tauri-apps/api/event", () => ({ emit, listen: vi.fn() }));
 vi.mock("@tauri-apps/api/window", () => ({
-  getCurrentWindow: () => finestra,
-  currentMonitor,
+  getCurrentWindow: () => finestraCorrente,
+  Window: {
+    getByLabel: async (etichetta: string) =>
+      ({ accesso, principale })[etichetta as "accesso" | "principale"] ?? null,
+  },
   LogicalSize: class {
     constructor(
       public width: number,
@@ -29,62 +33,60 @@ vi.mock("@tauri-apps/api/window", () => ({
   },
 }));
 
-const { adattaFinestra, modalitaFinestraPerStato, DIMENSIONE_SBLOCCO, DIMENSIONE_PRIMO_AVVIO } =
-  await import("./finestra");
+const finestra = await import("./finestra");
 
-describe("modalitaFinestraPerStato", () => {
-  it("usa la finestra principale solo dopo lo sblocco", () => {
-    expect(modalitaFinestraPerStato("sbloccato")).toBe("principale");
-    expect(modalitaFinestraPerStato("bloccato")).toBe("sblocco");
-    expect(modalitaFinestraPerStato("da_creare")).toBe("primo_avvio");
-  });
-});
+function ordine(funzione: ReturnType<typeof vi.fn>): number {
+  return funzione.mock.invocationCallOrder[0];
+}
 
-describe("adattaFinestra", () => {
+describe("finestre di accesso e principale", () => {
   beforeEach(() => {
-    Object.values(finestra).forEach((funzione) => funzione.mockReset());
-    currentMonitor.mockReset().mockResolvedValue(schermo);
+    [accesso, principale].forEach((f) =>
+      Object.values(f).forEach((v) => typeof v === "function" && v.mockReset()),
+    );
+    emit.mockReset();
+    finestraCorrente = accesso;
   });
 
-  it("dopo lo sblocco rende la finestra ridimensionabile prima di massimizzarla", async () => {
-    finestra.isMaximized.mockResolvedValue(true);
-    await adattaFinestra("principale");
-
-    expect(finestra.setDecorations).toHaveBeenCalledWith(true);
-    expect(finestra.setResizable).toHaveBeenCalledWith(true);
-    const ordineResizable = finestra.setResizable.mock.invocationCallOrder[0];
-    const ordineMaximize = finestra.maximize.mock.invocationCallOrder[0];
-    expect(ordineResizable).toBeLessThan(ordineMaximize);
-    expect(finestra.setSize).not.toHaveBeenCalled();
+  it("riconosce la finestra di accesso dall'etichetta", () => {
+    expect(finestra.eFinestraDiAccesso()).toBe(true);
+    finestraCorrente = principale;
+    expect(finestra.eFinestraDiAccesso()).toBe(false);
   });
 
-  it("se il sistema ignora la massimizzazione occupa l'area utile dello schermo", async () => {
-    finestra.isMaximized.mockResolvedValue(false);
-    await adattaFinestra("principale");
+  it("dopo lo sblocco mostra la principale massimizzata prima di nascondere l'accesso", async () => {
+    await finestra.passaAllaFinestraPrincipale("Backup automatico non riuscito");
 
-    expect(finestra.setSize).toHaveBeenCalledWith(schermo.workArea.size);
-    expect(finestra.setPosition).toHaveBeenCalledWith(schermo.workArea.position);
-  });
-
-  it("allo sblocco usa una finestra compatta, senza bordi né ombra e centrata", async () => {
-    await adattaFinestra("sblocco");
-    expect(finestra.setFullscreen).toHaveBeenCalledWith(false);
-    expect(finestra.unmaximize).toHaveBeenCalled();
-    expect(finestra.setDecorations).toHaveBeenCalledWith(false);
-    expect(finestra.setShadow).toHaveBeenCalledWith(false);
-    expect(finestra.setResizable).toHaveBeenCalledWith(false);
-    expect(finestra.setSize).toHaveBeenCalledWith({
-      width: DIMENSIONE_SBLOCCO.larghezza,
-      height: DIMENSIONE_SBLOCCO.altezza,
+    expect(emit).toHaveBeenCalledWith("stato-database-cambiato", {
+      avviso: "Backup automatico non riuscito",
     });
-    expect(finestra.center).toHaveBeenCalled();
+    expect(principale.show).toHaveBeenCalled();
+    expect(principale.maximize).toHaveBeenCalled();
+    expect(accesso.hide).toHaveBeenCalled();
+    expect(ordine(principale.show)).toBeLessThan(ordine(accesso.hide));
   });
 
-  it("al primo avvio la finestra è più alta per l'avviso sulla password", async () => {
-    await adattaFinestra("primo_avvio");
-    expect(finestra.setSize).toHaveBeenCalledWith({
-      width: DIMENSIONE_PRIMO_AVVIO.larghezza,
-      height: DIMENSIONE_PRIMO_AVVIO.altezza,
+  it("al blocco esce dallo schermo intero e torna alla finestra di accesso", async () => {
+    finestraCorrente = principale;
+    await finestra.passaAllaFinestraDiAccesso();
+
+    expect(principale.setFullscreen).toHaveBeenCalledWith(false);
+    expect(accesso.show).toHaveBeenCalled();
+    expect(principale.hide).toHaveBeenCalled();
+    expect(ordine(accesso.show)).toBeLessThan(ordine(principale.hide));
+  });
+
+  it("la finestra di accesso è più alta al primo avvio", async () => {
+    await finestra.adattaFinestraDiAccesso(true);
+    expect(accesso.setSize).toHaveBeenCalledWith({
+      width: finestra.DIMENSIONE_PRIMO_AVVIO.larghezza,
+      height: finestra.DIMENSIONE_PRIMO_AVVIO.altezza,
+    });
+
+    await finestra.adattaFinestraDiAccesso(false);
+    expect(accesso.setSize).toHaveBeenLastCalledWith({
+      width: finestra.DIMENSIONE_SBLOCCO.larghezza,
+      height: finestra.DIMENSIONE_SBLOCCO.altezza,
     });
   });
 });

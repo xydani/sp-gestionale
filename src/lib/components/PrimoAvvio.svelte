@@ -17,6 +17,8 @@
     inCorso = true;
     try {
       await creaDatabase(password, confermaPassword);
+      password = "";
+      confermaPassword = "";
       onCompletato();
     } catch (erroreBackend) {
       errore = messaggioErrore(erroreBackend);

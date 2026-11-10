@@ -1,8 +1,16 @@
 <script lang="ts">
   import "../app.css";
-  import { onMount, type Snippet } from "svelte";
+  import { onDestroy, onMount, type Snippet } from "svelte";
   import { bloccaDatabase, leggiStatoDatabase } from "$lib/api";
-  import { adattaFinestra, modalitaFinestraPerStato } from "$lib/finestra";
+  import {
+    adattaFinestraDiAccesso,
+    eFinestraDiAccesso,
+    passaAllaFinestraDiAccesso,
+    passaAllaFinestraPrincipale,
+    quandoCambiaStatoDatabase,
+    type CambioStatoDatabase,
+  } from "$lib/finestra";
+  import { mostraAvviso } from "$lib/avvisi.svelte";
   import BarraAvvisi from "$lib/components/BarraAvvisi.svelte";
   import CorniceSenzaBordi from "$lib/components/CorniceSenzaBordi.svelte";
   import MenuLaterale from "$lib/components/MenuLaterale.svelte";
@@ -21,22 +29,29 @@
   let statoDatabase = $state<StatoDatabase | null>(null);
   let pulsanteSchermoIntero = $state<PulsanteSchermoIntero>();
 
+  // Ogni finestra mostra solo le sue schermate: accesso (password) oppure programma
+  const finestraDiAccesso = eFinestraDiAccesso();
+  let smettiDiAscoltare: (() => void) | undefined;
+
   async function aggiornaStato() {
-    const nuovoStato = await leggiStatoDatabase();
-    // Prima si adatta la finestra, poi si cambia schermata: evita di vedere
-    // per un istante il layout principale nella finestra compatta
-    const modalita = modalitaFinestraPerStato(nuovoStato);
-    document.documentElement.classList.toggle("finestra-compatta", modalita !== "principale");
-    await adattaFinestra(modalita);
-    statoDatabase = nuovoStato;
+    statoDatabase = await leggiStatoDatabase();
+    if (finestraDiAccesso && statoDatabase !== "sbloccato") {
+      await adattaFinestraDiAccesso(statoDatabase === "da_creare");
+    }
+  }
+
+  async function gestisciCambioStato(cambio: CambioStatoDatabase) {
+    if (cambio.avviso && !finestraDiAccesso) mostraAvviso("avviso", cambio.avviso);
+    await aggiornaStato();
   }
 
   async function blocca() {
     await bloccaDatabase();
-    await aggiornaStato();
+    await passaAllaFinestraDiAccesso();
   }
 
   async function gestisciTasti(evento: KeyboardEvent) {
+    if (finestraDiAccesso) return;
     if (eTastoSchermoIntero(evento)) {
       evento.preventDefault();
       await alternaSchermoIntero();
@@ -48,12 +63,28 @@
     await pulsanteSchermoIntero?.aggiornaStato();
   }
 
-  onMount(aggiornaStato);
+  onMount(async () => {
+    document.documentElement.classList.toggle("finestra-compatta", finestraDiAccesso);
+    smettiDiAscoltare = await quandoCambiaStatoDatabase(gestisciCambioStato);
+    await aggiornaStato();
+  });
+
+  onDestroy(() => smettiDiAscoltare?.());
 </script>
 
 <svelte:window onkeydown={gestisciTasti} />
 
-{#if statoDatabase === "sbloccato"}
+{#if finestraDiAccesso}
+  {#if statoDatabase === "bloccato"}
+    <CorniceSenzaBordi>
+      <SchermataSblocco onSbloccato={(avviso) => passaAllaFinestraPrincipale(avviso)} />
+    </CorniceSenzaBordi>
+  {:else if statoDatabase === "da_creare"}
+    <CorniceSenzaBordi
+      ><PrimoAvvio onCompletato={() => passaAllaFinestraPrincipale()} /></CorniceSenzaBordi
+    >
+  {/if}
+{:else if statoDatabase === "sbloccato"}
   <div class="app">
     <MenuLaterale onBlocca={blocca} />
     <main>
@@ -66,10 +97,6 @@
       </div>
     </main>
   </div>
-{:else if statoDatabase === "bloccato"}
-  <CorniceSenzaBordi><SchermataSblocco onSbloccato={aggiornaStato} /></CorniceSenzaBordi>
-{:else if statoDatabase === "da_creare"}
-  <CorniceSenzaBordi><PrimoAvvio onCompletato={aggiornaStato} /></CorniceSenzaBordi>
 {/if}
 
 <style>
