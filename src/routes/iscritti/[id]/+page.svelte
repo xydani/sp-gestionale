@@ -13,15 +13,22 @@
   import BadgeStato from "$lib/components/BadgeStato.svelte";
   import FormIscritto from "$lib/components/FormIscritto.svelte";
   import FormPagamento from "$lib/components/FormPagamento.svelte";
+  import Paginazione from "$lib/components/Paginazione.svelte";
   import TabellaPagamenti from "$lib/components/TabellaPagamenti.svelte";
   import { confermaEliminazionePagamento } from "$lib/conferma";
   import { formattaData } from "$lib/format";
-  import type { DatiIscritto, Iscritto, Pagamento } from "$lib/types";
+  import type { DatiIscritto, Iscritto, Pagamento, PaginaPagamenti } from "$lib/types";
 
   const idIscritto = $derived(Number(page.params.id));
 
   let iscritto = $state<Iscritto | null>(null);
-  let pagamenti = $state<Pagamento[]>([]);
+  let storico = $state<PaginaPagamenti>({
+    elementi: [],
+    numero: 1,
+    elementiPerPagina: 50,
+    totaleElementi: 0,
+    totaleImportoCent: 0,
+  });
   let inModifica = $state(false);
   let nuovoPagamentoAperto = $state(false);
   let errore = $state<string | null>(null);
@@ -33,11 +40,18 @@
   async function carica(id: number) {
     try {
       iscritto = await trovaIscritto(id);
-      pagamenti = await elencaPagamenti({ dal: null, al: null, metodo: null, iscrittoId: id });
+      await caricaStorico(id, 1);
       errore = null;
     } catch (erroreBackend) {
       errore = messaggioErrore(erroreBackend);
     }
+  }
+
+  async function caricaStorico(id: number, numeroPagina: number) {
+    storico = await elencaPagamenti(
+      { dal: null, al: null, metodo: null, iscrittoId: id },
+      numeroPagina,
+    );
   }
 
   async function salvaModifiche(dati: DatiIscritto): Promise<boolean> {
@@ -129,7 +143,7 @@
         <h2>Pagamenti</h2>
         {#if !nuovoPagamentoAperto && !iscritto.archiviato}
           <button type="button" onclick={() => (nuovoPagamentoAperto = true)}>
-            {pagamenti.length > 0 ? "Rinnova abbonamento" : "Primo pagamento"}
+            {storico.totaleElementi > 0 ? "Rinnova abbonamento" : "Primo pagamento"}
           </button>
         {/if}
       </div>
@@ -140,7 +154,16 @@
           onAnnulla={() => (nuovoPagamentoAperto = false)}
         />
       {/if}
-      <TabellaPagamenti {pagamenti} mostraIscritto={false} onElimina={elimina} />
+      <TabellaPagamenti
+        pagamenti={storico.elementi}
+        totaleElementi={storico.totaleElementi}
+        totaleImportoCent={storico.totaleImportoCent}
+        mostraIscritto={false}
+        onElimina={elimina}
+      />
+      {#if storico.totaleElementi > storico.elementiPerPagina}
+        <Paginazione pagina={storico} onCambia={(numero) => caricaStorico(idIscritto, numero)} />
+      {/if}
     </section>
   {/if}
 </div>

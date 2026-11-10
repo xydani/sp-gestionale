@@ -98,3 +98,17 @@ export interface FiltroPagamenti {
   metodo: MetodoPagamento | null;
   iscrittoId: number | null;
 }
+
+/** Una pagina di risultati: al massimo `elementiPerPagina` elementi. */
+export interface Pagina<T> {
+  elementi: T[];
+  numero: number;
+  elementiPerPagina: number;
+  /** Elementi totali che corrispondono al filtro, su tutte le pagine. */
+  totaleElementi: number;
+}
+
+export interface PaginaPagamenti extends Pagina<Pagamento> {
+  /** Totale incassato di tutti i pagamenti filtrati, non solo della pagina. */
+  totaleImportoCent: number;
+}

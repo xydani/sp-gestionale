@@ -2,20 +2,23 @@
   import { resolve } from "$app/paths";
   import { formattaData, formattaEuro } from "$lib/format";
   import { ETICHETTE_METODO } from "$lib/metodi-pagamento";
-  import { sommaImporti } from "$lib/periodo";
   import type { Pagamento } from "$lib/types";
 
   let {
     pagamenti,
+    totaleElementi,
+    totaleImportoCent,
     mostraIscritto = true,
     onElimina,
   }: {
+    /** Pagamenti della pagina corrente. */
     pagamenti: Pagamento[];
+    /** Conteggio e totale di tutti i pagamenti filtrati, su tutte le pagine. */
+    totaleElementi: number;
+    totaleImportoCent: number;
     mostraIscritto?: boolean;
     onElimina: (pagamento: Pagamento) => void;
   } = $props();
-
-  const totaleCent = $derived(sommaImporti(pagamenti));
 </script>
 
 <table>
@@ -62,8 +65,8 @@
   {#if pagamenti.length > 0}
     <tfoot>
       <tr>
-        <td colspan={mostraIscritto ? 5 : 4}>Totale ({pagamenti.length} pagamenti)</td>
-        <td class="importo">{formattaEuro(totaleCent)}</td>
+        <td colspan={mostraIscritto ? 5 : 4}>Totale ({totaleElementi} pagamenti)</td>
+        <td class="importo">{formattaEuro(totaleImportoCent)}</td>
         <td></td>
       </tr>
     </tfoot>

@@ -87,8 +87,8 @@ describe("api iscritti", () => {
   it("elenca gli iscritti con il filtro", async () => {
     invoke.mockResolvedValue([]);
     const filtro = { testo: "ross", includiArchiviati: false, stato: "scaduto" as const };
-    await api.elencaIscritti(filtro);
-    expect(invoke).toHaveBeenCalledWith("elenca_iscritti", { filtro });
+    await api.elencaIscritti(filtro, 3);
+    expect(invoke).toHaveBeenCalledWith("elenca_iscritti", { filtro, pagina: { numero: 3 } });
   });
 
   it("archivia un iscritto", async () => {
@@ -125,7 +125,7 @@ describe("api pagamenti", () => {
     invoke.mockResolvedValue([]);
     const filtro = { dal: "2026-11-01", al: "2026-11-30", metodo: null, iscrittoId: null };
     await api.elencaPagamenti(filtro);
-    expect(invoke).toHaveBeenCalledWith("elenca_pagamenti", { filtro });
+    expect(invoke).toHaveBeenCalledWith("elenca_pagamenti", { filtro, pagina: { numero: 1 } });
   });
 });
 

@@ -9,6 +9,8 @@ import type {
   FiltroPagamenti,
   Iscritto,
   Pagamento,
+  Pagina,
+  PaginaPagamenti,
   PropostaPagamento,
   StatoDatabase,
   TipologiaAbbonamento,
@@ -61,8 +63,11 @@ export function impostaTipologiaAttiva(id: number, attiva: boolean): Promise<Tip
   return invoke<TipologiaAbbonamento>("imposta_tipologia_attiva", { id, attiva });
 }
 
-export function elencaIscritti(filtro: FiltroIscritti): Promise<Iscritto[]> {
-  return invoke<Iscritto[]>("elenca_iscritti", { filtro });
+export function elencaIscritti(
+  filtro: FiltroIscritti,
+  numeroPagina = 1,
+): Promise<Pagina<Iscritto>> {
+  return invoke<Pagina<Iscritto>>("elenca_iscritti", { filtro, pagina: { numero: numeroPagina } });
 }
 
 export function trovaIscritto(id: number): Promise<Iscritto> {
@@ -94,8 +99,11 @@ export function registraPagamento(dati: DatiPagamento): Promise<Pagamento> {
   return invoke<Pagamento>("registra_pagamento", { dati });
 }
 
-export function elencaPagamenti(filtro: FiltroPagamenti): Promise<Pagamento[]> {
-  return invoke<Pagamento[]>("elenca_pagamenti", { filtro });
+export function elencaPagamenti(
+  filtro: FiltroPagamenti,
+  numeroPagina = 1,
+): Promise<PaginaPagamenti> {
+  return invoke<PaginaPagamenti>("elenca_pagamenti", { filtro, pagina: { numero: numeroPagina } });
 }
 
 export function eliminaPagamento(id: number): Promise<void> {

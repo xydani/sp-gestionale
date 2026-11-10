@@ -18,7 +18,7 @@
       return;
     }
     const trovati = await elencaIscritti({ testo, includiArchiviati: false, stato: null });
-    risultati = trovati.slice(0, RISULTATI_MASSIMI);
+    risultati = trovati.elementi.slice(0, RISULTATI_MASSIMI);
   }, PAUSA_RICERCA_MS);
 
   function scegli(iscritto: Iscritto) {

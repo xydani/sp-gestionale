@@ -3,28 +3,34 @@
   import { elencaPagamenti, eliminaPagamento, messaggioErrore } from "$lib/api";
   import { mostraAvviso } from "$lib/avvisi.svelte";
   import FormPagamento from "$lib/components/FormPagamento.svelte";
+  import Paginazione from "$lib/components/Paginazione.svelte";
   import TabellaPagamenti from "$lib/components/TabellaPagamenti.svelte";
   import { confermaEliminazionePagamento } from "$lib/conferma";
   import { ETICHETTE_METODO, METODI_PAGAMENTO } from "$lib/metodi-pagamento";
   import { meseCorrente } from "$lib/periodo";
-  import type { MetodoPagamento, Pagamento } from "$lib/types";
+  import type { MetodoPagamento, Pagamento, PaginaPagamenti } from "$lib/types";
 
   const periodoIniziale = meseCorrente();
 
-  let pagamenti = $state<Pagamento[]>([]);
+  let pagina = $state<PaginaPagamenti>({
+    elementi: [],
+    numero: 1,
+    elementiPerPagina: 50,
+    totaleElementi: 0,
+    totaleImportoCent: 0,
+  });
   let dal = $state(periodoIniziale.dal);
   let al = $state(periodoIniziale.al);
   let metodo = $state<MetodoPagamento | "">("");
   let nuovoPagamentoAperto = $state(false);
 
-  async function carica() {
+  /** Carica una pagina; cambiando i filtri si riparte dalla prima. */
+  async function carica(numeroPagina = 1) {
     try {
-      pagamenti = await elencaPagamenti({
-        dal: dal || null,
-        al: al || null,
-        metodo: metodo || null,
-        iscrittoId: null,
-      });
+      pagina = await elencaPagamenti(
+        { dal: dal || null, al: al || null, metodo: metodo || null, iscrittoId: null },
+        numeroPagina,
+      );
     } catch (errore) {
       mostraAvviso("errore", messaggioErrore(errore));
     }
@@ -44,7 +50,7 @@
     try {
       await eliminaPagamento(pagamento.id);
       mostraAvviso("successo", "Pagamento eliminato");
-      await carica();
+      await carica(pagina.numero);
     } catch (errore) {
       mostraAvviso("errore", messaggioErrore(errore));
     }
@@ -56,7 +62,7 @@
     carica();
   }
 
-  onMount(carica);
+  onMount(() => carica());
 </script>
 
 <div class="intestazione">
@@ -79,9 +85,9 @@
 {/if}
 
 <div class="filtri">
-  <label>Dal <input type="date" bind:value={dal} onchange={carica} /></label>
-  <label>Al <input type="date" bind:value={al} min={dal} onchange={carica} /></label>
-  <select bind:value={metodo} onchange={carica}>
+  <label>Dal <input type="date" bind:value={dal} onchange={() => carica()} /></label>
+  <label>Al <input type="date" bind:value={al} min={dal} onchange={() => carica()} /></label>
+  <select bind:value={metodo} onchange={() => carica()}>
     <option value="">Tutti i metodi</option>
     {#each METODI_PAGAMENTO as valore (valore)}
       <option value={valore}>{ETICHETTE_METODO[valore]}</option>
@@ -90,7 +96,16 @@
   <button type="button" class="collegamento" onclick={tuttoLoStorico}>Tutto lo storico</button>
 </div>
 
-<TabellaPagamenti {pagamenti} onElimina={elimina} />
+<Paginazione {pagina} onCambia={carica} />
+<TabellaPagamenti
+  pagamenti={pagina.elementi}
+  totaleElementi={pagina.totaleElementi}
+  totaleImportoCent={pagina.totaleImportoCent}
+  onElimina={elimina}
+/>
+{#if pagina.totaleElementi > pagina.elementiPerPagina}
+  <Paginazione {pagina} onCambia={carica} />
+{/if}
 
 <style>
   .intestazione {

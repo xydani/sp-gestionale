@@ -6,27 +6,33 @@
   import { mostraAvviso } from "$lib/avvisi.svelte";
   import BadgeStato from "$lib/components/BadgeStato.svelte";
   import FormIscritto from "$lib/components/FormIscritto.svelte";
+  import Paginazione from "$lib/components/Paginazione.svelte";
   import { formattaData } from "$lib/format";
   import { ritarda } from "$lib/ritarda";
   import { ETICHETTE_STATO, STATI_ABBONAMENTO } from "$lib/stato-abbonamento";
-  import type { DatiIscritto, Iscritto, StatoAbbonamento } from "$lib/types";
+  import type { DatiIscritto, Iscritto, Pagina, StatoAbbonamento } from "$lib/types";
 
   const PAUSA_RICERCA_MS = 200;
 
-  let iscritti = $state<Iscritto[]>([]);
+  let pagina = $state<Pagina<Iscritto>>({
+    elementi: [],
+    numero: 1,
+    elementiPerPagina: 50,
+    totaleElementi: 0,
+  });
   let testoRicerca = $state("");
   let statoFiltro = $state<StatoAbbonamento | "">("");
   let includiArchiviati = $state(false);
   let nuovoIscrittoAperto = $state(false);
   let caricamento = $state(true);
 
-  async function carica() {
+  /** Carica una pagina; cambiando i filtri si riparte dalla prima. */
+  async function carica(numeroPagina = 1) {
     try {
-      iscritti = await elencaIscritti({
-        testo: testoRicerca,
-        includiArchiviati,
-        stato: statoFiltro || null,
-      });
+      pagina = await elencaIscritti(
+        { testo: testoRicerca, includiArchiviati, stato: statoFiltro || null },
+        numeroPagina,
+      );
     } catch (errore) {
       mostraAvviso("errore", messaggioErrore(errore));
     } finally {
@@ -34,7 +40,7 @@
     }
   }
 
-  const caricaDopoPausa = ritarda(carica, PAUSA_RICERCA_MS);
+  const caricaDopoPausa = ritarda(() => carica(), PAUSA_RICERCA_MS);
 
   async function salvaNuovoIscritto(dati: DatiIscritto): Promise<boolean> {
     try {
@@ -49,7 +55,7 @@
     }
   }
 
-  onMount(carica);
+  onMount(() => carica());
 </script>
 
 <div class="intestazione">
@@ -80,28 +86,28 @@
     bind:value={testoRicerca}
     oninput={caricaDopoPausa}
   />
-  <select bind:value={statoFiltro} onchange={carica}>
+  <select bind:value={statoFiltro} onchange={() => carica()}>
     <option value="">Tutti gli stati</option>
     {#each STATI_ABBONAMENTO as stato (stato)}
       <option value={stato}>{ETICHETTE_STATO[stato]}</option>
     {/each}
   </select>
   <label class="spunta">
-    <input type="checkbox" bind:checked={includiArchiviati} onchange={carica} />
+    <input type="checkbox" bind:checked={includiArchiviati} onchange={() => carica()} />
     Mostra archiviati
   </label>
 </div>
 
-<p class="conteggio">
-  {caricamento ? "Caricamento…" : `${iscritti.length} iscritti`}
-</p>
+{#if !caricamento}
+  <Paginazione {pagina} onCambia={carica} />
+{/if}
 
 <table>
   <thead>
     <tr><th>Cognome e nome</th><th>Telefono</th><th>Scadenza</th><th>Stato</th></tr>
   </thead>
   <tbody>
-    {#each iscritti as iscritto (iscritto.id)}
+    {#each pagina.elementi as iscritto (iscritto.id)}
       <tr
         class:archiviato={iscritto.archiviato}
         onclick={() => goto(resolve("/iscritti/[id]", { id: String(iscritto.id) }))}
@@ -123,6 +129,10 @@
     {/each}
   </tbody>
 </table>
+
+{#if pagina.totaleElementi > pagina.elementiPerPagina}
+  <Paginazione {pagina} onCambia={carica} />
+{/if}
 
 <style>
   .intestazione {
@@ -170,11 +180,6 @@
     display: flex;
     gap: 0.4rem;
     align-items: center;
-  }
-
-  .conteggio {
-    color: var(--colore-testo-secondario);
-    font-size: 0.9rem;
   }
 
   table {
