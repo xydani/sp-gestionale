@@ -2,6 +2,8 @@
 
 ## [Non rilasciato]
 
+- Certificato medico: scadenza nella scheda, avvisi se manca o sta per scadere, scheda dedicata nelle Scadenze e riquadro in dashboard
+
 - Il nuovo iscritto si registra insieme alla quota annuale e al primo abbonamento
 
 - Le nuove password devono avere almeno 12 caratteri (quelle esistenti restano valide)
