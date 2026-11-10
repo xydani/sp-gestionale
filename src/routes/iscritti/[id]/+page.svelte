@@ -2,6 +2,8 @@
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
   import {
+    elencaPagamenti,
+    eliminaPagamento,
     impostaIscrittoArchiviato,
     messaggioErrore,
     modificaIscritto,
@@ -10,13 +12,18 @@
   import { mostraAvviso } from "$lib/avvisi.svelte";
   import BadgeStato from "$lib/components/BadgeStato.svelte";
   import FormIscritto from "$lib/components/FormIscritto.svelte";
+  import FormPagamento from "$lib/components/FormPagamento.svelte";
+  import TabellaPagamenti from "$lib/components/TabellaPagamenti.svelte";
+  import { confermaEliminazionePagamento } from "$lib/conferma";
   import { formattaData } from "$lib/format";
-  import type { DatiIscritto, Iscritto } from "$lib/types";
+  import type { DatiIscritto, Iscritto, Pagamento } from "$lib/types";
 
   const idIscritto = $derived(Number(page.params.id));
 
   let iscritto = $state<Iscritto | null>(null);
+  let pagamenti = $state<Pagamento[]>([]);
   let inModifica = $state(false);
+  let nuovoPagamentoAperto = $state(false);
   let errore = $state<string | null>(null);
 
   $effect(() => {
@@ -26,6 +33,7 @@
   async function carica(id: number) {
     try {
       iscritto = await trovaIscritto(id);
+      pagamenti = await elencaPagamenti({ dal: null, al: null, metodo: null, iscrittoId: id });
       errore = null;
     } catch (erroreBackend) {
       errore = messaggioErrore(erroreBackend);
@@ -42,6 +50,23 @@
     } catch (erroreBackend) {
       mostraAvviso("errore", messaggioErrore(erroreBackend));
       return false;
+    }
+  }
+
+  async function pagamentoRegistrato() {
+    nuovoPagamentoAperto = false;
+    mostraAvviso("successo", "Pagamento registrato");
+    await carica(idIscritto);
+  }
+
+  async function elimina(pagamento: Pagamento) {
+    if (!(await confermaEliminazionePagamento(pagamento))) return;
+    try {
+      await eliminaPagamento(pagamento.id);
+      mostraAvviso("successo", "Pagamento eliminato");
+      await carica(idIscritto);
+    } catch (erroreBackend) {
+      mostraAvviso("errore", messaggioErrore(erroreBackend));
     }
   }
 
@@ -100,8 +125,22 @@
     </section>
 
     <section class="scheda">
-      <h2>Pagamenti</h2>
-      <p class="nota">Lo storico dei pagamenti e il rinnovo arrivano nella prossima fase.</p>
+      <div class="intestazione-sezione">
+        <h2>Pagamenti</h2>
+        {#if !nuovoPagamentoAperto && !iscritto.archiviato}
+          <button type="button" onclick={() => (nuovoPagamentoAperto = true)}>
+            {pagamenti.length > 0 ? "Rinnova abbonamento" : "Primo pagamento"}
+          </button>
+        {/if}
+      </div>
+      {#if nuovoPagamentoAperto}
+        <FormPagamento
+          iscrittoIniziale={iscritto}
+          onRegistrato={pagamentoRegistrato}
+          onAnnulla={() => (nuovoPagamentoAperto = false)}
+        />
+      {/if}
+      <TabellaPagamenti {pagamenti} mostraIscritto={false} onElimina={elimina} />
     </section>
   {/if}
 </div>
@@ -177,9 +216,10 @@
     color: var(--colore-primario);
   }
 
-  .nota {
-    margin: 0;
-    color: var(--colore-testo-secondario);
+  .intestazione-sezione {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
 
   .errore {
