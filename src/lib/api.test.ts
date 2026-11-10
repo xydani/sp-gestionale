@@ -81,6 +81,23 @@ describe("api tipologie", () => {
   });
 });
 
+describe("api iscritti", () => {
+  beforeEach(() => invoke.mockReset());
+
+  it("elenca gli iscritti con il filtro", async () => {
+    invoke.mockResolvedValue([]);
+    const filtro = { testo: "ross", includiArchiviati: false, stato: "scaduto" as const };
+    await api.elencaIscritti(filtro);
+    expect(invoke).toHaveBeenCalledWith("elenca_iscritti", { filtro });
+  });
+
+  it("archivia un iscritto", async () => {
+    invoke.mockResolvedValue({});
+    await api.impostaIscrittoArchiviato(7, true);
+    expect(invoke).toHaveBeenCalledWith("imposta_iscritto_archiviato", { id: 7, archiviato: true });
+  });
+});
+
 describe("messaggioErrore", () => {
   it("usa il messaggio degli errori del backend", () => {
     expect(api.messaggioErrore({ codice: "password_errata", messaggio: "Password errata" })).toBe(

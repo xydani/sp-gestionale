@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { centesimiInTestoEuro, descriviDurata, euroInCentesimi, formattaEuro } from "./format";
+import {
+  centesimiInTestoEuro,
+  descriviDurata,
+  euroInCentesimi,
+  formattaData,
+  formattaEuro,
+  oggiIso,
+} from "./format";
 
 // Intl separa il simbolo € con uno spazio non separabile
 const SPAZIO_NON_SEPARABILE = " ";
@@ -49,5 +56,17 @@ describe("descriviDurata", () => {
     expect(descriviDurata(3, "mesi")).toBe("3 mesi");
     expect(descriviDurata(1, "giorni")).toBe("1 giorno");
     expect(descriviDurata(10, "giorni")).toBe("10 giorni");
+  });
+});
+
+describe("formattaData", () => {
+  it("converte la data ISO nel formato italiano", () => {
+    expect(formattaData("2026-11-05")).toBe("05/11/2026");
+  });
+});
+
+describe("oggiIso", () => {
+  it("usa la data locale con zeri iniziali", () => {
+    expect(oggiIso(new Date(2026, 0, 5, 23, 30))).toBe("2026-01-05");
   });
 });

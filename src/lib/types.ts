@@ -25,3 +25,30 @@ export interface TipologiaAbbonamento {
 
 /** Dati inseriti dall'utente per creare o modificare una tipologia. */
 export type DatiTipologia = Omit<TipologiaAbbonamento, "id" | "attiva">;
+
+export type StatoAbbonamento = "attivo" | "in_scadenza" | "scaduto" | "nessuno";
+
+export interface Iscritto {
+  id: number;
+  nome: string;
+  cognome: string;
+  telefono: string | null;
+  /** Data ISO YYYY-MM-DD */
+  dataIscrizione: string;
+  note: string | null;
+  archiviato: boolean;
+  ultimaDataScadenza: string | null;
+  stato: StatoAbbonamento;
+}
+
+/** Dati inseriti dall'utente per creare o modificare un iscritto. */
+export type DatiIscritto = Pick<
+  Iscritto,
+  "nome" | "cognome" | "telefono" | "dataIscrizione" | "note"
+>;
+
+export interface FiltroIscritti {
+  testo: string;
+  includiArchiviati: boolean;
+  stato: StatoAbbonamento | null;
+}

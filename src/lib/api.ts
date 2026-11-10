@@ -1,8 +1,11 @@
 import { invoke } from "@tauri-apps/api/core";
 import type {
+  DatiIscritto,
   DatiTipologia,
   ErroreApp,
   EsitoSblocco,
+  FiltroIscritti,
+  Iscritto,
   StatoDatabase,
   TipologiaAbbonamento,
 } from "./types";
@@ -52,6 +55,26 @@ export function modificaTipologia(id: number, dati: DatiTipologia): Promise<Tipo
 
 export function impostaTipologiaAttiva(id: number, attiva: boolean): Promise<TipologiaAbbonamento> {
   return invoke<TipologiaAbbonamento>("imposta_tipologia_attiva", { id, attiva });
+}
+
+export function elencaIscritti(filtro: FiltroIscritti): Promise<Iscritto[]> {
+  return invoke<Iscritto[]>("elenca_iscritti", { filtro });
+}
+
+export function trovaIscritto(id: number): Promise<Iscritto> {
+  return invoke<Iscritto>("trova_iscritto", { id });
+}
+
+export function creaIscritto(dati: DatiIscritto): Promise<Iscritto> {
+  return invoke<Iscritto>("crea_iscritto", { dati });
+}
+
+export function modificaIscritto(id: number, dati: DatiIscritto): Promise<Iscritto> {
+  return invoke<Iscritto>("modifica_iscritto", { id, dati });
+}
+
+export function impostaIscrittoArchiviato(id: number, archiviato: boolean): Promise<Iscritto> {
+  return invoke<Iscritto>("imposta_iscritto_archiviato", { id, archiviato });
 }
 
 /** Estrae un messaggio leggibile da un errore del backend o imprevisto. */

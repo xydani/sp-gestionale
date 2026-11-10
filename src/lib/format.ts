@@ -25,3 +25,16 @@ export function descriviDurata(valore: number, unita: "giorni" | "mesi"): string
   if (unita === "mesi") return `${valore} ${valore === 1 ? "mese" : "mesi"}`;
   return `${valore} ${valore === 1 ? "giorno" : "giorni"}`;
 }
+
+/** Data ISO "2026-11-10" nel formato italiano "10/11/2026". */
+export function formattaData(dataIso: string): string {
+  const [anno, mese, giorno] = dataIso.split("-");
+  return `${giorno}/${mese}/${anno}`;
+}
+
+/** Data di oggi in formato ISO, secondo il fuso orario locale. */
+export function oggiIso(adesso: Date = new Date()): string {
+  const mese = String(adesso.getMonth() + 1).padStart(2, "0");
+  const giorno = String(adesso.getDate()).padStart(2, "0");
+  return `${adesso.getFullYear()}-${mese}-${giorno}`;
+}
