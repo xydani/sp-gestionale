@@ -1,6 +1,7 @@
 use tauri::State;
 
 use crate::db::iscritti::{self, DatiIscritto, FiltroIscritti, Iscritto, riferimento_per_oggi};
+use crate::db::nuovo_iscritto::{self, DatiNuovoIscritto};
 use crate::db::paginazione::{Pagina, RichiestaPagina};
 use crate::errore::ErroreApp;
 use crate::stato_app::StatoApp;
@@ -36,6 +37,18 @@ pub fn crea_iscritto(
     stato.con_connessione(|connessione| {
         let riferimento = riferimento_per_oggi(connessione, oggi)?;
         iscritti::crea_iscritto(connessione, &dati, riferimento)
+    })
+}
+
+#[tauri::command]
+pub fn iscrivi_nuovo_iscritto(
+    stato: State<'_, StatoApp>,
+    dati: DatiNuovoIscritto,
+) -> Result<Iscritto, ErroreApp> {
+    let oggi = stato.oggi();
+    stato.con_connessione_modificabile(|connessione| {
+        let riferimento = riferimento_per_oggi(connessione, oggi)?;
+        nuovo_iscritto::iscrivi_nuovo_iscritto(connessione, &dati, riferimento)
     })
 }
 

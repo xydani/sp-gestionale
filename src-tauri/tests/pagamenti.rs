@@ -48,7 +48,8 @@ fn paga_come_proposto(
     tipologia_id: i64,
     oggi: NaiveDate,
 ) -> i64 {
-    let proposta = proponi_pagamento(connessione, iscritto_id, tipologia_id, None, oggi).unwrap();
+    let proposta =
+        proponi_pagamento(connessione, Some(iscritto_id), tipologia_id, None, oggi).unwrap();
     let dati = DatiPagamento {
         iscritto_id,
         tipologia_id,
@@ -69,7 +70,7 @@ fn il_primo_pagamento_parte_da_oggi_con_il_prezzo_di_listino() {
     let connessione = database.crea_con_schema();
     let iscritto = nuovo_iscritto(&connessione);
 
-    let proposta = proponi_pagamento(&connessione, iscritto, MENSILE, None, OGGI).unwrap();
+    let proposta = proponi_pagamento(&connessione, Some(iscritto), MENSILE, None, OGGI).unwrap();
 
     assert_eq!(proposta.importo_cent, 5000);
     assert_eq!(proposta.data_inizio, OGGI);
@@ -86,7 +87,7 @@ fn il_rinnovo_anticipato_parte_dal_giorno_dopo_la_scadenza() {
 
     let proposta = proponi_pagamento(
         &connessione,
-        iscritto,
+        Some(iscritto),
         TRIMESTRALE,
         None,
         data("2026-12-05"),
@@ -106,7 +107,7 @@ fn il_rinnovo_dopo_la_scadenza_parte_da_oggi() {
     let iscritto = nuovo_iscritto(&connessione);
     paga_come_proposto(&connessione, iscritto, MENSILE, data("2026-08-01"));
 
-    let proposta = proponi_pagamento(&connessione, iscritto, MENSILE, None, OGGI).unwrap();
+    let proposta = proponi_pagamento(&connessione, Some(iscritto), MENSILE, None, OGGI).unwrap();
 
     assert_eq!(proposta.data_inizio, OGGI);
 }
@@ -119,7 +120,7 @@ fn una_data_di_inizio_scelta_ricalcola_la_scadenza() {
 
     let proposta = proponi_pagamento(
         &connessione,
-        iscritto,
+        Some(iscritto),
         MENSILE,
         Some(data("2026-11-20")),
         OGGI,

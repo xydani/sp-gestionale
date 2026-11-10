@@ -7,7 +7,7 @@ use crate::stato_app::StatoApp;
 #[tauri::command]
 pub fn proponi_iscrizione(
     stato: State<'_, StatoApp>,
-    iscritto_id: i64,
+    iscritto_id: Option<i64>,
 ) -> Result<PropostaIscrizione, ErroreApp> {
     let oggi = stato.oggi();
     stato.con_connessione(|connessione| {

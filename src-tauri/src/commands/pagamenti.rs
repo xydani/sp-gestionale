@@ -11,7 +11,7 @@ use crate::stato_app::StatoApp;
 #[tauri::command]
 pub fn proponi_pagamento(
     stato: State<'_, StatoApp>,
-    iscritto_id: i64,
+    iscritto_id: Option<i64>,
     tipologia_id: i64,
     data_inizio: Option<NaiveDate>,
 ) -> Result<PropostaPagamento, ErroreApp> {

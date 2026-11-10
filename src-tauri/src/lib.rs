@@ -41,6 +41,7 @@ pub fn run() {
             commands::iscritti::elenca_iscritti,
             commands::iscritti::trova_iscritto,
             commands::iscritti::crea_iscritto,
+            commands::iscritti::iscrivi_nuovo_iscritto,
             commands::iscritti::modifica_iscritto,
             commands::iscritti::imposta_iscritto_archiviato,
             commands::iscrizioni::proponi_iscrizione,

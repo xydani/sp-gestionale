@@ -7,6 +7,7 @@ pub mod impostazioni;
 pub mod iscritti;
 pub mod iscrizioni;
 pub mod migrazioni;
+pub mod nuovo_iscritto;
 pub mod pagamenti;
 pub mod paginazione;
 pub mod promemoria;

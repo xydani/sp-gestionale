@@ -46,7 +46,7 @@ fn nuovo_iscritto(connessione: &Connection) -> i64 {
 }
 
 fn iscrivi_come_proposto(connessione: &Connection, iscritto_id: i64, oggi: NaiveDate) -> i64 {
-    let proposta = proponi_iscrizione(connessione, iscritto_id, oggi).unwrap();
+    let proposta = proponi_iscrizione(connessione, Some(iscritto_id), oggi).unwrap();
     let dati = DatiIscrizione {
         iscritto_id,
         importo_cent: proposta.importo_cent,
@@ -65,7 +65,7 @@ fn la_prima_iscrizione_copre_l_anno_sportivo_in_corso_con_la_quota_predefinita()
     let connessione = database.crea_con_schema();
     let iscritto = nuovo_iscritto(&connessione);
 
-    let proposta = proponi_iscrizione(&connessione, iscritto, OGGI).unwrap();
+    let proposta = proponi_iscrizione(&connessione, Some(iscritto), OGGI).unwrap();
 
     assert_eq!(proposta.importo_cent, 3000);
     assert_eq!(proposta.data_inizio, data("2026-09-01"));
@@ -79,7 +79,7 @@ fn il_rinnovo_con_iscrizione_valida_propone_l_anno_sportivo_successivo() {
     let iscritto = nuovo_iscritto(&connessione);
     iscrivi_come_proposto(&connessione, iscritto, OGGI);
 
-    let proposta = proponi_iscrizione(&connessione, iscritto, data("2027-08-20")).unwrap();
+    let proposta = proponi_iscrizione(&connessione, Some(iscritto), data("2027-08-20")).unwrap();
 
     assert_eq!(proposta.data_inizio, data("2027-09-01"));
     assert_eq!(proposta.data_fine, data("2028-08-31"));
@@ -97,7 +97,7 @@ fn quota_e_mese_di_inizio_vengono_dalle_impostazioni() {
         .unwrap();
     let iscritto = nuovo_iscritto(&connessione);
 
-    let proposta = proponi_iscrizione(&connessione, iscritto, OGGI).unwrap();
+    let proposta = proponi_iscrizione(&connessione, Some(iscritto), OGGI).unwrap();
 
     assert_eq!(proposta.importo_cent, 2500);
     assert_eq!(proposta.data_inizio, data("2026-01-01"));

@@ -85,9 +85,10 @@ const SELEZIONE_PAGAMENTI: &str = "
 /// Propone importo e date per un nuovo pagamento dell'iscritto con la tipologia scelta.
 /// Se `data_inizio` non è indicata, il nuovo abbonamento parte dopo l'ultima scadenza
 /// (se ancora valida) oppure da oggi.
+/// Senza `iscritto_id` (iscritto non ancora creato) l'abbonamento parte da oggi.
 pub fn proponi_pagamento(
     connessione: &Connection,
-    iscritto_id: i64,
+    iscritto_id: Option<i64>,
     tipologia_id: i64,
     data_inizio: Option<NaiveDate>,
     oggi: NaiveDate,
@@ -266,7 +267,7 @@ pub fn valida_dati_pagamento(dati: &DatiPagamento) -> Result<(), ErroreDatabase>
 /// Id e scadenza del pagamento con la scadenza più lontana dell'iscritto.
 fn ultimo_pagamento(
     connessione: &Connection,
-    iscritto_id: i64,
+    iscritto_id: Option<i64>,
 ) -> Result<Option<(i64, NaiveDate)>, ErroreDatabase> {
     Ok(connessione
         .query_row(

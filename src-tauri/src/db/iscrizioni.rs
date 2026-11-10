@@ -55,9 +55,10 @@ const SELEZIONE_ISCRIZIONI: &str = "
 
 /// Propone la quota dalle impostazioni e il periodo dell'anno sportivo:
 /// il successivo se l'iscrizione è ancora valida, altrimenti quello in corso.
+/// Senza `iscritto_id` (iscritto non ancora creato) si propone l'anno sportivo in corso.
 pub fn proponi_iscrizione(
     connessione: &Connection,
-    iscritto_id: i64,
+    iscritto_id: Option<i64>,
     oggi: NaiveDate,
 ) -> Result<PropostaIscrizione, ErroreDatabase> {
     let mese_inizio = leggi_impostazione_numerica(
