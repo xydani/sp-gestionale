@@ -107,6 +107,6 @@ fn le_prossime_scadenze_sono_ordinate_e_limitate() {
     assert!(
         scadenze
             .iter()
-            .all(|s| s.tipo == "abbonamento" || s.tipo == "iscrizione")
+            .all(|s| ["abbonamento", "iscrizione", "certificato"].contains(&s.tipo.as_str()))
     );
 }

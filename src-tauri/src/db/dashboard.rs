@@ -33,7 +33,7 @@ pub struct Incassi {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProssimaScadenza {
-    /// "abbonamento" oppure "iscrizione"
+    /// "abbonamento", "iscrizione" oppure "certificato"
     pub tipo: String,
     pub iscritto_id: i64,
     pub nome: String,
@@ -48,6 +48,8 @@ pub struct RiepilogoDashboard {
     pub iscritti: u32,
     pub abbonamenti: ConteggioStati,
     pub iscrizioni: ConteggioStati,
+    /// "assenti" sono gli iscritti che non hanno presentato il certificato medico.
+    pub certificati: ConteggioStati,
     pub incassi_mese: Incassi,
     pub incassi_mese_precedente: Incassi,
     pub prossime_scadenze: Vec<ProssimaScadenza>,
@@ -80,6 +82,12 @@ pub fn riepilogo_dashboard(
             connessione,
             "v_ultima_iscrizione_iscritti",
             "ultima_data_fine_iscrizione",
+            riferimento,
+        )?,
+        certificati: conta_per_stato(
+            connessione,
+            "v_certificato_iscritti",
+            "data_scadenza_certificato",
             riferimento,
         )?,
         incassi_mese: incassi_tra(connessione, inizio_mese, fine_mese)?,
@@ -181,6 +189,10 @@ fn prossime_scadenze(
          SELECT 'iscrizione', i.id, i.nome, i.cognome, v.ultima_data_fine_iscrizione
          FROM v_ultima_iscrizione_iscritti v JOIN iscritti i ON i.id = v.iscritto_id
          WHERE i.archiviato = 0 AND v.ultima_data_fine_iscrizione BETWEEN ?1 AND ?2
+         UNION ALL
+         SELECT 'certificato', i.id, i.nome, i.cognome, i.data_scadenza_certificato
+         FROM iscritti i
+         WHERE i.archiviato = 0 AND i.data_scadenza_certificato BETWEEN ?1 AND ?2
          ORDER BY 5, 4 COLLATE NOCASE
          LIMIT ?3",
     )?;

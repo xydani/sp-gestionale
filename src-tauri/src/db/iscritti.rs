@@ -31,6 +31,9 @@ pub struct Iscritto {
     pub stato_iscrizione: StatoValidita,
     pub ultima_data_scadenza_abbonamento: Option<NaiveDate>,
     pub stato_abbonamento: StatoValidita,
+    /// Assente se il certificato medico non è stato presentato.
+    pub data_scadenza_certificato: Option<NaiveDate>,
+    pub stato_certificato: StatoValidita,
 }
 
 /// Dati inseriti dall'utente per creare o modificare un iscritto.
@@ -44,6 +47,9 @@ pub struct DatiIscritto {
     pub telefono: Option<String>,
     pub email: Option<String>,
     pub note: Option<String>,
+    /// Scadenza del certificato medico; assente se non è stato presentato.
+    #[serde(default)]
+    pub data_scadenza_certificato: Option<NaiveDate>,
 }
 
 /// Ordine dell'elenco: alfabetico, oppure per data (le scadenze vicine prima o le più recenti).
@@ -56,6 +62,8 @@ pub enum OrdinamentoIscritti {
     ScadenzaAbbonamentoDecrescente,
     FineIscrizioneCrescente,
     FineIscrizioneDecrescente,
+    ScadenzaCertificatoCrescente,
+    ScadenzaCertificatoDecrescente,
 }
 
 impl OrdinamentoIscritti {
@@ -74,6 +82,12 @@ impl OrdinamentoIscritti {
             Self::FineIscrizioneDecrescente => {
                 "ORDER BY s.ultima_data_fine_iscrizione DESC, i.cognome COLLATE NOCASE, i.id"
             }
+            Self::ScadenzaCertificatoCrescente => {
+                "ORDER BY i.data_scadenza_certificato, i.cognome COLLATE NOCASE, i.id"
+            }
+            Self::ScadenzaCertificatoDecrescente => {
+                "ORDER BY i.data_scadenza_certificato DESC, i.cognome COLLATE NOCASE, i.id"
+            }
         }
     }
 }
@@ -86,6 +100,8 @@ pub struct FiltroIscritti {
     pub includi_archiviati: bool,
     pub stato_abbonamento: Option<StatoValidita>,
     pub stato_iscrizione: Option<StatoValidita>,
+    #[serde(default)]
+    pub stato_certificato: Option<StatoValidita>,
     #[serde(default)]
     pub ordinamento: OrdinamentoIscritti,
 }
@@ -115,7 +131,8 @@ pub fn riferimento_per_oggi(
 
 const SELEZIONE_ISCRITTI: &str = "
     SELECT i.id, i.nome, i.cognome, i.data_nascita, i.luogo_nascita, i.telefono, i.email,
-           i.note, i.archiviato, s.ultima_data_fine_iscrizione, a.ultima_data_scadenza
+           i.note, i.archiviato, s.ultima_data_fine_iscrizione, a.ultima_data_scadenza,
+           i.data_scadenza_certificato
     FROM iscritti i
     JOIN v_ultima_iscrizione_iscritti s ON s.iscritto_id = i.id
     JOIN v_ultima_scadenza_iscritti a ON a.iscritto_id = i.id";
@@ -203,8 +220,9 @@ pub fn crea_iscritto(
 ) -> Result<Iscritto, ErroreDatabase> {
     let dati = valida_dati_iscritto(dati, riferimento.oggi)?;
     connessione.execute(
-        "INSERT INTO iscritti (nome, cognome, data_nascita, luogo_nascita, telefono, email, note)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        "INSERT INTO iscritti (nome, cognome, data_nascita, luogo_nascita, telefono, email, note,
+                               data_scadenza_certificato)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
         params![
             dati.nome,
             dati.cognome,
@@ -212,7 +230,8 @@ pub fn crea_iscritto(
             dati.luogo_nascita,
             dati.telefono,
             dati.email,
-            dati.note
+            dati.note,
+            dati.data_scadenza_certificato
         ],
     )?;
     trova_iscritto(connessione, connessione.last_insert_rowid(), riferimento)
@@ -228,8 +247,8 @@ pub fn modifica_iscritto(
     let righe_modificate = connessione.execute(
         "UPDATE iscritti
          SET nome = ?1, cognome = ?2, data_nascita = ?3, luogo_nascita = ?4, telefono = ?5,
-             email = ?6, note = ?7, modificato_il = datetime('now')
-         WHERE id = ?8",
+             email = ?6, note = ?7, data_scadenza_certificato = ?8, modificato_il = datetime('now')
+         WHERE id = ?9",
         params![
             dati.nome,
             dati.cognome,
@@ -238,6 +257,7 @@ pub fn modifica_iscritto(
             dati.telefono,
             dati.email,
             dati.note,
+            dati.data_scadenza_certificato,
             id
         ],
     )?;
@@ -299,6 +319,7 @@ pub fn valida_dati_iscritto(
         telefono: testo_facoltativo(dati.telefono.as_deref()),
         email,
         note: testo_facoltativo(dati.note.as_deref()),
+        data_scadenza_certificato: dati.data_scadenza_certificato,
     })
 }
 
@@ -330,6 +351,7 @@ fn condizioni_filtro(filtro: &FiltroIscritti, riferimento: Riferimento) -> (Stri
     let filtri_stato = [
         ("a.ultima_data_scadenza", filtro.stato_abbonamento),
         ("s.ultima_data_fine_iscrizione", filtro.stato_iscrizione),
+        ("i.data_scadenza_certificato", filtro.stato_certificato),
     ];
     for (colonna, stato) in filtri_stato {
         if let Some(stato) = stato {
@@ -386,6 +408,7 @@ fn leggi_iscritto(riga: &Row<'_>, riferimento: Riferimento) -> rusqlite::Result<
     };
     let ultima_data_fine_iscrizione: Option<NaiveDate> = riga.get(9)?;
     let ultima_data_scadenza_abbonamento: Option<NaiveDate> = riga.get(10)?;
+    let data_scadenza_certificato: Option<NaiveDate> = riga.get(11)?;
     Ok(Iscritto {
         id: riga.get(0)?,
         nome: riga.get(1)?,
@@ -400,6 +423,8 @@ fn leggi_iscritto(riga: &Row<'_>, riferimento: Riferimento) -> rusqlite::Result<
         stato_iscrizione: stato_di(ultima_data_fine_iscrizione),
         ultima_data_scadenza_abbonamento,
         stato_abbonamento: stato_di(ultima_data_scadenza_abbonamento),
+        data_scadenza_certificato,
+        stato_certificato: stato_di(data_scadenza_certificato),
     })
 }
 
@@ -418,6 +443,7 @@ mod test {
             telefono: Some("   ".into()),
             email: Some(" mario@esempio.it ".into()),
             note: Some(" nota ".into()),
+            data_scadenza_certificato: None,
         }
     }
 

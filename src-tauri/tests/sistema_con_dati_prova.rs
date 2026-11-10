@@ -109,6 +109,26 @@ fn sono_presenti_tutti_gli_stati_di_iscrizione() {
 }
 
 #[test]
+fn sono_presenti_tutti_gli_stati_del_certificato() {
+    let (_database, connessione) = database_con_dati_prova();
+    let conteggi = conta_per_stato(
+        &connessione,
+        "SELECT data_scadenza_certificato FROM iscritti",
+    );
+    for stato in [
+        StatoValidita::Attivo,
+        StatoValidita::InScadenza,
+        StatoValidita::Scaduto,
+        StatoValidita::Nessuno,
+    ] {
+        assert!(
+            conteggi.get(&stato).copied().unwrap_or(0) > 0,
+            "manca lo stato del certificato {stato:?}"
+        );
+    }
+}
+
+#[test]
 fn esistono_abbonamenti_attivi_senza_iscrizione_valida() {
     let (_database, connessione) = database_con_dati_prova();
     let oggi = OGGI.to_string();

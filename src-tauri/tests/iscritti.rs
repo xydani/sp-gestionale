@@ -31,6 +31,7 @@ fn dati(nome: &str, cognome: &str) -> DatiIscritto {
         telefono: Some("+39 333 1234567".into()),
         email: None,
         note: None,
+        data_scadenza_certificato: None,
     }
 }
 

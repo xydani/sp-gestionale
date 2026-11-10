@@ -109,6 +109,10 @@ const ANNI_MASSIMI_DI_STORICO: u64 = 3;
 const PERCENTUALE_ISCRIZIONE_IN_SCADENZA: u64 = 5;
 const PERCENTUALE_ISCRIZIONE_NON_RINNOVATA: u64 = 6;
 const PERCENTUALE_SENZA_ISCRIZIONE: u64 = 3;
+const PERCENTUALE_CON_CERTIFICATO: u64 = 80;
+/// Le scadenze dei certificati vanno da due mesi fa a quasi un anno da oggi.
+const GIORNI_CERTIFICATO_PRIMA_DI_OGGI: u64 = 60;
+const GIORNI_CERTIFICATO_DOPO_OGGI: u64 = 330;
 
 /// Come viene generata l'iscrizione annuale di un iscritto.
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -192,9 +196,19 @@ pub fn genera_dati_prova(
             )
         });
 
+        let scadenza_certificato =
+            (casuale.tra(1, 100) <= PERCENTUALE_CON_CERTIFICATO).then(|| {
+                oggi - Days::new(GIORNI_CERTIFICATO_PRIMA_DI_OGGI)
+                    + Days::new(casuale.tra(
+                        0,
+                        GIORNI_CERTIFICATO_PRIMA_DI_OGGI + GIORNI_CERTIFICATO_DOPO_OGGI,
+                    ))
+            });
+
         transazione.execute(
-            "INSERT INTO iscritti (nome, cognome, data_nascita, luogo_nascita, telefono, email)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            "INSERT INTO iscritti (nome, cognome, data_nascita, luogo_nascita, telefono, email,
+                                   data_scadenza_certificato)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
             params![
                 nome,
                 cognome,
@@ -206,6 +220,7 @@ pub fn genera_dati_prova(
                     casuale.tra(0, 9_999_999)
                 ),
                 email,
+                scadenza_certificato,
             ],
         )?;
         let iscritto_id = transazione.last_insert_rowid();

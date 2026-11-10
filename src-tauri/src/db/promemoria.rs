@@ -12,15 +12,17 @@ use crate::domain::stato::{CondizioneScadenza, StatoValidita, condizione_scadenz
 pub enum TipoScadenza {
     Abbonamento,
     Iscrizione,
+    Certificato,
 }
 
 impl TipoScadenza {
-    pub const TUTTI: [TipoScadenza; 2] = [Self::Abbonamento, Self::Iscrizione];
+    pub const TUTTI: [TipoScadenza; 3] = [Self::Abbonamento, Self::Iscrizione, Self::Certificato];
 
     fn come_testo(self) -> &'static str {
         match self {
             Self::Abbonamento => "abbonamento",
             Self::Iscrizione => "iscrizione",
+            Self::Certificato => "certificato",
         }
     }
 
@@ -32,6 +34,7 @@ impl TipoScadenza {
                 "v_ultima_iscrizione_iscritti",
                 "ultima_data_fine_iscrizione",
             ),
+            Self::Certificato => ("v_certificato_iscritti", "data_scadenza_certificato"),
         }
     }
 }
@@ -42,6 +45,7 @@ impl TipoScadenza {
 pub struct ConteggioInScadenza {
     pub abbonamenti: u32,
     pub iscrizioni: u32,
+    pub certificati: u32,
 }
 
 /// Esito del controllo periodico: le scadenze notificate ora per la prima volta e il totale.
@@ -60,6 +64,8 @@ pub fn conta_in_scadenza(
         abbonamenti: scadenze_in_arrivo(connessione, TipoScadenza::Abbonamento, riferimento)?.len()
             as u32,
         iscrizioni: scadenze_in_arrivo(connessione, TipoScadenza::Iscrizione, riferimento)?.len()
+            as u32,
+        certificati: scadenze_in_arrivo(connessione, TipoScadenza::Certificato, riferimento)?.len()
             as u32,
     })
 }
@@ -91,6 +97,10 @@ pub fn controlla_promemoria(
             TipoScadenza::Iscrizione => {
                 esito.nuovi.iscrizioni = nuovi;
                 esito.in_scadenza.iscrizioni = in_arrivo.len() as u32;
+            }
+            TipoScadenza::Certificato => {
+                esito.nuovi.certificati = nuovi;
+                esito.in_scadenza.certificati = in_arrivo.len() as u32;
             }
         }
     }

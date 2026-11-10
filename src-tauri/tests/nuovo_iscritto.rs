@@ -43,6 +43,7 @@ fn dati_completi(connessione: &Connection) -> DatiNuovoIscritto {
             telefono: None,
             email: None,
             note: None,
+            data_scadenza_certificato: None,
         },
         iscrizione: DatiIscrizione {
             iscritto_id: ID_IGNORATO,

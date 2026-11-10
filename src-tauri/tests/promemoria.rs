@@ -26,6 +26,7 @@ fn nuovo_iscritto(connessione: &Connection, cognome: &str) -> i64 {
         telefono: None,
         email: None,
         note: None,
+        data_scadenza_certificato: None,
     };
     crea_iscritto(connessione, &dati, RIFERIMENTO).unwrap().id
 }

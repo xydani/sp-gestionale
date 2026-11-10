@@ -41,6 +41,7 @@ fn nuovo_iscritto(connessione: &Connection) -> i64 {
         telefono: None,
         email: Some("giulia@esempio.it".into()),
         note: None,
+        data_scadenza_certificato: None,
     };
     crea_iscritto(connessione, &dati, RIFERIMENTO).unwrap().id
 }
