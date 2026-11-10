@@ -1,8 +1,10 @@
 use std::path::Path;
 
+use rusqlite::functions::FunctionFlags;
 use rusqlite::{Connection, ErrorCode};
 
 use super::ErroreDatabase;
+use crate::domain::testo::normalizza_per_ricerca;
 
 pub const LUNGHEZZA_MINIMA_PASSWORD: usize = 8;
 
@@ -51,7 +53,21 @@ fn imposta_chiave_e_configura(
     verifica_password(connessione)?;
     connessione.pragma_update(None, "journal_mode", "WAL")?;
     connessione.pragma_update(None, "foreign_keys", "ON")?;
+    registra_funzioni_sql(connessione)?;
     Ok(())
+}
+
+/// Funzioni Rust richiamabili da SQL. `normalizza(testo)` serve alla ricerca senza accenti.
+fn registra_funzioni_sql(connessione: &Connection) -> rusqlite::Result<()> {
+    connessione.create_scalar_function(
+        "normalizza",
+        1,
+        FunctionFlags::SQLITE_UTF8 | FunctionFlags::SQLITE_DETERMINISTIC,
+        |contesto| {
+            let testo: Option<String> = contesto.get(0)?;
+            Ok(testo.map(|testo| normalizza_per_ricerca(&testo)))
+        },
+    )
 }
 
 /// SQLCipher non verifica la chiave finché non legge una pagina:

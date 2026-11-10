@@ -3,6 +3,7 @@
 pub mod date;
 pub mod rinnovo;
 pub mod stato;
+pub mod testo;
 
 use thiserror::Error;
 
