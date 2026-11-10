@@ -72,6 +72,10 @@ impl StatoApp {
         }
     }
 
+    pub fn oggi(&self) -> chrono::NaiveDate {
+        (self.adesso)().date()
+    }
+
     pub fn cartella_backup(&self) -> &Path {
         &self.cartella_backup
     }

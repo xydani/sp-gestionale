@@ -33,6 +33,11 @@ pub fn run() {
             commands::tipologie::crea_tipologia,
             commands::tipologie::modifica_tipologia,
             commands::tipologie::imposta_tipologia_attiva,
+            commands::iscritti::elenca_iscritti,
+            commands::iscritti::trova_iscritto,
+            commands::iscritti::crea_iscritto,
+            commands::iscritti::modifica_iscritto,
+            commands::iscritti::imposta_iscritto_archiviato,
         ])
         // Le due finestre (accesso e principale) vivono insieme: chiuderne una chiude il programma
         .on_window_event(|finestra, evento| {
