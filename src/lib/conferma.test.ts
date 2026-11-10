@@ -1,8 +1,22 @@
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@tauri-apps/plugin-dialog", () => ({ ask: vi.fn() }));
+const { ask } = vi.hoisted(() => ({ ask: vi.fn() }));
+vi.mock("@tauri-apps/plugin-dialog", () => ({ ask }));
 
-const { testoConfermaEliminazione } = await import("./conferma");
+const { TESTO_AVVISO_ESPORTAZIONE, confermaEsportazioneCsv, testoConfermaEliminazione } =
+  await import("./conferma");
+
+describe("confermaEsportazioneCsv", () => {
+  it("avvisa che il file non è criptato e restituisce la scelta", async () => {
+    ask.mockResolvedValueOnce(false);
+    expect(await confermaEsportazioneCsv()).toBe(false);
+    expect(ask).toHaveBeenCalledWith(
+      TESTO_AVVISO_ESPORTAZIONE,
+      expect.objectContaining({ kind: "warning", okLabel: "Esporta" }),
+    );
+    expect(TESTO_AVVISO_ESPORTAZIONE).toContain("non è criptato");
+  });
+});
 
 describe("testoConfermaEliminazione", () => {
   it("descrive il pagamento da eliminare", () => {

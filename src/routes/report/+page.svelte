@@ -4,6 +4,7 @@
   import { onMount } from "svelte";
   import { esportaIncassiCsv, leggiRiepilogoIncassi, messaggioErrore } from "$lib/api";
   import { mostraAvviso } from "$lib/avvisi.svelte";
+  import { confermaEsportazioneCsv } from "$lib/conferma";
   import CampoData from "$lib/components/CampoData.svelte";
   import RiquadroNumero from "$lib/components/RiquadroNumero.svelte";
   import { formattaEuro, formattaPercentuale, formattaPeriodo } from "$lib/format";
@@ -60,6 +61,7 @@
   }
 
   async function esporta() {
+    if (!(await confermaEsportazioneCsv())) return;
     const percorso = await save({
       defaultPath: `incassi_${dal}_${al}.csv`,
       filters: [{ name: "CSV", extensions: ["csv"] }],
