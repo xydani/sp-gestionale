@@ -2,10 +2,16 @@
   import { onMount } from "svelte";
   import ElencoScadenze from "$lib/components/ElencoScadenze.svelte";
   import { aggiornaConteggioScadenze, scadenzeInArrivo } from "$lib/promemoria.svelte";
+  import { REGOLE_SCADENZA, TIPI_SCADENZA, statiDaMostrare } from "$lib/scadenze";
+  import type { TipoScadenza } from "$lib/types";
 
-  type Scheda = "abbonamento" | "iscrizione";
+  const TITOLI_SEZIONE = {
+    in_scadenza: "In scadenza",
+    scaduto: "Scaduti",
+    nessuno: "Non presentati",
+  } as const;
 
-  let schedaAttiva = $state<Scheda>("abbonamento");
+  let schedaAttiva = $state<TipoScadenza>("abbonamento");
 
   onMount(aggiornaConteggioScadenze);
 </script>
@@ -13,40 +19,28 @@
 <h1>Scadenze</h1>
 
 <div class="schede" role="tablist">
-  <button
-    type="button"
-    role="tab"
-    aria-selected={schedaAttiva === "abbonamento"}
-    class:attiva={schedaAttiva === "abbonamento"}
-    onclick={() => (schedaAttiva = "abbonamento")}
-  >
-    Abbonamenti
-    {#if scadenzeInArrivo.abbonamenti > 0}<span class="conteggio"
-        >{scadenzeInArrivo.abbonamenti}</span
-      >{/if}
-  </button>
-  <button
-    type="button"
-    role="tab"
-    aria-selected={schedaAttiva === "iscrizione"}
-    class:attiva={schedaAttiva === "iscrizione"}
-    onclick={() => (schedaAttiva = "iscrizione")}
-  >
-    Iscrizioni annuali
-    {#if scadenzeInArrivo.iscrizioni > 0}<span class="conteggio">{scadenzeInArrivo.iscrizioni}</span
-      >{/if}
-  </button>
+  {#each TIPI_SCADENZA as tipo (tipo)}
+    {@const conteggio = scadenzeInArrivo[REGOLE_SCADENZA[tipo].chiaveConteggio]}
+    <button
+      type="button"
+      role="tab"
+      aria-selected={schedaAttiva === tipo}
+      class:attiva={schedaAttiva === tipo}
+      onclick={() => (schedaAttiva = tipo)}
+    >
+      {REGOLE_SCADENZA[tipo].etichetta}
+      {#if conteggio > 0}<span class="conteggio">{conteggio}</span>{/if}
+    </button>
+  {/each}
 </div>
 
 {#key schedaAttiva}
-  <section>
-    <h2 class="in-scadenza">In scadenza</h2>
-    <ElencoScadenze tipo={schedaAttiva} stato="in_scadenza" />
-  </section>
-  <section>
-    <h2 class="scaduti">Scaduti</h2>
-    <ElencoScadenze tipo={schedaAttiva} stato="scaduto" />
-  </section>
+  {#each statiDaMostrare(schedaAttiva) as stato (stato)}
+    <section>
+      <h2 class={stato}>{TITOLI_SEZIONE[stato]}</h2>
+      <ElencoScadenze tipo={schedaAttiva} {stato} />
+    </section>
+  {/each}
 {/key}
 
 <style>
@@ -95,11 +89,12 @@
     margin: 0 0 0.75rem;
   }
 
-  h2.in-scadenza {
+  h2.in_scadenza {
     color: #8a5300;
   }
 
-  h2.scaduti {
+  h2.scaduto,
+  h2.nessuno {
     color: #b42318;
   }
 </style>

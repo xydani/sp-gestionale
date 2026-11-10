@@ -4,17 +4,12 @@
   import { elencaIscritti, messaggioErrore } from "$lib/api";
   import { mostraAvviso } from "$lib/avvisi.svelte";
   import { descriviScadenza, formattaData } from "$lib/format";
-  import type { Iscritto, OrdinamentoIscritti, Pagina } from "$lib/types";
+  import { REGOLE_SCADENZA, filtroScadenze, type StatoScadenza } from "$lib/scadenze";
+  import type { Iscritto, Pagina, TipoScadenza } from "$lib/types";
   import Paginazione from "./Paginazione.svelte";
 
-  /** Elenco paginato degli iscritti con abbonamento o iscrizione in scadenza oppure scaduti. */
-  let {
-    tipo,
-    stato,
-  }: {
-    tipo: "abbonamento" | "iscrizione";
-    stato: "in_scadenza" | "scaduto";
-  } = $props();
+  /** Elenco paginato degli iscritti con una scadenza in arrivo, passata o mancante. */
+  let { tipo, stato }: { tipo: TipoScadenza; stato: StatoScadenza } = $props();
 
   let pagina = $state<Pagina<Iscritto>>({
     elementi: [],
@@ -23,37 +18,13 @@
     totaleElementi: 0,
   });
 
-  // In scadenza: le più vicine prima. Scaduti: i più recenti prima.
-  const ordinamento = $derived<OrdinamentoIscritti>(
-    tipo === "abbonamento"
-      ? stato === "in_scadenza"
-        ? "scadenza_abbonamento_crescente"
-        : "scadenza_abbonamento_decrescente"
-      : stato === "in_scadenza"
-        ? "fine_iscrizione_crescente"
-        : "fine_iscrizione_decrescente",
-  );
-
   function dataScadenza(iscritto: Iscritto): string {
-    const data =
-      tipo === "abbonamento"
-        ? iscritto.ultimaDataScadenzaAbbonamento
-        : iscritto.ultimaDataFineIscrizione;
-    return data ?? "";
+    return REGOLE_SCADENZA[tipo].dataScadenza(iscritto) ?? "";
   }
 
   async function carica(numeroPagina = 1) {
     try {
-      pagina = await elencaIscritti(
-        {
-          testo: "",
-          includiArchiviati: false,
-          statoAbbonamento: tipo === "abbonamento" ? stato : null,
-          statoIscrizione: tipo === "iscrizione" ? stato : null,
-          ordinamento,
-        },
-        numeroPagina,
-      );
+      pagina = await elencaIscritti(filtroScadenze(tipo, stato), numeroPagina);
     } catch (errore) {
       mostraAvviso("errore", messaggioErrore(errore));
     }
@@ -76,8 +47,12 @@
           </a>
         </td>
         <td>{iscritto.telefono ?? "—"}</td>
-        <td>{formattaData(dataScadenza(iscritto))}</td>
-        <td class="distanza">{descriviScadenza(dataScadenza(iscritto))}</td>
+        {#if dataScadenza(iscritto)}
+          <td>{formattaData(dataScadenza(iscritto))}</td>
+          <td class="distanza">{descriviScadenza(dataScadenza(iscritto))}</td>
+        {:else}
+          <td colspan="2" class="distanza">Non presentato</td>
+        {/if}
       </tr>
     {:else}
       <tr><td colspan="4" class="vuoto">Nessuno</td></tr>
@@ -98,6 +73,7 @@
     border-left-color: #e0a100;
   }
 
+  table.nessuno,
   table.scaduto {
     border-left-color: #d92d20;
   }
