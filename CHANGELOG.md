@@ -2,6 +2,13 @@
 
 ## [Non rilasciato]
 
+- Corretto: un importo scritto con il punto (es. 30.50) veniva letto cento volte più grande
+- Corretto: dopo un tentativo di salvataggio senza scelta, una tendina obbligatoria bloccava il modulo anche dopo aver scelto
+- Corretto: un backup di una versione più recente rendeva l'archivio inapribile; ora viene rifiutato prima
+- Corretto: dopo un ripristino la pagina Impostazioni mostrava ancora i valori precedenti
+- La finestra non si blocca più durante sblocco, backup ed esportazioni
+- Il CSV esportato non contiene testi che Excel eseguirebbe come formule
+- Ricerca, paginazione e rinnovo anticipato degli abbonamenti pluriennali più affidabili
 - Un abbonamento disattivato nel listino non si può più registrare come nuovo pagamento
 
 ## [0.1.2] - 2026-11-10
