@@ -5,6 +5,7 @@
     indiceSuccessivo,
     type OpzioneTendina,
   } from "$lib/tendina";
+  import { validita } from "$lib/validazione";
 
   /** Tendina disegnata dall'app: uguale su ogni sistema, usabile con mouse e tastiera. */
   let {
@@ -155,8 +156,7 @@
       aria-hidden="true"
       value={mostraSegnaposto ? "" : "scelta"}
       required
-      oninvalid={(evento) =>
-        (evento.currentTarget as HTMLInputElement).setCustomValidity("Scegli un'opzione")}
+      use:validita={mostraSegnaposto ? "Scegli un'opzione" : null}
       onfocus={() => pulsante?.focus()}
     />
   {/if}
