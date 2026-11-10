@@ -16,6 +16,15 @@ impl Default for RichiestaPagina {
 }
 
 impl RichiestaPagina {
+    /// Una pagina oltre l'ultima (es. dopo aver eliminato l'unico elemento dell'ultima pagina)
+    /// diventa l'ultima che contiene elementi.
+    pub fn limitata_a(self, totale_elementi: u32) -> Self {
+        let ultima_pagina = totale_elementi.div_ceil(ELEMENTI_PER_PAGINA).max(1);
+        Self {
+            numero: self.numero.clamp(1, ultima_pagina),
+        }
+    }
+
     /// Quanti elementi saltare: una pagina 0 viene trattata come la prima.
     pub fn scarto(self) -> u32 {
         self.numero
@@ -38,6 +47,15 @@ pub struct Pagina<T> {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    fn una_pagina_oltre_l_ultima_diventa_l_ultima() {
+        let pagina = |numero| RichiestaPagina { numero };
+        assert_eq!(pagina(3).limitata_a(100), pagina(2));
+        assert_eq!(pagina(3).limitata_a(101), pagina(3));
+        assert_eq!(pagina(5).limitata_a(0), pagina(1));
+        assert_eq!(pagina(0).limitata_a(10), pagina(1));
+    }
 
     #[test]
     fn la_prima_pagina_non_salta_nulla() {

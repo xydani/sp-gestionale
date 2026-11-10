@@ -266,7 +266,9 @@ fn con_250_iscritti_le_pagine_sono_da_50() {
 
     assert_eq!(pagina(1).elementi[..], tutti[..50]);
     assert_eq!(pagina(5).elementi[..], tutti[200..250]);
-    assert!(pagina(6).elementi.is_empty());
+    // Oltre l'ultima pagina (es. dopo un'eliminazione) si ottiene l'ultima, non una vuota
+    assert_eq!(pagina(6).numero, 5);
+    assert_eq!(pagina(6).elementi[..], tutti[200..250]);
     assert_eq!(pagina(1).totale_elementi, 250);
 }
 

@@ -185,6 +185,7 @@ pub fn elenca_iscritti_paginati(
         |riga| riga.get(0),
     )?;
 
+    let richiesta = richiesta.limitata_a(totale_elementi);
     let mut parametri_pagina = parametri;
     parametri_pagina.push(Value::from(i64::from(ELEMENTI_PER_PAGINA)));
     parametri_pagina.push(Value::from(i64::from(richiesta.scarto())));
@@ -200,7 +201,7 @@ pub fn elenca_iscritti_paginati(
 
     Ok(Pagina {
         elementi,
-        numero: richiesta.numero.max(1),
+        numero: richiesta.numero,
         elementi_per_pagina: ELEMENTI_PER_PAGINA,
         totale_elementi,
     })
