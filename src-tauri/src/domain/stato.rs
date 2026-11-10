@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 /// Giorni di preavviso predefiniti per segnalare un abbonamento in scadenza.
 pub const GIORNI_PREAVVISO_PREDEFINITI: u32 = 7;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum StatoAbbonamento {
     Attivo,

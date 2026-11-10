@@ -1,3 +1,4 @@
+pub mod dati_prova;
 pub mod db;
 pub mod domain;
 pub mod versione;
