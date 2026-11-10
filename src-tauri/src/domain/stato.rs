@@ -6,37 +6,37 @@ pub const GIORNI_PREAVVISO_PREDEFINITI: u32 = 7;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
-pub enum StatoAbbonamento {
+pub enum StatoValidita {
     Attivo,
     InScadenza,
     Scaduto,
     Nessuno,
 }
 
-/// Stato dell'abbonamento di un iscritto in base alla sua ultima scadenza.
+/// Stato di validità (abbonamento o iscrizione) in base alla sua ultima scadenza.
 ///
 /// Il giorno di scadenza è ancora valido: diventa scaduto dal giorno dopo.
-pub fn calcola_stato_abbonamento(
+pub fn calcola_stato_validita(
     ultima_data_scadenza: Option<NaiveDate>,
     oggi: NaiveDate,
     giorni_preavviso: u32,
-) -> StatoAbbonamento {
+) -> StatoValidita {
     let Some(data_scadenza) = ultima_data_scadenza else {
-        return StatoAbbonamento::Nessuno;
+        return StatoValidita::Nessuno;
     };
 
     let giorni_rimanenti = giorni_alla_scadenza(data_scadenza, oggi);
     if giorni_rimanenti < 0 {
-        StatoAbbonamento::Scaduto
+        StatoValidita::Scaduto
     } else if giorni_rimanenti <= i64::from(giorni_preavviso) {
-        StatoAbbonamento::InScadenza
+        StatoValidita::InScadenza
     } else {
-        StatoAbbonamento::Attivo
+        StatoValidita::Attivo
     }
 }
 
 /// Intervallo di date di scadenza che corrisponde a uno stato: permette di filtrare
-/// per stato direttamente nel database, con la stessa regola di `calcola_stato_abbonamento`.
+/// per stato direttamente nel database, con la stessa regola di `calcola_stato_validita`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CondizioneScadenza {
     /// Nessun pagamento: scadenza assente.
@@ -61,22 +61,22 @@ impl CondizioneScadenza {
 }
 
 pub fn condizione_scadenza_per_stato(
-    stato: StatoAbbonamento,
+    stato: StatoValidita,
     oggi: NaiveDate,
     giorni_preavviso: u32,
 ) -> CondizioneScadenza {
     let ultimo_giorno_di_preavviso = oggi + Days::new(u64::from(giorni_preavviso));
     match stato {
-        StatoAbbonamento::Nessuno => CondizioneScadenza::Assente,
-        StatoAbbonamento::Scaduto => CondizioneScadenza::Tra {
+        StatoValidita::Nessuno => CondizioneScadenza::Assente,
+        StatoValidita::Scaduto => CondizioneScadenza::Tra {
             dal: None,
             al: oggi.pred_opt(),
         },
-        StatoAbbonamento::InScadenza => CondizioneScadenza::Tra {
+        StatoValidita::InScadenza => CondizioneScadenza::Tra {
             dal: Some(oggi),
             al: Some(ultimo_giorno_di_preavviso),
         },
-        StatoAbbonamento::Attivo => CondizioneScadenza::Tra {
+        StatoValidita::Attivo => CondizioneScadenza::Tra {
             dal: ultimo_giorno_di_preavviso.succ_opt(),
             al: None,
         },
@@ -94,49 +94,49 @@ mod test {
 
     const OGGI: NaiveDate = NaiveDate::from_ymd_opt(2026, 11, 10).unwrap();
 
-    fn stato_con_scadenza_tra(giorni: i64) -> StatoAbbonamento {
+    fn stato_con_scadenza_tra(giorni: i64) -> StatoValidita {
         let scadenza = OGGI + chrono::Duration::days(giorni);
-        calcola_stato_abbonamento(Some(scadenza), OGGI, GIORNI_PREAVVISO_PREDEFINITI)
+        calcola_stato_validita(Some(scadenza), OGGI, GIORNI_PREAVVISO_PREDEFINITI)
     }
 
     #[test]
     fn senza_pagamenti_lo_stato_e_nessuno() {
         assert_eq!(
-            calcola_stato_abbonamento(None, OGGI, GIORNI_PREAVVISO_PREDEFINITI),
-            StatoAbbonamento::Nessuno
+            calcola_stato_validita(None, OGGI, GIORNI_PREAVVISO_PREDEFINITI),
+            StatoValidita::Nessuno
         );
     }
 
     #[test]
     fn scaduto_ieri_e_scaduto() {
-        assert_eq!(stato_con_scadenza_tra(-1), StatoAbbonamento::Scaduto);
+        assert_eq!(stato_con_scadenza_tra(-1), StatoValidita::Scaduto);
     }
 
     #[test]
     fn scade_oggi_e_in_scadenza() {
-        assert_eq!(stato_con_scadenza_tra(0), StatoAbbonamento::InScadenza);
+        assert_eq!(stato_con_scadenza_tra(0), StatoValidita::InScadenza);
     }
 
     #[test]
     fn scade_all_ultimo_giorno_di_preavviso_e_in_scadenza() {
-        assert_eq!(stato_con_scadenza_tra(7), StatoAbbonamento::InScadenza);
+        assert_eq!(stato_con_scadenza_tra(7), StatoValidita::InScadenza);
     }
 
     #[test]
     fn scade_dopo_il_preavviso_e_attivo() {
-        assert_eq!(stato_con_scadenza_tra(8), StatoAbbonamento::Attivo);
+        assert_eq!(stato_con_scadenza_tra(8), StatoValidita::Attivo);
     }
 
     #[test]
     fn preavviso_zero_segnala_solo_il_giorno_di_scadenza() {
         let domani = OGGI.succ_opt().unwrap();
         assert_eq!(
-            calcola_stato_abbonamento(Some(OGGI), OGGI, 0),
-            StatoAbbonamento::InScadenza
+            calcola_stato_validita(Some(OGGI), OGGI, 0),
+            StatoValidita::InScadenza
         );
         assert_eq!(
-            calcola_stato_abbonamento(Some(domani), OGGI, 0),
-            StatoAbbonamento::Attivo
+            calcola_stato_validita(Some(domani), OGGI, 0),
+            StatoValidita::Attivo
         );
     }
 
@@ -150,16 +150,16 @@ mod test {
     #[test]
     fn la_condizione_di_ogni_stato_coincide_con_il_calcolo_dello_stato() {
         let stati = [
-            StatoAbbonamento::Attivo,
-            StatoAbbonamento::InScadenza,
-            StatoAbbonamento::Scaduto,
-            StatoAbbonamento::Nessuno,
+            StatoValidita::Attivo,
+            StatoValidita::InScadenza,
+            StatoValidita::Scaduto,
+            StatoValidita::Nessuno,
         ];
         let scadenze = std::iter::once(None)
             .chain((-40..=40).map(|giorni| Some(OGGI + chrono::Duration::days(giorni))));
         for scadenza in scadenze {
             for giorni_preavviso in [0, 7, 14] {
-                let stato_calcolato = calcola_stato_abbonamento(scadenza, OGGI, giorni_preavviso);
+                let stato_calcolato = calcola_stato_validita(scadenza, OGGI, giorni_preavviso);
                 for stato in stati {
                     let condizione = condizione_scadenza_per_stato(stato, OGGI, giorni_preavviso);
                     assert_eq!(
@@ -175,7 +175,7 @@ mod test {
     #[test]
     fn stato_si_serializza_in_snake_case() {
         assert_eq!(
-            serde_json::to_string(&StatoAbbonamento::InScadenza).unwrap(),
+            serde_json::to_string(&StatoValidita::InScadenza).unwrap(),
             "\"in_scadenza\""
         );
     }

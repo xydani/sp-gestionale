@@ -1,4 +1,4 @@
-//! Anagrafica degli iscritti.
+//! Anagrafica degli iscritti, con lo stato di iscrizione annuale e abbonamento.
 
 use chrono::NaiveDate;
 use rusqlite::types::Value;
@@ -9,7 +9,7 @@ use super::ErroreDatabase;
 use super::impostazioni::{CHIAVE_GIORNI_PREAVVISO, leggi_impostazione_numerica};
 use super::paginazione::{ELEMENTI_PER_PAGINA, Pagina, RichiestaPagina};
 use crate::domain::stato::{
-    CondizioneScadenza, GIORNI_PREAVVISO_PREDEFINITI, StatoAbbonamento, calcola_stato_abbonamento,
+    CondizioneScadenza, GIORNI_PREAVVISO_PREDEFINITI, StatoValidita, calcola_stato_validita,
     condizione_scadenza_per_stato,
 };
 use crate::domain::testo::parole_di_ricerca;
@@ -20,12 +20,17 @@ pub struct Iscritto {
     pub id: i64,
     pub nome: String,
     pub cognome: String,
+    /// Facoltative solo per gli iscritti inseriti prima che diventassero obbligatorie.
+    pub data_nascita: Option<NaiveDate>,
+    pub luogo_nascita: Option<String>,
     pub telefono: Option<String>,
-    pub data_iscrizione: NaiveDate,
+    pub email: Option<String>,
     pub note: Option<String>,
     pub archiviato: bool,
-    pub ultima_data_scadenza: Option<NaiveDate>,
-    pub stato: StatoAbbonamento,
+    pub ultima_data_fine_iscrizione: Option<NaiveDate>,
+    pub stato_iscrizione: StatoValidita,
+    pub ultima_data_scadenza_abbonamento: Option<NaiveDate>,
+    pub stato_abbonamento: StatoValidita,
 }
 
 /// Dati inseriti dall'utente per creare o modificare un iscritto.
@@ -34,8 +39,10 @@ pub struct Iscritto {
 pub struct DatiIscritto {
     pub nome: String,
     pub cognome: String,
+    pub data_nascita: NaiveDate,
+    pub luogo_nascita: String,
     pub telefono: Option<String>,
-    pub data_iscrizione: NaiveDate,
+    pub email: Option<String>,
     pub note: Option<String>,
 }
 
@@ -45,10 +52,11 @@ pub struct FiltroIscritti {
     /// Parole cercate in nome e cognome, senza distinzione di maiuscole e accenti.
     pub testo: String,
     pub includi_archiviati: bool,
-    pub stato: Option<StatoAbbonamento>,
+    pub stato_abbonamento: Option<StatoValidita>,
+    pub stato_iscrizione: Option<StatoValidita>,
 }
 
-/// Data di oggi e preavviso: servono a calcolare lo stato dell'abbonamento.
+/// Data di oggi e preavviso: servono a calcolare gli stati di validità.
 #[derive(Debug, Clone, Copy)]
 pub struct Riferimento {
     pub oggi: NaiveDate,
@@ -72,10 +80,19 @@ pub fn riferimento_per_oggi(
 }
 
 const SELEZIONE_ISCRITTI: &str = "
-    SELECT i.id, i.nome, i.cognome, i.telefono, i.data_iscrizione, i.note, i.archiviato,
-           u.ultima_data_scadenza
+    SELECT i.id, i.nome, i.cognome, i.data_nascita, i.luogo_nascita, i.telefono, i.email,
+           i.note, i.archiviato, s.ultima_data_fine_iscrizione, a.ultima_data_scadenza
     FROM iscritti i
-    JOIN v_ultima_scadenza_iscritti u ON u.iscritto_id = i.id";
+    JOIN v_ultima_iscrizione_iscritti s ON s.iscritto_id = i.id
+    JOIN v_ultima_scadenza_iscritti a ON a.iscritto_id = i.id";
+
+const CONTEGGIO_ISCRITTI: &str = "
+    SELECT count(*)
+    FROM iscritti i
+    JOIN v_ultima_iscrizione_iscritti s ON s.iscritto_id = i.id
+    JOIN v_ultima_scadenza_iscritti a ON a.iscritto_id = i.id";
+
+const ORDINAMENTO_ISCRITTI: &str = "ORDER BY i.cognome COLLATE NOCASE, i.nome COLLATE NOCASE, i.id";
 
 /// Tutti gli iscritti che corrispondono al filtro (senza paginazione).
 pub fn elenca_iscritti(
@@ -105,10 +122,7 @@ pub fn elenca_iscritti_paginati(
     let (clausola_where, parametri) = condizioni_filtro(filtro, riferimento);
 
     let totale_elementi: u32 = connessione.query_row(
-        &format!(
-            "SELECT count(*) FROM iscritti i
-             JOIN v_ultima_scadenza_iscritti u ON u.iscritto_id = i.id {clausola_where}"
-        ),
+        &format!("{CONTEGGIO_ISCRITTI} {clausola_where}"),
         params_from_iter(parametri.iter()),
         |riga| riga.get(0),
     )?;
@@ -133,45 +147,6 @@ pub fn elenca_iscritti_paginati(
     })
 }
 
-const ORDINAMENTO_ISCRITTI: &str = "ORDER BY i.cognome COLLATE NOCASE, i.nome COLLATE NOCASE, i.id";
-
-/// Clausola WHERE e parametri del filtro, compreso lo stato tradotto in date di scadenza.
-fn condizioni_filtro(filtro: &FiltroIscritti, riferimento: Riferimento) -> (String, Vec<Value>) {
-    let mut condizioni = vec!["(i.archiviato = 0 OR ?1 = 1)".to_string()];
-    let mut parametri: Vec<Value> = vec![Value::from(filtro.includi_archiviati)];
-
-    // Ogni parola deve comparire nel nome o nel cognome: "ross mar" trova "Mario Rossi"
-    for parola in parole_di_ricerca(&filtro.testo) {
-        parametri.push(Value::from(format!("%{}%", escape_like(&parola))));
-        let indice = parametri.len();
-        condizioni.push(format!(
-            "(normalizza(i.nome) LIKE ?{indice} ESCAPE '\\' OR normalizza(i.cognome) LIKE ?{indice} ESCAPE '\\')"
-        ));
-    }
-
-    if let Some(stato) = filtro.stato {
-        match condizione_scadenza_per_stato(stato, riferimento.oggi, riferimento.giorni_preavviso) {
-            CondizioneScadenza::Assente => {
-                condizioni.push("u.ultima_data_scadenza IS NULL".into());
-            }
-            CondizioneScadenza::Tra { dal, al } => {
-                condizioni.push("u.ultima_data_scadenza IS NOT NULL".into());
-                for (operatore, data) in [(">=", dal), ("<=", al)] {
-                    if let Some(data) = data {
-                        parametri.push(Value::from(data.to_string()));
-                        condizioni.push(format!(
-                            "u.ultima_data_scadenza {operatore} ?{}",
-                            parametri.len()
-                        ));
-                    }
-                }
-            }
-        }
-    }
-
-    (format!("WHERE {}", condizioni.join(" AND ")), parametri)
-}
-
 pub fn trova_iscritto(
     connessione: &Connection,
     id: i64,
@@ -192,15 +167,17 @@ pub fn crea_iscritto(
     dati: &DatiIscritto,
     riferimento: Riferimento,
 ) -> Result<Iscritto, ErroreDatabase> {
-    let dati = valida_dati_iscritto(dati)?;
+    let dati = valida_dati_iscritto(dati, riferimento.oggi)?;
     connessione.execute(
-        "INSERT INTO iscritti (nome, cognome, telefono, data_iscrizione, note)
-         VALUES (?1, ?2, ?3, ?4, ?5)",
+        "INSERT INTO iscritti (nome, cognome, data_nascita, luogo_nascita, telefono, email, note)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
         params![
             dati.nome,
             dati.cognome,
+            dati.data_nascita,
+            dati.luogo_nascita,
             dati.telefono,
-            dati.data_iscrizione.to_string(),
+            dati.email,
             dati.note
         ],
     )?;
@@ -213,17 +190,19 @@ pub fn modifica_iscritto(
     dati: &DatiIscritto,
     riferimento: Riferimento,
 ) -> Result<Iscritto, ErroreDatabase> {
-    let dati = valida_dati_iscritto(dati)?;
+    let dati = valida_dati_iscritto(dati, riferimento.oggi)?;
     let righe_modificate = connessione.execute(
         "UPDATE iscritti
-         SET nome = ?1, cognome = ?2, telefono = ?3, data_iscrizione = ?4, note = ?5,
-             modificato_il = datetime('now')
-         WHERE id = ?6",
+         SET nome = ?1, cognome = ?2, data_nascita = ?3, luogo_nascita = ?4, telefono = ?5,
+             email = ?6, note = ?7, modificato_il = datetime('now')
+         WHERE id = ?8",
         params![
             dati.nome,
             dati.cognome,
+            dati.data_nascita,
+            dati.luogo_nascita,
             dati.telefono,
-            dati.data_iscrizione.to_string(),
+            dati.email,
             dati.note,
             id
         ],
@@ -252,26 +231,100 @@ pub fn imposta_iscritto_archiviato(
 }
 
 /// Pulisce i dati (spazi, campi facoltativi vuoti) e controlla quelli obbligatori.
-pub fn valida_dati_iscritto(dati: &DatiIscritto) -> Result<DatiIscritto, ErroreDatabase> {
-    let nome = dati.nome.trim().to_string();
-    let cognome = dati.cognome.trim().to_string();
-    if nome.is_empty() {
-        return Err(ErroreDatabase::DatiNonValidi(
-            "Il nome è obbligatorio".into(),
+pub fn valida_dati_iscritto(
+    dati: &DatiIscritto,
+    oggi: NaiveDate,
+) -> Result<DatiIscritto, ErroreDatabase> {
+    let obbligatorio = |valore: &str, nome_campo: &str| {
+        let pulito = valore.trim().to_string();
+        if pulito.is_empty() {
+            Err(dati_non_validi(&format!("{nome_campo} è obbligatorio")))
+        } else {
+            Ok(pulito)
+        }
+    };
+    let nome = obbligatorio(&dati.nome, "Il nome")?;
+    let cognome = obbligatorio(&dati.cognome, "Il cognome")?;
+    let luogo_nascita = obbligatorio(&dati.luogo_nascita, "Il luogo di nascita")?;
+    if dati.data_nascita > oggi {
+        return Err(dati_non_validi(
+            "La data di nascita non può essere nel futuro",
         ));
     }
-    if cognome.is_empty() {
-        return Err(ErroreDatabase::DatiNonValidi(
-            "Il cognome è obbligatorio".into(),
-        ));
+    let email = testo_facoltativo(dati.email.as_deref());
+    if let Some(email) = &email
+        && !sembra_un_email(email)
+    {
+        return Err(dati_non_validi("L'indirizzo email non è valido"));
     }
     Ok(DatiIscritto {
         nome,
         cognome,
+        data_nascita: dati.data_nascita,
+        luogo_nascita,
         telefono: testo_facoltativo(dati.telefono.as_deref()),
-        data_iscrizione: dati.data_iscrizione,
+        email,
         note: testo_facoltativo(dati.note.as_deref()),
     })
+}
+
+/// Controllo volutamente semplice: qualcosa@dominio.estensione, senza spazi.
+fn sembra_un_email(testo: &str) -> bool {
+    let Some((utente, dominio)) = testo.split_once('@') else {
+        return false;
+    };
+    !utente.is_empty()
+        && !testo.contains(char::is_whitespace)
+        && dominio.split('.').count() >= 2
+        && dominio.split('.').all(|parte| !parte.is_empty())
+}
+
+/// Clausola WHERE e parametri del filtro; gli stati sono tradotti in intervalli di date.
+fn condizioni_filtro(filtro: &FiltroIscritti, riferimento: Riferimento) -> (String, Vec<Value>) {
+    let mut condizioni = vec!["(i.archiviato = 0 OR ?1 = 1)".to_string()];
+    let mut parametri: Vec<Value> = vec![Value::from(filtro.includi_archiviati)];
+
+    // Ogni parola deve comparire nel nome o nel cognome: "ross mar" trova "Mario Rossi"
+    for parola in parole_di_ricerca(&filtro.testo) {
+        parametri.push(Value::from(format!("%{}%", escape_like(&parola))));
+        let indice = parametri.len();
+        condizioni.push(format!(
+            "(normalizza(i.nome) LIKE ?{indice} ESCAPE '\\' OR normalizza(i.cognome) LIKE ?{indice} ESCAPE '\\')"
+        ));
+    }
+
+    let filtri_stato = [
+        ("a.ultima_data_scadenza", filtro.stato_abbonamento),
+        ("s.ultima_data_fine_iscrizione", filtro.stato_iscrizione),
+    ];
+    for (colonna, stato) in filtri_stato {
+        if let Some(stato) = stato {
+            aggiungi_condizione_stato(colonna, stato, riferimento, &mut condizioni, &mut parametri);
+        }
+    }
+
+    (format!("WHERE {}", condizioni.join(" AND ")), parametri)
+}
+
+fn aggiungi_condizione_stato(
+    colonna: &str,
+    stato: StatoValidita,
+    riferimento: Riferimento,
+    condizioni: &mut Vec<String>,
+    parametri: &mut Vec<Value>,
+) {
+    match condizione_scadenza_per_stato(stato, riferimento.oggi, riferimento.giorni_preavviso) {
+        CondizioneScadenza::Assente => condizioni.push(format!("{colonna} IS NULL")),
+        CondizioneScadenza::Tra { dal, al } => {
+            condizioni.push(format!("{colonna} IS NOT NULL"));
+            for (operatore, data) in [(">=", dal), ("<=", al)] {
+                if let Some(data) = data {
+                    parametri.push(Value::from(data.to_string()));
+                    condizioni.push(format!("{colonna} {operatore} ?{}", parametri.len()));
+                }
+            }
+        }
+    }
 }
 
 fn testo_facoltativo(testo: Option<&str>) -> Option<String> {
@@ -289,22 +342,30 @@ fn escape_like(testo: &str) -> String {
         .replace('_', "\\_")
 }
 
+fn dati_non_validi(messaggio: &str) -> ErroreDatabase {
+    ErroreDatabase::DatiNonValidi(messaggio.to_string())
+}
+
 fn leggi_iscritto(riga: &Row<'_>, riferimento: Riferimento) -> rusqlite::Result<Iscritto> {
-    let ultima_data_scadenza: Option<NaiveDate> = riga.get(7)?;
+    let stato_di = |data: Option<NaiveDate>| {
+        calcola_stato_validita(data, riferimento.oggi, riferimento.giorni_preavviso)
+    };
+    let ultima_data_fine_iscrizione: Option<NaiveDate> = riga.get(9)?;
+    let ultima_data_scadenza_abbonamento: Option<NaiveDate> = riga.get(10)?;
     Ok(Iscritto {
         id: riga.get(0)?,
         nome: riga.get(1)?,
         cognome: riga.get(2)?,
-        telefono: riga.get(3)?,
-        data_iscrizione: riga.get(4)?,
-        note: riga.get(5)?,
-        archiviato: riga.get(6)?,
-        ultima_data_scadenza,
-        stato: calcola_stato_abbonamento(
-            ultima_data_scadenza,
-            riferimento.oggi,
-            riferimento.giorni_preavviso,
-        ),
+        data_nascita: riga.get(3)?,
+        luogo_nascita: riga.get(4)?,
+        telefono: riga.get(5)?,
+        email: riga.get(6)?,
+        note: riga.get(7)?,
+        archiviato: riga.get(8)?,
+        ultima_data_fine_iscrizione,
+        stato_iscrizione: stato_di(ultima_data_fine_iscrizione),
+        ultima_data_scadenza_abbonamento,
+        stato_abbonamento: stato_di(ultima_data_scadenza_abbonamento),
     })
 }
 
@@ -312,29 +373,78 @@ fn leggi_iscritto(riga: &Row<'_>, riferimento: Riferimento) -> rusqlite::Result<
 mod test {
     use super::*;
 
+    const OGGI: NaiveDate = NaiveDate::from_ymd_opt(2026, 11, 10).unwrap();
+
     fn dati(nome: &str, cognome: &str) -> DatiIscritto {
         DatiIscritto {
             nome: nome.into(),
             cognome: cognome.into(),
+            data_nascita: NaiveDate::from_ymd_opt(1990, 5, 20).unwrap(),
+            luogo_nascita: " Roma ".into(),
             telefono: Some("   ".into()),
-            data_iscrizione: NaiveDate::from_ymd_opt(2026, 1, 1).unwrap(),
+            email: Some(" mario@esempio.it ".into()),
             note: Some(" nota ".into()),
         }
     }
 
     #[test]
     fn la_validazione_ripulisce_spazi_e_campi_vuoti() {
-        let puliti = valida_dati_iscritto(&dati("  Mario ", " Rossi ")).unwrap();
+        let puliti = valida_dati_iscritto(&dati("  Mario ", " Rossi "), OGGI).unwrap();
         assert_eq!(puliti.nome, "Mario");
         assert_eq!(puliti.cognome, "Rossi");
+        assert_eq!(puliti.luogo_nascita, "Roma");
         assert_eq!(puliti.telefono, None);
+        assert_eq!(puliti.email.as_deref(), Some("mario@esempio.it"));
         assert_eq!(puliti.note.as_deref(), Some("nota"));
     }
 
     #[test]
-    fn nome_e_cognome_sono_obbligatori() {
-        assert!(valida_dati_iscritto(&dati(" ", "Rossi")).is_err());
-        assert!(valida_dati_iscritto(&dati("Mario", "")).is_err());
+    fn nome_cognome_e_luogo_di_nascita_sono_obbligatori() {
+        assert!(valida_dati_iscritto(&dati(" ", "Rossi"), OGGI).is_err());
+        assert!(valida_dati_iscritto(&dati("Mario", ""), OGGI).is_err());
+        let senza_luogo = DatiIscritto {
+            luogo_nascita: "  ".into(),
+            ..dati("Mario", "Rossi")
+        };
+        assert!(valida_dati_iscritto(&senza_luogo, OGGI).is_err());
+    }
+
+    #[test]
+    fn la_data_di_nascita_non_puo_essere_nel_futuro() {
+        let futura = DatiIscritto {
+            data_nascita: OGGI.succ_opt().unwrap(),
+            ..dati("Mario", "Rossi")
+        };
+        assert!(valida_dati_iscritto(&futura, OGGI).is_err());
+    }
+
+    #[test]
+    fn l_email_e_facoltativa_ma_se_presente_deve_essere_valida() {
+        let senza_email = DatiIscritto {
+            email: Some("  ".into()),
+            ..dati("Mario", "Rossi")
+        };
+        assert_eq!(
+            valida_dati_iscritto(&senza_email, OGGI).unwrap().email,
+            None
+        );
+        for non_valida in [
+            "mario",
+            "mario@",
+            "@esempio.it",
+            "mario@esempio",
+            "ma rio@esempio.it",
+            "mario@esempio.",
+        ] {
+            let dati = DatiIscritto {
+                email: Some(non_valida.into()),
+                ..dati("Mario", "Rossi")
+            };
+            assert!(
+                valida_dati_iscritto(&dati, OGGI).is_err(),
+                "{non_valida} accettata"
+            );
+        }
     }
 
     #[test]

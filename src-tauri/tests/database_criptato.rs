@@ -19,7 +19,7 @@ fn il_file_su_disco_e_criptato() {
     let connessione = database.crea_con_schema();
     connessione
         .execute(
-            "INSERT INTO iscritti (nome, cognome, data_iscrizione) VALUES ('Testo', 'Riconoscibile', '2026-01-01')",
+            "INSERT INTO iscritti (nome, cognome) VALUES ('Testo', 'Riconoscibile')",
             [],
         )
         .unwrap();
@@ -161,14 +161,14 @@ fn lo_schema_rifiuta_date_non_iso_e_scadenze_prima_dell_inizio() {
     let database = DatabaseTemporaneo::nuovo();
     let connessione = database.crea_con_schema();
     let data_non_iso = connessione.execute(
-        "INSERT INTO iscritti (nome, cognome, data_iscrizione) VALUES ('Mario', 'Prova', '01/02/2026')",
+        "INSERT INTO iscritti (nome, cognome, data_nascita) VALUES ('Mario', 'Prova', '01/02/1990')",
         [],
     );
     assert!(data_non_iso.is_err());
 
     connessione
         .execute(
-            "INSERT INTO iscritti (nome, cognome, data_iscrizione) VALUES ('Mario', 'Prova', '2026-01-01')",
+            "INSERT INTO iscritti (nome, cognome) VALUES ('Mario', 'Prova')",
             [],
         )
         .unwrap();
@@ -186,7 +186,7 @@ fn il_metodo_di_pagamento_deve_essere_tra_quelli_ammessi() {
     let connessione = database.crea_con_schema();
     connessione
         .execute(
-            "INSERT INTO iscritti (nome, cognome, data_iscrizione) VALUES ('Mario', 'Prova', '2026-01-01')",
+            "INSERT INTO iscritti (nome, cognome) VALUES ('Mario', 'Prova')",
             [],
         )
         .unwrap();

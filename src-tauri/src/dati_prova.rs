@@ -6,6 +6,9 @@ use rusqlite::{Connection, params};
 
 use crate::db::ErroreDatabase;
 use crate::db::tipologie::elenca_tipologie;
+use crate::domain::anno_sportivo::{
+    MESE_INIZIO_ANNO_SPORTIVO_PREDEFINITO, anno_sportivo_contenente,
+};
 use crate::domain::date::calcola_data_scadenza;
 use crate::domain::pagamento::MetodoPagamento;
 
@@ -88,6 +91,15 @@ const COGNOMI: &[&str] = &[
     "D'Angelo",
 ];
 
+const LUOGHI_NASCITA: &[&str] = &[
+    "Roma", "Milano", "Napoli", "Torino", "Palermo", "Genova", "Bologna", "Firenze", "Bari",
+    "Catania", "Verona", "Padova", "Brescia", "Parma", "Modena", "Perugia", "Pescara", "Lecce",
+];
+
+const QUOTA_ISCRIZIONE_CENT: i64 = 3000;
+/// Percentuale di iscritti con l'email indicata.
+const PERCENTUALE_CON_EMAIL: u64 = 60;
+
 /// Percentuale di iscritti senza alcun pagamento.
 const PERCENTUALE_SENZA_PAGAMENTI: u64 = 8;
 const ANNI_MASSIMI_DI_STORICO: u64 = 3;
@@ -132,14 +144,31 @@ pub fn genera_dati_prova(
     for _ in 0..numero_iscritti {
         let giorni_dall_iscrizione = casuale.tra(30, ANNI_MASSIMI_DI_STORICO * 365);
         let data_iscrizione = oggi - Days::new(giorni_dall_iscrizione);
+        let nome = casuale.scegli(NOMI);
+        let cognome = casuale.scegli(COGNOMI);
+        let data_nascita = oggi - Days::new(casuale.tra(16 * 365, 70 * 365));
+        let email = (casuale.tra(1, 100) <= PERCENTUALE_CON_EMAIL).then(|| {
+            format!(
+                "{}.{}@esempio.it",
+                nome.to_lowercase(),
+                cognome.to_lowercase().replace(['\'', ' '], "")
+            )
+        });
 
         transazione.execute(
-            "INSERT INTO iscritti (nome, cognome, telefono, data_iscrizione) VALUES (?1, ?2, ?3, ?4)",
+            "INSERT INTO iscritti (nome, cognome, data_nascita, luogo_nascita, telefono, email)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
             params![
-                casuale.scegli(NOMI),
-                casuale.scegli(COGNOMI),
-                format!("+39 3{:02} {:07}", casuale.tra(20, 99), casuale.tra(0, 9_999_999)),
-                data_iscrizione.to_string(),
+                nome,
+                cognome,
+                data_nascita,
+                casuale.scegli(LUOGHI_NASCITA),
+                format!(
+                    "+39 3{:02} {:07}",
+                    casuale.tra(20, 99),
+                    casuale.tra(0, 9_999_999)
+                ),
+                email,
             ],
         )?;
         let iscritto_id = transazione.last_insert_rowid();
@@ -183,8 +212,49 @@ pub fn genera_dati_prova(
             };
             data_inizio = data_scadenza + Days::new(1 + giorni_di_pausa);
         }
+
+        inserisci_iscrizioni(
+            &transazione,
+            &mut casuale,
+            iscritto_id,
+            data_iscrizione,
+            ultima_data_coperta,
+        )?;
     }
 
     transazione.commit()?;
+    Ok(())
+}
+
+/// Un'iscrizione per ogni anno sportivo di attività, dal primo all'ultimo abbonamento.
+fn inserisci_iscrizioni(
+    transazione: &rusqlite::Transaction<'_>,
+    casuale: &mut GeneratoreCasuale,
+    iscritto_id: i64,
+    primo_giorno: NaiveDate,
+    ultimo_giorno: NaiveDate,
+) -> Result<(), ErroreDatabase> {
+    let mut periodo = anno_sportivo_contenente(primo_giorno, MESE_INIZIO_ANNO_SPORTIVO_PREDEFINITO);
+    while periodo.inizio <= ultimo_giorno {
+        let data_pagamento = periodo.inizio.max(primo_giorno);
+        transazione.execute(
+            "INSERT INTO iscrizioni (iscritto_id, importo_cent, data_pagamento, metodo,
+                 data_inizio, data_fine)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![
+                iscritto_id,
+                QUOTA_ISCRIZIONE_CENT,
+                data_pagamento,
+                casuale.scegli(&MetodoPagamento::TUTTI).come_testo(),
+                periodo.inizio,
+                periodo.fine,
+            ],
+        )?;
+        let inizio_anno_dopo = periodo
+            .fine
+            .succ_opt()
+            .expect("data nell'intervallo supportato");
+        periodo = anno_sportivo_contenente(inizio_anno_dopo, MESE_INIZIO_ANNO_SPORTIVO_PREDEFINITO);
+    }
     Ok(())
 }

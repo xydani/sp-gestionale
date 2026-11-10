@@ -107,7 +107,7 @@ fn rinominare_una_tipologia_non_cambia_lo_storico_dei_pagamenti() {
     let connessione = database.crea_con_schema();
     connessione
         .execute(
-            "INSERT INTO iscritti (nome, cognome, data_iscrizione) VALUES ('Mario', 'Prova', '2026-01-01')",
+            "INSERT INTO iscritti (nome, cognome) VALUES ('Mario', 'Prova')",
             [],
         )
         .unwrap();

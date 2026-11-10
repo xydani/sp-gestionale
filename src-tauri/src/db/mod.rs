@@ -4,6 +4,7 @@ pub mod backup;
 pub mod crittografia;
 pub mod impostazioni;
 pub mod iscritti;
+pub mod iscrizioni;
 pub mod migrazioni;
 pub mod pagamenti;
 pub mod paginazione;

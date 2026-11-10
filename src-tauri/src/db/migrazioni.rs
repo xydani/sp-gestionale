@@ -4,7 +4,10 @@ use super::ErroreDatabase;
 
 /// Migrazioni in ordine: la posizione + 1 è la versione dello schema.
 /// Una migrazione rilasciata non va mai modificata: se ne aggiunge una nuova.
-const MIGRAZIONI: &[&str] = &[include_str!("../../migrations/0001_init.sql")];
+const MIGRAZIONI: &[&str] = &[
+    include_str!("../../migrations/0001_init.sql"),
+    include_str!("../../migrations/0002_iscrizioni_e_anagrafica.sql"),
+];
 
 pub fn versione_schema_supportata() -> u32 {
     MIGRAZIONI.len() as u32
@@ -17,6 +20,15 @@ pub fn versione_schema_corrente(connessione: &Connection) -> Result<u32, ErroreD
 /// Porta lo schema all'ultima versione; ogni migrazione gira nella propria transazione.
 /// Restituisce il numero di migrazioni applicate.
 pub fn applica_migrazioni(connessione: &mut Connection) -> Result<u32, ErroreDatabase> {
+    applica_migrazioni_fino_a(connessione, versione_schema_supportata())
+}
+
+/// Come `applica_migrazioni`, ma si ferma alla versione indicata: serve ai test
+/// per creare database "vecchi" e verificarne l'aggiornamento.
+pub fn applica_migrazioni_fino_a(
+    connessione: &mut Connection,
+    versione_finale: u32,
+) -> Result<u32, ErroreDatabase> {
     let versione_database = versione_schema_corrente(connessione)?;
     let versione_supportata = versione_schema_supportata();
 
@@ -27,9 +39,11 @@ pub fn applica_migrazioni(connessione: &mut Connection) -> Result<u32, ErroreDat
         });
     }
 
+    let versione_finale = versione_finale.min(versione_supportata);
     for (indice, sql) in MIGRAZIONI
         .iter()
         .enumerate()
+        .take(versione_finale as usize)
         .skip(versione_database as usize)
     {
         let nuova_versione = indice as u32 + 1;
@@ -39,7 +53,7 @@ pub fn applica_migrazioni(connessione: &mut Connection) -> Result<u32, ErroreDat
         transazione.commit()?;
     }
 
-    Ok(versione_supportata - versione_database)
+    Ok(versione_finale.saturating_sub(versione_database))
 }
 
 /// Il backup prima delle migrazioni serve solo se il database contiene già dati:

@@ -9,7 +9,7 @@ use rusqlite::Connection;
 use sp_gestionale_lib::dati_prova::genera_dati_prova;
 use sp_gestionale_lib::db::crittografia::apri_database_criptato;
 use sp_gestionale_lib::domain::stato::{
-    GIORNI_PREAVVISO_PREDEFINITI, StatoAbbonamento, calcola_stato_abbonamento,
+    GIORNI_PREAVVISO_PREDEFINITI, StatoValidita, calcola_stato_validita,
 };
 
 const NUMERO_ISCRITTI: u32 = 250;
@@ -28,7 +28,7 @@ fn conta(connessione: &Connection, sql: &str) -> i64 {
     connessione.query_row(sql, [], |riga| riga.get(0)).unwrap()
 }
 
-fn conta_iscritti_per_stato(connessione: &Connection) -> HashMap<StatoAbbonamento, u32> {
+fn conta_iscritti_per_stato(connessione: &Connection) -> HashMap<StatoValidita, u32> {
     let mut query = connessione
         .prepare("SELECT ultima_data_scadenza FROM v_ultima_scadenza_iscritti")
         .unwrap();
@@ -39,7 +39,7 @@ fn conta_iscritti_per_stato(connessione: &Connection) -> HashMap<StatoAbbonament
     for scadenza in scadenze {
         let ultima_data_scadenza = scadenza.unwrap().map(|testo| testo.parse().unwrap());
         let stato =
-            calcola_stato_abbonamento(ultima_data_scadenza, OGGI, GIORNI_PREAVVISO_PREDEFINITI);
+            calcola_stato_validita(ultima_data_scadenza, OGGI, GIORNI_PREAVVISO_PREDEFINITI);
         *conteggi.entry(stato).or_insert(0) += 1;
     }
     conteggi
@@ -69,10 +69,10 @@ fn sono_presenti_tutti_gli_stati_di_abbonamento() {
     let (_database, connessione) = database_con_dati_prova();
     let conteggi = conta_iscritti_per_stato(&connessione);
     for stato in [
-        StatoAbbonamento::Attivo,
-        StatoAbbonamento::InScadenza,
-        StatoAbbonamento::Scaduto,
-        StatoAbbonamento::Nessuno,
+        StatoValidita::Attivo,
+        StatoValidita::InScadenza,
+        StatoValidita::Scaduto,
+        StatoValidita::Nessuno,
     ] {
         assert!(
             conteggi.get(&stato).copied().unwrap_or(0) > 0,
@@ -114,7 +114,7 @@ fn i_rinnovi_sono_collegati_al_pagamento_precedente() {
 fn i_dati_sono_gli_stessi_con_lo_stesso_seme() {
     let (_primo, prima_connessione) = database_con_dati_prova();
     let (_secondo, seconda_connessione) = database_con_dati_prova();
-    let firma = "SELECT group_concat(cognome || nome || data_iscrizione, ',') FROM iscritti";
+    let firma = "SELECT group_concat(cognome || nome || data_nascita, ',') FROM iscritti";
     let prima: String = prima_connessione
         .query_row(firma, [], |riga| riga.get(0))
         .unwrap();

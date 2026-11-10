@@ -13,7 +13,7 @@ use sp_gestionale_lib::db::iscritti::{
     trova_iscritto,
 };
 use sp_gestionale_lib::db::paginazione::RichiestaPagina;
-use sp_gestionale_lib::domain::stato::StatoAbbonamento;
+use sp_gestionale_lib::domain::stato::StatoValidita;
 
 const OGGI: NaiveDate = NaiveDate::from_ymd_opt(2026, 11, 10).unwrap();
 const RIFERIMENTO: Riferimento = Riferimento {
@@ -26,8 +26,10 @@ fn dati(nome: &str, cognome: &str) -> DatiIscritto {
     DatiIscritto {
         nome: nome.into(),
         cognome: cognome.into(),
+        data_nascita: NaiveDate::from_ymd_opt(1990, 5, 20).unwrap(),
+        luogo_nascita: "Roma".into(),
         telefono: Some("+39 333 1234567".into()),
-        data_iscrizione: NaiveDate::from_ymd_opt(2026, 1, 15).unwrap(),
+        email: None,
         note: None,
     }
 }
@@ -62,7 +64,7 @@ fn si_crea_e_si_ritrova_un_iscritto() {
     let creato = crea_iscritto(&connessione, &dati(" Mario ", "Rossi"), RIFERIMENTO).unwrap();
 
     assert_eq!(creato.nome, "Mario");
-    assert_eq!(creato.stato, StatoAbbonamento::Nessuno);
+    assert_eq!(creato.stato_abbonamento, StatoValidita::Nessuno);
     assert!(!creato.archiviato);
     assert_eq!(
         trova_iscritto(&connessione, creato.id, RIFERIMENTO).unwrap(),
@@ -154,13 +156,17 @@ fn lo_stato_dipende_dall_ultima_scadenza() {
     aggiungi_pagamento(&connessione, attivo.id, "2026-10-01", "2026-10-31");
     aggiungi_pagamento(&connessione, attivo.id, "2026-11-01", "2026-12-31");
 
-    let stato_di = |id| trova_iscritto(&connessione, id, RIFERIMENTO).unwrap().stato;
-    assert_eq!(stato_di(scaduto.id), StatoAbbonamento::Scaduto);
-    assert_eq!(stato_di(in_scadenza.id), StatoAbbonamento::InScadenza);
-    assert_eq!(stato_di(attivo.id), StatoAbbonamento::Attivo);
+    let stato_di = |id| {
+        trova_iscritto(&connessione, id, RIFERIMENTO)
+            .unwrap()
+            .stato_abbonamento
+    };
+    assert_eq!(stato_di(scaduto.id), StatoValidita::Scaduto);
+    assert_eq!(stato_di(in_scadenza.id), StatoValidita::InScadenza);
+    assert_eq!(stato_di(attivo.id), StatoValidita::Attivo);
 
     let filtro = FiltroIscritti {
-        stato: Some(StatoAbbonamento::Scaduto),
+        stato_abbonamento: Some(StatoValidita::Scaduto),
         ..Default::default()
     };
     let scaduti = elenca_iscritti(&connessione, &filtro, RIFERIMENTO).unwrap();
@@ -271,13 +277,13 @@ fn il_filtro_per_stato_nel_database_coincide_con_lo_stato_calcolato() {
     let tutti = elenca_iscritti(&connessione, &FiltroIscritti::default(), RIFERIMENTO).unwrap();
 
     for stato in [
-        StatoAbbonamento::Attivo,
-        StatoAbbonamento::InScadenza,
-        StatoAbbonamento::Scaduto,
-        StatoAbbonamento::Nessuno,
+        StatoValidita::Attivo,
+        StatoValidita::InScadenza,
+        StatoValidita::Scaduto,
+        StatoValidita::Nessuno,
     ] {
         let filtro = FiltroIscritti {
-            stato: Some(stato),
+            stato_abbonamento: Some(stato),
             ..Default::default()
         };
         let pagina = elenca_iscritti_paginati(
@@ -287,7 +293,10 @@ fn il_filtro_per_stato_nel_database_coincide_con_lo_stato_calcolato() {
             RichiestaPagina::default(),
         )
         .unwrap();
-        let attesi: Vec<_> = tutti.iter().filter(|i| i.stato == stato).collect();
+        let attesi: Vec<_> = tutti
+            .iter()
+            .filter(|i| i.stato_abbonamento == stato)
+            .collect();
 
         assert!(
             !attesi.is_empty(),
@@ -298,7 +307,7 @@ fn il_filtro_per_stato_nel_database_coincide_con_lo_stato_calcolato() {
             attesi.len(),
             "conteggio {stato:?}"
         );
-        assert!(pagina.elementi.iter().all(|i| i.stato == stato));
+        assert!(pagina.elementi.iter().all(|i| i.stato_abbonamento == stato));
         let prima_pagina_attesa: Vec<_> = attesi.into_iter().take(50).cloned().collect();
         assert_eq!(pagina.elementi, prima_pagina_attesa);
     }

@@ -14,7 +14,7 @@ use sp_gestionale_lib::db::paginazione::{ELEMENTI_PER_PAGINA, RichiestaPagina};
 use sp_gestionale_lib::db::tipologie::{DatiTipologia, modifica_tipologia};
 use sp_gestionale_lib::domain::date::UnitaDurata;
 use sp_gestionale_lib::domain::pagamento::MetodoPagamento;
-use sp_gestionale_lib::domain::stato::StatoAbbonamento;
+use sp_gestionale_lib::domain::stato::StatoValidita;
 
 const OGGI: NaiveDate = NaiveDate::from_ymd_opt(2026, 11, 10).unwrap();
 const RIFERIMENTO: Riferimento = Riferimento {
@@ -32,8 +32,10 @@ fn nuovo_iscritto(connessione: &Connection) -> i64 {
     let dati = DatiIscritto {
         nome: "Mario".into(),
         cognome: "Rossi".into(),
+        data_nascita: data("1990-05-20"),
+        luogo_nascita: "Roma".into(),
         telefono: None,
-        data_iscrizione: data("2026-01-01"),
+        email: None,
         note: None,
     };
     crea_iscritto(connessione, &dati, RIFERIMENTO).unwrap().id
@@ -136,15 +138,18 @@ fn il_pagamento_aggiorna_lo_stato_dell_iscritto() {
     assert_eq!(
         trova_iscritto(&connessione, iscritto, RIFERIMENTO)
             .unwrap()
-            .stato,
-        StatoAbbonamento::Nessuno
+            .stato_abbonamento,
+        StatoValidita::Nessuno
     );
 
     paga_come_proposto(&connessione, iscritto, MENSILE, OGGI);
 
     let aggiornato = trova_iscritto(&connessione, iscritto, RIFERIMENTO).unwrap();
-    assert_eq!(aggiornato.stato, StatoAbbonamento::Attivo);
-    assert_eq!(aggiornato.ultima_data_scadenza, Some(data("2026-12-09")));
+    assert_eq!(aggiornato.stato_abbonamento, StatoValidita::Attivo);
+    assert_eq!(
+        aggiornato.ultima_data_scadenza_abbonamento,
+        Some(data("2026-12-09"))
+    );
 }
 
 #[test]
