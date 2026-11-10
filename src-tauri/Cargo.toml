@@ -22,6 +22,7 @@ chrono = { version = "0.4.45", default-features = false, features = ["std", "ser
 thiserror = "2.0.21"
 rusqlite = { version = "0.41.1", features = ["bundled-sqlcipher-vendored-openssl"] }
 zeroize = "1.9.1"
+tauri-plugin-dialog = "2"
 
 [profile.release]
 codegen-units = 1

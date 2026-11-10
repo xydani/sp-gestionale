@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use rusqlite::{Connection, ErrorCode, OpenFlags};
+use rusqlite::{Connection, ErrorCode};
 
 use super::ErroreDatabase;
 
@@ -28,7 +28,8 @@ pub fn apri_database_criptato(
     if !percorso.exists() {
         return Err(ErroreDatabase::DatabaseNonTrovato);
     }
-    let connessione = Connection::open_with_flags(percorso, OpenFlags::SQLITE_OPEN_READ_WRITE)?;
+    // Flag predefiniti (con CREATE): servono all'ATTACH dei backup per creare il file di copia
+    let connessione = Connection::open(percorso)?;
     imposta_chiave_e_configura(&connessione, password)?;
     Ok(connessione)
 }

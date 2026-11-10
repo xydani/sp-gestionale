@@ -42,7 +42,37 @@ pub fn applica_migrazioni(connessione: &mut Connection) -> Result<u32, ErroreDat
     Ok(versione_supportata - versione_database)
 }
 
+/// Il backup prima delle migrazioni serve solo se il database contiene già dati:
+/// un database appena creato (versione 0) non ha nulla da proteggere.
+pub fn serve_backup_pre_migrazione(versione_corrente: u32) -> bool {
+    versione_corrente > 0 && versione_corrente < versione_schema_supportata()
+}
+
 /// Vero se ci sono migrazioni da applicare (serve per fare il backup prima).
 pub fn ci_sono_migrazioni_da_applicare(connessione: &Connection) -> Result<bool, ErroreDatabase> {
     Ok(versione_schema_corrente(connessione)? < versione_schema_supportata())
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn database_nuovo_non_richiede_backup_pre_migrazione() {
+        assert!(!serve_backup_pre_migrazione(0));
+    }
+
+    #[test]
+    fn database_aggiornato_non_richiede_backup_pre_migrazione() {
+        assert!(!serve_backup_pre_migrazione(versione_schema_supportata()));
+    }
+
+    #[test]
+    fn database_con_dati_e_schema_vecchio_richiede_backup() {
+        // Vero solo quando esisteranno almeno due migrazioni
+        let versione_supportata = versione_schema_supportata();
+        if versione_supportata > 1 {
+            assert!(serve_backup_pre_migrazione(versione_supportata - 1));
+        }
+    }
 }

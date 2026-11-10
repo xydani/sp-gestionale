@@ -15,6 +15,7 @@ const NOME_FILE_DATABASE: &str = "palestra.db";
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let cartella_dati = app.path().app_data_dir()?;
             app.manage(StatoApp::nuovo(cartella_dati.join(NOME_FILE_DATABASE)));
@@ -25,6 +26,9 @@ pub fn run() {
             commands::sblocco::crea_database,
             commands::sblocco::sblocca_database,
             commands::sblocco::blocca_database,
+            commands::backup::esegui_backup_manuale,
+            commands::backup::ripristina_backup,
+            commands::backup::cartella_backup_automatici,
         ])
         .run(tauri::generate_context!())
         .expect("errore durante l'avvio dell'applicazione");

@@ -2,7 +2,7 @@ use tauri::State;
 use zeroize::Zeroizing;
 
 use crate::errore::ErroreApp;
-use crate::stato_app::{StatoApp, StatoDatabase};
+use crate::stato_app::{EsitoSblocco, StatoApp, StatoDatabase};
 
 #[tauri::command]
 pub fn stato_database(stato: State<'_, StatoApp>) -> StatoDatabase {
@@ -19,7 +19,10 @@ pub fn crea_database(
 }
 
 #[tauri::command]
-pub fn sblocca_database(stato: State<'_, StatoApp>, password: String) -> Result<(), ErroreApp> {
+pub fn sblocca_database(
+    stato: State<'_, StatoApp>,
+    password: String,
+) -> Result<EsitoSblocco, ErroreApp> {
     stato.sblocca_database(Zeroizing::new(password))
 }
 

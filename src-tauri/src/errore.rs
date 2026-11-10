@@ -26,6 +26,7 @@ impl From<ErroreDatabase> for ErroreApp {
             ErroreDatabase::DatabaseGiaEsistente => "database_gia_esistente",
             ErroreDatabase::DatabaseNonTrovato => "database_non_trovato",
             ErroreDatabase::VersioneDatabaseSuccessiva { .. } => "versione_database_successiva",
+            ErroreDatabase::File(_) => "errore_file",
             ErroreDatabase::Sqlite(_) => "errore_database",
         };
         Self::nuovo(codice, errore.to_string())

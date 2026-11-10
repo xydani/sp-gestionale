@@ -1,6 +1,8 @@
 //! Accesso ai dati: database SQLite criptato con SQLCipher.
 
+pub mod backup;
 pub mod crittografia;
+pub mod impostazioni;
 pub mod migrazioni;
 
 use thiserror::Error;
@@ -23,6 +25,8 @@ pub enum ErroreDatabase {
         versione_database: u32,
         versione_supportata: u32,
     },
+    #[error("Errore sul file: {0}")]
+    File(String),
     #[error("Errore del database: {0}")]
     Sqlite(#[from] rusqlite::Error),
 }
