@@ -9,7 +9,7 @@
     onConferma,
     onAnnulla,
   }: {
-    iniziale?: DatiIscritto;
+    iniziale?: Partial<DatiIscritto>;
     etichettaConferma: string;
     onConferma: (dati: DatiIscritto) => Promise<boolean>;
     onAnnulla: () => void;
@@ -20,8 +20,10 @@
 
   let nome = $state(valoriIniziali?.nome ?? "");
   let cognome = $state(valoriIniziali?.cognome ?? "");
+  let dataNascita = $state(valoriIniziali?.dataNascita ?? "");
+  let luogoNascita = $state(valoriIniziali?.luogoNascita ?? "");
   let telefono = $state(valoriIniziali?.telefono ?? "");
-  let dataIscrizione = $state(valoriIniziali?.dataIscrizione ?? oggiIso());
+  let email = $state(valoriIniziali?.email ?? "");
   let note = $state(valoriIniziali?.note ?? "");
   let inCorso = $state(false);
 
@@ -32,8 +34,10 @@
       await onConferma({
         nome,
         cognome,
+        dataNascita,
+        luogoNascita,
         telefono: telefono || null,
-        dataIscrizione,
+        email: email || null,
         note: note || null,
       });
     } finally {
@@ -43,25 +47,43 @@
 </script>
 
 <form onsubmit={conferma}>
-  <div class="griglia">
-    <label>
-      Nome
-      <!-- svelte-ignore a11y_autofocus -->
-      <input bind:value={nome} required autofocus />
-    </label>
-    <label>
-      Cognome
-      <input bind:value={cognome} required />
-    </label>
-    <label>
-      Telefono
-      <input type="tel" bind:value={telefono} placeholder="+39 …" />
-    </label>
-    <label>
-      Data di iscrizione
-      <input type="date" bind:value={dataIscrizione} required />
-    </label>
-  </div>
+  <fieldset>
+    <legend>Dati obbligatori</legend>
+    <div class="griglia">
+      <label>
+        Nome
+        <!-- svelte-ignore a11y_autofocus -->
+        <input bind:value={nome} required autofocus />
+      </label>
+      <label>
+        Cognome
+        <input bind:value={cognome} required />
+      </label>
+      <label>
+        Data di nascita
+        <input type="date" bind:value={dataNascita} max={oggiIso()} required />
+      </label>
+      <label>
+        Luogo di nascita
+        <input bind:value={luogoNascita} required />
+      </label>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Contatti (facoltativi)</legend>
+    <div class="griglia">
+      <label>
+        Telefono
+        <input type="tel" bind:value={telefono} placeholder="+39 …" />
+      </label>
+      <label>
+        Email
+        <input type="email" bind:value={email} placeholder="nome@esempio.it" />
+      </label>
+    </div>
+  </fieldset>
+
   <label>
     Note
     <textarea bind:value={note} rows="3"></textarea>
@@ -76,6 +98,23 @@
   form {
     display: grid;
     gap: 1rem;
+  }
+
+  fieldset {
+    margin: 0;
+    padding: 0;
+    border: none;
+    display: grid;
+    gap: 0.6rem;
+  }
+
+  legend {
+    padding: 0;
+    margin-bottom: 0.5rem;
+    color: var(--colore-testo-secondario);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
 
   .griglia {

@@ -86,7 +86,12 @@ describe("api iscritti", () => {
 
   it("elenca gli iscritti con il filtro", async () => {
     invoke.mockResolvedValue([]);
-    const filtro = { testo: "ross", includiArchiviati: false, stato: "scaduto" as const };
+    const filtro = {
+      testo: "ross",
+      includiArchiviati: false,
+      statoAbbonamento: "scaduto" as const,
+      statoIscrizione: null,
+    };
     await api.elencaIscritti(filtro, 3);
     expect(invoke).toHaveBeenCalledWith("elenca_iscritti", { filtro, pagina: { numero: 3 } });
   });
@@ -126,6 +131,22 @@ describe("api pagamenti", () => {
     const filtro = { dal: "2026-11-01", al: "2026-11-30", metodo: null, iscrittoId: null };
     await api.elencaPagamenti(filtro);
     expect(invoke).toHaveBeenCalledWith("elenca_pagamenti", { filtro, pagina: { numero: 1 } });
+  });
+});
+
+describe("api iscrizioni", () => {
+  beforeEach(() => invoke.mockReset());
+
+  it("chiede la proposta di iscrizione per l'iscritto", async () => {
+    invoke.mockResolvedValue({});
+    await api.proponiIscrizione(5);
+    expect(invoke).toHaveBeenCalledWith("proponi_iscrizione", { iscrittoId: 5 });
+  });
+
+  it("elenca lo storico iscrizioni dell'iscritto", async () => {
+    invoke.mockResolvedValue([]);
+    await api.elencaIscrizioni(5);
+    expect(invoke).toHaveBeenCalledWith("elenca_iscrizioni", { iscrittoId: 5 });
   });
 });
 

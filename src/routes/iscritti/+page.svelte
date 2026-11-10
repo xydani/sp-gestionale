@@ -9,8 +9,8 @@
   import Paginazione from "$lib/components/Paginazione.svelte";
   import { formattaData } from "$lib/format";
   import { ritarda } from "$lib/ritarda";
-  import { ETICHETTE_STATO, STATI_ABBONAMENTO } from "$lib/stato-abbonamento";
-  import type { DatiIscritto, Iscritto, Pagina, StatoAbbonamento } from "$lib/types";
+  import { ETICHETTE_STATO, STATI_VALIDITA } from "$lib/stato-validita";
+  import type { DatiIscritto, Iscritto, Pagina, StatoValidita } from "$lib/types";
 
   const PAUSA_RICERCA_MS = 200;
 
@@ -21,7 +21,8 @@
     totaleElementi: 0,
   });
   let testoRicerca = $state("");
-  let statoFiltro = $state<StatoAbbonamento | "">("");
+  let filtroAbbonamento = $state<StatoValidita | "">("");
+  let filtroIscrizione = $state<StatoValidita | "">("");
   let includiArchiviati = $state(false);
   let nuovoIscrittoAperto = $state(false);
   let caricamento = $state(true);
@@ -30,7 +31,12 @@
   async function carica(numeroPagina = 1) {
     try {
       pagina = await elencaIscritti(
-        { testo: testoRicerca, includiArchiviati, stato: statoFiltro || null },
+        {
+          testo: testoRicerca,
+          includiArchiviati,
+          statoAbbonamento: filtroAbbonamento || null,
+          statoIscrizione: filtroIscrizione || null,
+        },
         numeroPagina,
       );
     } catch (errore) {
@@ -86,10 +92,16 @@
     bind:value={testoRicerca}
     oninput={caricaDopoPausa}
   />
-  <select bind:value={statoFiltro} onchange={() => carica()}>
-    <option value="">Tutti gli stati</option>
-    {#each STATI_ABBONAMENTO as stato (stato)}
-      <option value={stato}>{ETICHETTE_STATO[stato]}</option>
+  <select bind:value={filtroIscrizione} onchange={() => carica()} aria-label="Stato iscrizione">
+    <option value="">Iscrizione: tutte</option>
+    {#each STATI_VALIDITA as stato (stato)}
+      <option value={stato}>Iscrizione: {ETICHETTE_STATO[stato].toLowerCase()}</option>
+    {/each}
+  </select>
+  <select bind:value={filtroAbbonamento} onchange={() => carica()} aria-label="Stato abbonamento">
+    <option value="">Abbonamento: tutti</option>
+    {#each STATI_VALIDITA as stato (stato)}
+      <option value={stato}>Abbonamento: {ETICHETTE_STATO[stato].toLowerCase()}</option>
     {/each}
   </select>
   <label class="spunta">
@@ -104,7 +116,13 @@
 
 <table>
   <thead>
-    <tr><th>Cognome e nome</th><th>Telefono</th><th>Scadenza</th><th>Stato</th></tr>
+    <tr>
+      <th>Cognome e nome</th>
+      <th>Telefono</th>
+      <th>Iscrizione</th>
+      <th>Abbonamento</th>
+      <th>Scadenza abbonamento</th>
+    </tr>
   </thead>
   <tbody>
     {#each pagina.elementi as iscritto (iscritto.id)}
@@ -119,12 +137,17 @@
           {#if iscritto.archiviato}<span class="etichetta-archiviato">archiviato</span>{/if}
         </td>
         <td>{iscritto.telefono ?? "—"}</td>
-        <td>{iscritto.ultimaDataScadenza ? formattaData(iscritto.ultimaDataScadenza) : "—"}</td>
-        <td><BadgeStato stato={iscritto.stato} /></td>
+        <td><BadgeStato stato={iscritto.statoIscrizione} /></td>
+        <td><BadgeStato stato={iscritto.statoAbbonamento} /></td>
+        <td>
+          {iscritto.ultimaDataScadenzaAbbonamento
+            ? formattaData(iscritto.ultimaDataScadenzaAbbonamento)
+            : "—"}
+        </td>
       </tr>
     {:else}
       {#if !caricamento}
-        <tr><td colspan="4" class="vuoto">Nessun iscritto trovato</td></tr>
+        <tr><td colspan="5" class="vuoto">Nessun iscritto trovato</td></tr>
       {/if}
     {/each}
   </tbody>

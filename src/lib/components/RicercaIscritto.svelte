@@ -17,7 +17,12 @@
       risultati = [];
       return;
     }
-    const trovati = await elencaIscritti({ testo, includiArchiviati: false, stato: null });
+    const trovati = await elencaIscritti({
+      testo,
+      includiArchiviati: false,
+      statoAbbonamento: null,
+      statoIscrizione: null,
+    });
     risultati = trovati.elementi.slice(0, RISULTATI_MASSIMI);
   }, PAUSA_RICERCA_MS);
 
@@ -43,7 +48,7 @@
         <li>
           <button type="button" onclick={() => scegli(iscritto)}>
             <span>{iscritto.cognome} {iscritto.nome}</span>
-            <BadgeStato stato={iscritto.stato} />
+            <BadgeStato stato={iscritto.statoAbbonamento} />
           </button>
         </li>
       {/each}

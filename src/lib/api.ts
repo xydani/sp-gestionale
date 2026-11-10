@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import type {
   DatiIscritto,
+  DatiIscrizione,
   DatiPagamento,
   DatiTipologia,
   ErroreApp,
@@ -8,9 +9,11 @@ import type {
   FiltroIscritti,
   FiltroPagamenti,
   Iscritto,
+  Iscrizione,
   Pagamento,
   Pagina,
   PaginaPagamenti,
+  PropostaIscrizione,
   PropostaPagamento,
   StatoDatabase,
   TipologiaAbbonamento,
@@ -84,6 +87,23 @@ export function modificaIscritto(id: number, dati: DatiIscritto): Promise<Iscrit
 
 export function impostaIscrittoArchiviato(id: number, archiviato: boolean): Promise<Iscritto> {
   return invoke<Iscritto>("imposta_iscritto_archiviato", { id, archiviato });
+}
+
+/** Propone quota e periodo dell'anno sportivo (il successivo se l'iscrizione è ancora valida). */
+export function proponiIscrizione(iscrittoId: number): Promise<PropostaIscrizione> {
+  return invoke<PropostaIscrizione>("proponi_iscrizione", { iscrittoId });
+}
+
+export function registraIscrizione(dati: DatiIscrizione): Promise<Iscrizione> {
+  return invoke<Iscrizione>("registra_iscrizione", { dati });
+}
+
+export function elencaIscrizioni(iscrittoId: number): Promise<Iscrizione[]> {
+  return invoke<Iscrizione[]>("elenca_iscrizioni", { iscrittoId });
+}
+
+export function eliminaIscrizione(id: number): Promise<void> {
+  return invoke("elimina_iscrizione", { id });
 }
 
 /** Propone importo e date; con `dataInizio` ricalcola la scadenza da quella data. */

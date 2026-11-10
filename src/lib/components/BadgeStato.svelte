@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { ETICHETTE_STATO } from "$lib/stato-abbonamento";
-  import type { StatoAbbonamento } from "$lib/types";
+  import { ETICHETTE_STATO } from "$lib/stato-validita";
+  import type { StatoValidita } from "$lib/types";
 
-  let { stato }: { stato: StatoAbbonamento } = $props();
+  let { stato }: { stato: StatoValidita } = $props();
 </script>
 
 <span class="badge {stato}">{ETICHETTE_STATO[stato]}</span>

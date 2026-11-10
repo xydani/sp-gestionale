@@ -2,6 +2,7 @@
   import { onMount, untrack } from "svelte";
   import { elencaTipologie, messaggioErrore, proponiPagamento, registraPagamento } from "$lib/api";
   import { centesimiInTestoEuro, euroInCentesimi, oggiIso } from "$lib/format";
+  import { iscrizioneNonValida } from "$lib/iscrizione";
   import { ETICHETTE_METODO, METODI_PAGAMENTO } from "$lib/metodi-pagamento";
   import type { Iscritto, MetodoPagamento, Pagamento, TipologiaAbbonamento } from "$lib/types";
   import RicercaIscritto from "./RicercaIscritto.svelte";
@@ -109,6 +110,14 @@
       <RicercaIscritto onScelto={scegliIscritto} />
     {/if}
   </div>
+
+  {#if iscritto && iscrizioneNonValida(iscritto)}
+    <p class="avviso" role="status">
+      Attenzione: l'iscrizione annuale di {iscritto.nome} è
+      {iscritto.statoIscrizione === "scaduto" ? "scaduta" : "assente"}. Puoi registrare
+      l'abbonamento, ma ricordati di rinnovare l'iscrizione dalla scheda.
+    </p>
+  {/if}
 
   <div class="griglia">
     <label>
@@ -218,6 +227,14 @@
   .errore {
     margin: 0;
     color: var(--colore-errore);
+  }
+
+  .avviso {
+    margin: 0;
+    padding: 0.6rem 0.8rem;
+    border-radius: var(--raggio);
+    background: #fff6e5;
+    color: var(--colore-avviso);
   }
 
   .azioni {

@@ -1,10 +1,10 @@
-import type { StatoAbbonamento } from "./types";
+import type { StatoValidita } from "./types";
 
-export const ETICHETTE_STATO: Record<StatoAbbonamento, string> = {
+export const ETICHETTE_STATO: Record<StatoValidita, string> = {
   attivo: "Attivo",
   in_scadenza: "In scadenza",
   scaduto: "Scaduto",
-  nessuno: "Nessun abbonamento",
+  nessuno: "Assente",
 };
 
-export const STATI_ABBONAMENTO = Object.keys(ETICHETTE_STATO) as StatoAbbonamento[];
+export const STATI_VALIDITA = Object.keys(ETICHETTE_STATO) as StatoValidita[];

@@ -2,56 +2,36 @@
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
   import {
-    elencaPagamenti,
-    eliminaPagamento,
     impostaIscrittoArchiviato,
     messaggioErrore,
     modificaIscritto,
     trovaIscritto,
   } from "$lib/api";
   import { mostraAvviso } from "$lib/avvisi.svelte";
-  import BadgeStato from "$lib/components/BadgeStato.svelte";
   import FormIscritto from "$lib/components/FormIscritto.svelte";
-  import FormPagamento from "$lib/components/FormPagamento.svelte";
-  import Paginazione from "$lib/components/Paginazione.svelte";
-  import TabellaPagamenti from "$lib/components/TabellaPagamenti.svelte";
-  import { confermaEliminazionePagamento } from "$lib/conferma";
+  import SezioneAbbonamento from "$lib/components/SezioneAbbonamento.svelte";
+  import SezioneIscrizione from "$lib/components/SezioneIscrizione.svelte";
   import { formattaData } from "$lib/format";
-  import type { DatiIscritto, Iscritto, Pagamento, PaginaPagamenti } from "$lib/types";
+  import type { DatiIscritto, Iscritto } from "$lib/types";
 
   const idIscritto = $derived(Number(page.params.id));
 
   let iscritto = $state<Iscritto | null>(null);
-  let storico = $state<PaginaPagamenti>({
-    elementi: [],
-    numero: 1,
-    elementiPerPagina: 50,
-    totaleElementi: 0,
-    totaleImportoCent: 0,
-  });
   let inModifica = $state(false);
-  let nuovoPagamentoAperto = $state(false);
   let errore = $state<string | null>(null);
 
   $effect(() => {
     carica(idIscritto);
   });
 
+  /** Ricarica i dati e gli stati dopo ogni modifica di iscrizione o abbonamento. */
   async function carica(id: number) {
     try {
       iscritto = await trovaIscritto(id);
-      await caricaStorico(id, 1);
       errore = null;
     } catch (erroreBackend) {
       errore = messaggioErrore(erroreBackend);
     }
-  }
-
-  async function caricaStorico(id: number, numeroPagina: number) {
-    storico = await elencaPagamenti(
-      { dal: null, al: null, metodo: null, iscrittoId: id },
-      numeroPagina,
-    );
   }
 
   async function salvaModifiche(dati: DatiIscritto): Promise<boolean> {
@@ -64,23 +44,6 @@
     } catch (erroreBackend) {
       mostraAvviso("errore", messaggioErrore(erroreBackend));
       return false;
-    }
-  }
-
-  async function pagamentoRegistrato() {
-    nuovoPagamentoAperto = false;
-    mostraAvviso("successo", "Pagamento registrato");
-    await carica(idIscritto);
-  }
-
-  async function elimina(pagamento: Pagamento) {
-    if (!(await confermaEliminazionePagamento(pagamento))) return;
-    try {
-      await eliminaPagamento(pagamento.id);
-      mostraAvviso("successo", "Pagamento eliminato");
-      await carica(idIscritto);
-    } catch (erroreBackend) {
-      mostraAvviso("errore", messaggioErrore(erroreBackend));
     }
   }
 
@@ -106,29 +69,39 @@
   {:else if iscritto}
     <div class="intestazione">
       <h1>{iscritto.nome} {iscritto.cognome}</h1>
-      <BadgeStato stato={iscritto.stato} />
       {#if iscritto.archiviato}<span class="archiviato">Archiviato</span>{/if}
     </div>
 
     <section class="scheda">
+      <h2>Anagrafica</h2>
       {#if inModifica}
         <FormIscritto
-          iniziale={iscritto}
+          iniziale={{
+            ...iscritto,
+            dataNascita: iscritto.dataNascita ?? "",
+            luogoNascita: iscritto.luogoNascita ?? "",
+          }}
           etichettaConferma="Salva modifiche"
           onConferma={salvaModifiche}
           onAnnulla={() => (inModifica = false)}
         />
       {:else}
         <dl>
+          <dt>Nato/a il</dt>
+          <dd>
+            {iscritto.dataNascita ? formattaData(iscritto.dataNascita) : "—"}
+            {#if iscritto.luogoNascita}a {iscritto.luogoNascita}{/if}
+          </dd>
           <dt>Telefono</dt>
           <dd>{iscritto.telefono ?? "—"}</dd>
-          <dt>Iscritto dal</dt>
-          <dd>{formattaData(iscritto.dataIscrizione)}</dd>
-          <dt>Ultima scadenza</dt>
-          <dd>{iscritto.ultimaDataScadenza ? formattaData(iscritto.ultimaDataScadenza) : "—"}</dd>
+          <dt>Email</dt>
+          <dd>{iscritto.email ?? "—"}</dd>
           <dt>Note</dt>
           <dd class="note">{iscritto.note ?? "—"}</dd>
         </dl>
+        {#if !iscritto.dataNascita || !iscritto.luogoNascita}
+          <p class="avviso">Mancano data o luogo di nascita: completali con "Modifica dati".</p>
+        {/if}
         <div class="azioni">
           <button type="button" onclick={() => (inModifica = true)}>Modifica dati</button>
           <button type="button" class="secondario" onclick={alternaArchiviazione}>
@@ -138,33 +111,10 @@
       {/if}
     </section>
 
-    <section class="scheda">
-      <div class="intestazione-sezione">
-        <h2>Pagamenti</h2>
-        {#if !nuovoPagamentoAperto && !iscritto.archiviato}
-          <button type="button" onclick={() => (nuovoPagamentoAperto = true)}>
-            {storico.totaleElementi > 0 ? "Rinnova abbonamento" : "Primo pagamento"}
-          </button>
-        {/if}
-      </div>
-      {#if nuovoPagamentoAperto}
-        <FormPagamento
-          iscrittoIniziale={iscritto}
-          onRegistrato={pagamentoRegistrato}
-          onAnnulla={() => (nuovoPagamentoAperto = false)}
-        />
-      {/if}
-      <TabellaPagamenti
-        pagamenti={storico.elementi}
-        totaleElementi={storico.totaleElementi}
-        totaleImportoCent={storico.totaleImportoCent}
-        mostraIscritto={false}
-        onElimina={elimina}
-      />
-      {#if storico.totaleElementi > storico.elementiPerPagina}
-        <Paginazione pagina={storico} onCambia={(numero) => caricaStorico(idIscritto, numero)} />
-      {/if}
-    </section>
+    {#key iscritto.id}
+      <SezioneIscrizione {iscritto} onCambiata={() => carica(idIscritto)} />
+      <SezioneAbbonamento {iscritto} onCambiato={() => carica(idIscritto)} />
+    {/key}
   {/if}
 </div>
 
@@ -221,6 +171,11 @@
     white-space: pre-wrap;
   }
 
+  .avviso {
+    margin: 0;
+    color: var(--colore-avviso);
+  }
+
   .azioni {
     display: flex;
     gap: 0.5rem;
@@ -237,12 +192,6 @@
   button.secondario {
     background: transparent;
     color: var(--colore-primario);
-  }
-
-  .intestazione-sezione {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
   }
 
   .errore {

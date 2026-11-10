@@ -26,31 +26,63 @@ export interface TipologiaAbbonamento {
 /** Dati inseriti dall'utente per creare o modificare una tipologia. */
 export type DatiTipologia = Omit<TipologiaAbbonamento, "id" | "attiva">;
 
-export type StatoAbbonamento = "attivo" | "in_scadenza" | "scaduto" | "nessuno";
+/** Stato di validità di iscrizione o abbonamento. */
+export type StatoValidita = "attivo" | "in_scadenza" | "scaduto" | "nessuno";
 
 export interface Iscritto {
   id: number;
   nome: string;
   cognome: string;
+  /** Date ISO YYYY-MM-DD. Assenti solo per iscritti inseriti prima che fossero obbligatorie. */
+  dataNascita: string | null;
+  luogoNascita: string | null;
   telefono: string | null;
-  /** Data ISO YYYY-MM-DD */
-  dataIscrizione: string;
+  email: string | null;
   note: string | null;
   archiviato: boolean;
-  ultimaDataScadenza: string | null;
-  stato: StatoAbbonamento;
+  ultimaDataFineIscrizione: string | null;
+  statoIscrizione: StatoValidita;
+  ultimaDataScadenzaAbbonamento: string | null;
+  statoAbbonamento: StatoValidita;
 }
 
 /** Dati inseriti dall'utente per creare o modificare un iscritto. */
-export type DatiIscritto = Pick<
-  Iscritto,
-  "nome" | "cognome" | "telefono" | "dataIscrizione" | "note"
->;
+export interface DatiIscritto {
+  nome: string;
+  cognome: string;
+  dataNascita: string;
+  luogoNascita: string;
+  telefono: string | null;
+  email: string | null;
+  note: string | null;
+}
 
 export interface FiltroIscritti {
   testo: string;
   includiArchiviati: boolean;
-  stato: StatoAbbonamento | null;
+  statoAbbonamento: StatoValidita | null;
+  statoIscrizione: StatoValidita | null;
+}
+
+/** Iscrizione annuale (anno sportivo) con la quota pagata. */
+export interface Iscrizione {
+  id: number;
+  iscrittoId: number;
+  importoCent: number;
+  dataPagamento: string;
+  metodo: MetodoPagamento;
+  dataInizio: string;
+  dataFine: string;
+  note: string | null;
+}
+
+export type DatiIscrizione = Omit<Iscrizione, "id">;
+
+/** Quota e periodo proposti per una nuova iscrizione, tutti modificabili. */
+export interface PropostaIscrizione {
+  importoCent: number;
+  dataInizio: string;
+  dataFine: string;
 }
 
 export type MetodoPagamento = "contanti" | "carta" | "bonifico" | "altro";
