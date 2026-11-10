@@ -1,7 +1,9 @@
 <script lang="ts">
   import "../app.css";
+  import { goto } from "$app/navigation";
+  import { resolve } from "$app/paths";
   import { onDestroy, onMount, type Snippet } from "svelte";
-  import { bloccaDatabase, leggiStatoDatabase } from "$lib/api";
+  import { bloccaDatabase, configurazioneInizialeCompletata, leggiStatoDatabase } from "$lib/api";
   import {
     adattaFinestraDiAccesso,
     eFinestraDiAccesso,
@@ -58,12 +60,21 @@
   async function aggiornaStato() {
     statoDatabase = await leggiStatoDatabase();
     if (!finestraDiAccesso) {
-      if (statoDatabase === "sbloccato") avviaControlloPromemoria();
-      else fermaControlloPromemoria();
+      if (statoDatabase === "sbloccato") {
+        avviaControlloPromemoria();
+        await proponiConfigurazioneIniziale();
+      } else {
+        fermaControlloPromemoria();
+      }
     }
     if (finestraDiAccesso && statoDatabase !== "sbloccato") {
       await adattaFinestraDiAccesso(statoDatabase === "da_creare");
     }
+  }
+
+  /** Un archivio appena creato parte dalla configurazione guidata. */
+  async function proponiConfigurazioneIniziale() {
+    if (!(await configurazioneInizialeCompletata())) await goto(resolve("/benvenuto"));
   }
 
   async function gestisciCambioStato(cambio: CambioStatoDatabase) {
