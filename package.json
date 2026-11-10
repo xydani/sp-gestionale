@@ -16,7 +16,7 @@
     "test": "vitest run",
     "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml",
     "lint:rust": "cargo fmt --manifest-path src-tauri/Cargo.toml --check && cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings",
-    "dati:prova": "cargo run --manifest-path src-tauri/Cargo.toml --bin genera_dati_prova -- dati-prova/palestra-prova.db"
+    "dati:prova": "cargo run --manifest-path src-tauri/Cargo.toml --example genera_dati_prova -- dati-prova/palestra-prova.db"
   },
   "license": "MIT",
   "dependencies": {
