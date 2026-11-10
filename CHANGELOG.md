@@ -2,6 +2,8 @@
 
 ## [Non rilasciato]
 
+## [0.1.3] - 2026-11-10
+
 - Corretto: un importo scritto con il punto (es. 30.50) veniva letto cento volte più grande
 - Corretto: dopo un tentativo di salvataggio senza scelta, una tendina obbligatoria bloccava il modulo anche dopo aver scelto
 - Corretto: un backup di una versione più recente rendeva l'archivio inapribile; ora viene rifiutato prima
