@@ -77,12 +77,21 @@
     flex: 1;
   }
 
+  ul {
+    display: grid;
+    gap: 2px;
+    align-content: start;
+  }
+
   a {
     display: block;
     padding: 0.6rem 0.75rem;
     border-radius: var(--raggio);
     color: inherit;
     text-decoration: none;
+    transition:
+      background-color 0.15s,
+      color 0.15s;
   }
 
   .badge {
@@ -98,10 +107,21 @@
     text-align: center;
   }
 
-  a:hover,
-  a.attiva {
-    background: var(--colore-menu-attivo);
+  a:hover {
+    background: rgb(255 255 255 / 0.06);
     color: #fff;
+  }
+
+  /* Voce attiva: fondo azzurrato e barretta a sinistra */
+  a.attiva {
+    background: var(--colore-menu-selezionato);
+    box-shadow: inset 3px 0 0 var(--colore-menu-accento);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  a:focus-visible {
+    outline-color: var(--colore-menu-accento);
   }
 
   .azioni {
@@ -115,5 +135,10 @@
     border: 1px solid var(--colore-menu-attivo);
     border-radius: var(--raggio);
     padding: 0.5rem;
+  }
+
+  .azioni button:hover {
+    background: rgb(255 255 255 / 0.06);
+    border-color: var(--colore-menu-accento);
   }
 </style>
