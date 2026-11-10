@@ -58,7 +58,7 @@
   }
 </script>
 
-<section>
+<section class="scheda">
   <h2>Backup</h2>
   <p>
     Ogni giorno, al primo sblocco, viene salvato un backup automatico criptato in:
@@ -106,20 +106,6 @@
 </section>
 
 <style>
-  section {
-    display: grid;
-    gap: 0.75rem;
-    background: var(--colore-superficie);
-    border: 1px solid var(--colore-bordo);
-    border-radius: var(--raggio);
-    padding: 1.5rem;
-  }
-
-  h2,
-  p {
-    margin: 0;
-  }
-
   code {
     word-break: break-all;
   }

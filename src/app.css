@@ -44,3 +44,18 @@ input {
   max-width: 760px;
   margin: 0 auto;
 }
+
+/* Riquadro delle sezioni di impostazioni e configurazione */
+.scheda {
+  display: grid;
+  gap: 0.75rem;
+  background: var(--colore-superficie);
+  border: 1px solid var(--colore-bordo);
+  border-radius: var(--raggio);
+  padding: 1.5rem;
+}
+
+.scheda h2,
+.scheda p {
+  margin: 0;
+}
