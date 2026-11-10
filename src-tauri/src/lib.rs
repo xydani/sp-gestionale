@@ -1,3 +1,4 @@
+pub mod domain;
 pub mod versione;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
