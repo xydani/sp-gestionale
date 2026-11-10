@@ -16,7 +16,11 @@
   --colore-primario-tenue: #eef0fc;
   --colore-focus: rgb(14 42 185 / 0.2);
   --colore-errore: #c62828;
+  --colore-errore-tenue: #fdecec;
   --colore-avviso: #b26a00;
+  --colore-avviso-tenue: #fdf3e3;
+  --colore-successo: #1b7a3d;
+  --colore-successo-tenue: #e7f5ec;
   /* Menu blu notte, ricavato dal blu del logo */
   --colore-menu: #0f1a4a;
   --colore-menu-testo: #c3cae6;
