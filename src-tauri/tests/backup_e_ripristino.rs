@@ -162,3 +162,34 @@ fn il_ripristino_con_password_sbagliata_non_tocca_i_dati() {
         sp_gestionale_lib::stato_app::StatoDatabase::Sbloccato
     );
 }
+
+#[test]
+fn un_backup_di_una_versione_piu_recente_non_sostituisce_l_archivio() {
+    let cartella = tempfile::tempdir().unwrap();
+    let stato = StatoApp::con_orologio(cartella.path().join("palestra.db"), orologio_fisso);
+    stato
+        .crea_database(segreto(PASSWORD_TEST), segreto(PASSWORD_TEST))
+        .unwrap();
+    let percorso_backup = stato.esegui_backup_manuale(cartella.path()).unwrap();
+    // Il backup sembra creato da un programma con uno schema più nuovo
+    let backup = apri_database_criptato(&percorso_backup, PASSWORD_TEST).unwrap();
+    backup
+        .pragma_update(None, "user_version", versione_schema_supportata() + 1)
+        .unwrap();
+    drop(backup);
+
+    let errore = stato
+        .ripristina_backup(&percorso_backup, segreto(PASSWORD_TEST))
+        .unwrap_err();
+
+    assert_eq!(errore.codice, "versione_database_successiva");
+    assert_eq!(
+        stato.stato_database(),
+        sp_gestionale_lib::stato_app::StatoDatabase::Sbloccato
+    );
+    let archivio = apri_database_criptato(&cartella.path().join("palestra.db"), PASSWORD_TEST);
+    assert_eq!(
+        versione_schema_corrente(&archivio.unwrap()).unwrap(),
+        versione_schema_supportata()
+    );
+}

@@ -8,6 +8,7 @@ use rusqlite::Connection;
 
 use super::ErroreDatabase;
 use super::crittografia::apri_database_criptato;
+use super::migrazioni::{versione_schema_corrente, versione_schema_supportata};
 
 pub const PREFISSO_BACKUP_GIORNALIERO: &str = "backup-";
 pub const PREFISSO_BACKUP_PRE_MIGRAZIONE: &str = "pre-migrazione-";
@@ -126,9 +127,19 @@ pub fn elimina_backup_giornalieri_in_eccesso(
     Ok(())
 }
 
-/// Verifica che il file sia un backup valido apribile con la password indicata.
+/// Verifica che il file sia un backup apribile con la password indicata e che questa
+/// versione del programma sappia leggerlo: va controllato prima di sostituire l'archivio.
 pub fn verifica_backup(percorso_backup: &Path, password: &str) -> Result<(), ErroreDatabase> {
-    apri_database_criptato(percorso_backup, password).map(drop)
+    let connessione = apri_database_criptato(percorso_backup, password)?;
+    let versione_database = versione_schema_corrente(&connessione)?;
+    let versione_supportata = versione_schema_supportata();
+    if versione_database > versione_supportata {
+        return Err(ErroreDatabase::VersioneDatabaseSuccessiva {
+            versione_database,
+            versione_supportata,
+        });
+    }
+    Ok(())
 }
 
 /// Sostituisce il file del database con il backup. La connessione al database va chiusa prima.
