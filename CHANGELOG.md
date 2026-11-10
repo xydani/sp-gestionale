@@ -2,6 +2,10 @@
 
 ## [Non rilasciato]
 
+- Calendario per scegliere le date con il mouse
+- Grafica più curata di campi, tendine, pulsanti e menu
+- Configurazione guidata con il passo del listino abbonamenti
+
 ## [0.1.0] - 2026-11-10
 
 Prima versione.
