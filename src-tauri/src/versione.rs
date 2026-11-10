@@ -7,8 +7,21 @@ pub fn versione_app() -> &'static str {
 mod test {
     use super::*;
 
+    fn versione_in(json: &str) -> String {
+        let valore: serde_json::Value = serde_json::from_str(json).unwrap();
+        valore["version"].as_str().unwrap().to_string()
+    }
+
+    /// Al rilascio la versione va cambiata in tre file: devono restare allineati.
     #[test]
-    fn versione_app_corrisponde_a_cargo_toml() {
-        assert_eq!(versione_app(), "0.1.0");
+    fn la_versione_coincide_in_cargo_tauri_e_npm() {
+        assert_eq!(
+            versione_in(include_str!("../tauri.conf.json")),
+            versione_app()
+        );
+        assert_eq!(
+            versione_in(include_str!("../../package.json")),
+            versione_app()
+        );
     }
 }
