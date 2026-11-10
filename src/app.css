@@ -7,11 +7,16 @@
   --colore-bordo: #dde1e8;
   --colore-primario: #0e2ab9;
   --colore-primario-testo: #ffffff;
+  --colore-primario-tenue: #e9ecfc;
+  --colore-focus: rgb(14 42 185 / 0.22);
+  --colore-bordo-hover: #b8c0cd;
   --colore-errore: #c62828;
   --colore-avviso: #b26a00;
   --colore-menu: #1d2330;
   --colore-menu-testo: #d7dbe3;
   --colore-menu-attivo: #2f3a4f;
+  --colore-menu-selezionato: rgb(98 124 255 / 0.2);
+  --colore-menu-accento: #8197ff;
   --raggio: 8px;
   --larghezza-menu: 220px;
   font-family: system-ui, "Segoe UI", Roboto, sans-serif;
@@ -33,10 +38,76 @@ body {
 button {
   font: inherit;
   cursor: pointer;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s,
+    color 0.15s,
+    filter 0.15s;
 }
 
-input {
+input,
+select,
+textarea {
   font: inherit;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+::selection {
+  background: var(--colore-primario-tenue);
+}
+
+/*
+ * Campi e controlli: i componenti definiscono bordo e sfondo; qui si aggiungono gli stati.
+ * Il prefisso :root dà la precedenza su quegli stili senza usare !important.
+ */
+:root :is(input, select, textarea):not([type="checkbox"], [type="radio"]):hover:not(:disabled) {
+  border-color: var(--colore-bordo-hover);
+}
+
+:root :is(input, select, textarea):not([type="checkbox"], [type="radio"]):focus {
+  outline: none;
+  border-color: var(--colore-primario);
+  box-shadow: 0 0 0 3px var(--colore-focus);
+}
+
+:root :is(input, select, textarea):disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Tendine con freccia propria, uguale su Windows, Linux e macOS */
+:root select:not([multiple]) {
+  appearance: none;
+  padding-right: 2.2rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%235b6476' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 0.75rem;
+  cursor: pointer;
+}
+
+input[type="checkbox"],
+input[type="radio"],
+progress {
+  accent-color: var(--colore-primario);
+}
+
+:root button:focus-visible,
+:root a:focus-visible {
+  outline: 2px solid var(--colore-primario);
+  outline-offset: 2px;
+}
+
+:root button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+/* Pulsanti pieni un po' più scuri al passaggio del mouse */
+:root button:hover:not(:disabled) {
+  filter: brightness(0.94);
 }
 
 /* Colonna centrata per le pagine con poco contenuto (moduli, impostazioni) */
