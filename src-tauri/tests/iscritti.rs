@@ -9,8 +9,10 @@ use sp_gestionale_lib::dati_prova::genera_dati_prova;
 use sp_gestionale_lib::db::ErroreDatabase;
 use sp_gestionale_lib::db::iscritti::{
     DatiIscritto, FiltroIscritti, Riferimento, crea_iscritto, elenca_iscritti,
-    imposta_iscritto_archiviato, modifica_iscritto, riferimento_per_oggi, trova_iscritto,
+    elenca_iscritti_paginati, imposta_iscritto_archiviato, modifica_iscritto, riferimento_per_oggi,
+    trova_iscritto,
 };
+use sp_gestionale_lib::db::paginazione::RichiestaPagina;
 use sp_gestionale_lib::domain::stato::StatoAbbonamento;
 
 const OGGI: NaiveDate = NaiveDate::from_ymd_opt(2026, 11, 10).unwrap();
@@ -235,4 +237,69 @@ fn con_250_iscritti_ricerca_ed_elenco_sono_veloci() {
         durata_ricerca < TEMPO_MASSIMO_RICERCA,
         "ricerca in {durata_ricerca:?}"
     );
+}
+
+#[test]
+fn con_250_iscritti_le_pagine_sono_da_50() {
+    let database = DatabaseTemporaneo::nuovo();
+    let mut connessione = database.crea_con_schema();
+    genera_dati_prova(&mut connessione, 250, OGGI, 11).unwrap();
+    let filtro = FiltroIscritti::default();
+    let tutti = elenca_iscritti(&connessione, &filtro, RIFERIMENTO).unwrap();
+
+    let pagina = |numero| {
+        elenca_iscritti_paginati(
+            &connessione,
+            &filtro,
+            RIFERIMENTO,
+            RichiestaPagina { numero },
+        )
+        .unwrap()
+    };
+
+    assert_eq!(pagina(1).elementi[..], tutti[..50]);
+    assert_eq!(pagina(5).elementi[..], tutti[200..250]);
+    assert!(pagina(6).elementi.is_empty());
+    assert_eq!(pagina(1).totale_elementi, 250);
+}
+
+#[test]
+fn il_filtro_per_stato_nel_database_coincide_con_lo_stato_calcolato() {
+    let database = DatabaseTemporaneo::nuovo();
+    let mut connessione = database.crea_con_schema();
+    genera_dati_prova(&mut connessione, 250, OGGI, 11).unwrap();
+    let tutti = elenca_iscritti(&connessione, &FiltroIscritti::default(), RIFERIMENTO).unwrap();
+
+    for stato in [
+        StatoAbbonamento::Attivo,
+        StatoAbbonamento::InScadenza,
+        StatoAbbonamento::Scaduto,
+        StatoAbbonamento::Nessuno,
+    ] {
+        let filtro = FiltroIscritti {
+            stato: Some(stato),
+            ..Default::default()
+        };
+        let pagina = elenca_iscritti_paginati(
+            &connessione,
+            &filtro,
+            RIFERIMENTO,
+            RichiestaPagina::default(),
+        )
+        .unwrap();
+        let attesi: Vec<_> = tutti.iter().filter(|i| i.stato == stato).collect();
+
+        assert!(
+            !attesi.is_empty(),
+            "nessun iscritto {stato:?} nei dati di prova"
+        );
+        assert_eq!(
+            pagina.totale_elementi as usize,
+            attesi.len(),
+            "conteggio {stato:?}"
+        );
+        assert!(pagina.elementi.iter().all(|i| i.stato == stato));
+        let prima_pagina_attesa: Vec<_> = attesi.into_iter().take(50).cloned().collect();
+        assert_eq!(pagina.elementi, prima_pagina_attesa);
+    }
 }

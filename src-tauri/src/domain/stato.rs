@@ -1,4 +1,4 @@
-use chrono::NaiveDate;
+use chrono::{Days, NaiveDate};
 use serde::{Deserialize, Serialize};
 
 /// Giorni di preavviso predefiniti per segnalare un abbonamento in scadenza.
@@ -32,6 +32,54 @@ pub fn calcola_stato_abbonamento(
         StatoAbbonamento::InScadenza
     } else {
         StatoAbbonamento::Attivo
+    }
+}
+
+/// Intervallo di date di scadenza che corrisponde a uno stato: permette di filtrare
+/// per stato direttamente nel database, con la stessa regola di `calcola_stato_abbonamento`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CondizioneScadenza {
+    /// Nessun pagamento: scadenza assente.
+    Assente,
+    /// Scadenza compresa tra le due date (estremi inclusi, `None` = illimitato).
+    Tra {
+        dal: Option<NaiveDate>,
+        al: Option<NaiveDate>,
+    },
+}
+
+impl CondizioneScadenza {
+    pub fn comprende(self, ultima_data_scadenza: Option<NaiveDate>) -> bool {
+        match (self, ultima_data_scadenza) {
+            (Self::Assente, scadenza) => scadenza.is_none(),
+            (Self::Tra { .. }, None) => false,
+            (Self::Tra { dal, al }, Some(scadenza)) => {
+                dal.is_none_or(|dal| scadenza >= dal) && al.is_none_or(|al| scadenza <= al)
+            }
+        }
+    }
+}
+
+pub fn condizione_scadenza_per_stato(
+    stato: StatoAbbonamento,
+    oggi: NaiveDate,
+    giorni_preavviso: u32,
+) -> CondizioneScadenza {
+    let ultimo_giorno_di_preavviso = oggi + Days::new(u64::from(giorni_preavviso));
+    match stato {
+        StatoAbbonamento::Nessuno => CondizioneScadenza::Assente,
+        StatoAbbonamento::Scaduto => CondizioneScadenza::Tra {
+            dal: None,
+            al: oggi.pred_opt(),
+        },
+        StatoAbbonamento::InScadenza => CondizioneScadenza::Tra {
+            dal: Some(oggi),
+            al: Some(ultimo_giorno_di_preavviso),
+        },
+        StatoAbbonamento::Attivo => CondizioneScadenza::Tra {
+            dal: ultimo_giorno_di_preavviso.succ_opt(),
+            al: None,
+        },
     }
 }
 
@@ -97,6 +145,31 @@ mod test {
         let tre_giorni_fa = OGGI - chrono::Duration::days(3);
         assert_eq!(giorni_alla_scadenza(tre_giorni_fa, OGGI), -3);
         assert_eq!(giorni_alla_scadenza(OGGI, OGGI), 0);
+    }
+
+    #[test]
+    fn la_condizione_di_ogni_stato_coincide_con_il_calcolo_dello_stato() {
+        let stati = [
+            StatoAbbonamento::Attivo,
+            StatoAbbonamento::InScadenza,
+            StatoAbbonamento::Scaduto,
+            StatoAbbonamento::Nessuno,
+        ];
+        let scadenze = std::iter::once(None)
+            .chain((-40..=40).map(|giorni| Some(OGGI + chrono::Duration::days(giorni))));
+        for scadenza in scadenze {
+            for giorni_preavviso in [0, 7, 14] {
+                let stato_calcolato = calcola_stato_abbonamento(scadenza, OGGI, giorni_preavviso);
+                for stato in stati {
+                    let condizione = condizione_scadenza_per_stato(stato, OGGI, giorni_preavviso);
+                    assert_eq!(
+                        condizione.comprende(scadenza),
+                        stato == stato_calcolato,
+                        "scadenza {scadenza:?}, preavviso {giorni_preavviso}, stato {stato:?}"
+                    );
+                }
+            }
+        }
     }
 
     #[test]

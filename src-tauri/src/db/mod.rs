@@ -6,6 +6,7 @@ pub mod impostazioni;
 pub mod iscritti;
 pub mod migrazioni;
 pub mod pagamenti;
+pub mod paginazione;
 pub mod tipologie;
 
 use thiserror::Error;

@@ -1,7 +1,10 @@
 use chrono::NaiveDate;
 use tauri::State;
 
-use crate::db::pagamenti::{self, DatiPagamento, FiltroPagamenti, Pagamento, PropostaPagamento};
+use crate::db::pagamenti::{
+    self, DatiPagamento, FiltroPagamenti, Pagamento, PaginaPagamenti, PropostaPagamento,
+};
+use crate::db::paginazione::RichiestaPagina;
 use crate::errore::ErroreApp;
 use crate::stato_app::StatoApp;
 
@@ -30,8 +33,11 @@ pub fn registra_pagamento(
 pub fn elenca_pagamenti(
     stato: State<'_, StatoApp>,
     filtro: FiltroPagamenti,
-) -> Result<Vec<Pagamento>, ErroreApp> {
-    stato.con_connessione(|connessione| pagamenti::elenca_pagamenti(connessione, &filtro))
+    pagina: RichiestaPagina,
+) -> Result<PaginaPagamenti, ErroreApp> {
+    stato.con_connessione(|connessione| {
+        pagamenti::elenca_pagamenti_paginati(connessione, &filtro, pagina)
+    })
 }
 
 #[tauri::command]

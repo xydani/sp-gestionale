@@ -7,8 +7,10 @@ use serde::{Deserialize, Serialize};
 
 use super::ErroreDatabase;
 use super::impostazioni::{CHIAVE_GIORNI_PREAVVISO, leggi_impostazione_numerica};
+use super::paginazione::{ELEMENTI_PER_PAGINA, Pagina, RichiestaPagina};
 use crate::domain::stato::{
-    GIORNI_PREAVVISO_PREDEFINITI, StatoAbbonamento, calcola_stato_abbonamento,
+    CondizioneScadenza, GIORNI_PREAVVISO_PREDEFINITI, StatoAbbonamento, calcola_stato_abbonamento,
+    condizione_scadenza_per_stato,
 };
 use crate::domain::testo::parole_di_ricerca;
 
@@ -75,11 +77,66 @@ const SELEZIONE_ISCRITTI: &str = "
     FROM iscritti i
     JOIN v_ultima_scadenza_iscritti u ON u.iscritto_id = i.id";
 
+/// Tutti gli iscritti che corrispondono al filtro (senza paginazione).
 pub fn elenca_iscritti(
     connessione: &Connection,
     filtro: &FiltroIscritti,
     riferimento: Riferimento,
 ) -> Result<Vec<Iscritto>, ErroreDatabase> {
+    let (clausola_where, parametri) = condizioni_filtro(filtro, riferimento);
+    let mut query = connessione.prepare(&format!(
+        "{SELEZIONE_ISCRITTI} {clausola_where} {ORDINAMENTO_ISCRITTI}"
+    ))?;
+    let iscritti = query
+        .query_map(params_from_iter(parametri), |riga| {
+            leggi_iscritto(riga, riferimento)
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(iscritti)
+}
+
+/// Una pagina dell'elenco filtrato: il database legge solo gli iscritti della pagina.
+pub fn elenca_iscritti_paginati(
+    connessione: &Connection,
+    filtro: &FiltroIscritti,
+    riferimento: Riferimento,
+    richiesta: RichiestaPagina,
+) -> Result<Pagina<Iscritto>, ErroreDatabase> {
+    let (clausola_where, parametri) = condizioni_filtro(filtro, riferimento);
+
+    let totale_elementi: u32 = connessione.query_row(
+        &format!(
+            "SELECT count(*) FROM iscritti i
+             JOIN v_ultima_scadenza_iscritti u ON u.iscritto_id = i.id {clausola_where}"
+        ),
+        params_from_iter(parametri.iter()),
+        |riga| riga.get(0),
+    )?;
+
+    let mut parametri_pagina = parametri;
+    parametri_pagina.push(Value::from(i64::from(ELEMENTI_PER_PAGINA)));
+    parametri_pagina.push(Value::from(i64::from(richiesta.scarto())));
+    let mut query = connessione.prepare(&format!(
+        "{SELEZIONE_ISCRITTI} {clausola_where} {ORDINAMENTO_ISCRITTI} LIMIT ? OFFSET ?"
+    ))?;
+    let elementi = query
+        .query_map(params_from_iter(parametri_pagina), |riga| {
+            leggi_iscritto(riga, riferimento)
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(Pagina {
+        elementi,
+        numero: richiesta.numero.max(1),
+        elementi_per_pagina: ELEMENTI_PER_PAGINA,
+        totale_elementi,
+    })
+}
+
+const ORDINAMENTO_ISCRITTI: &str = "ORDER BY i.cognome COLLATE NOCASE, i.nome COLLATE NOCASE, i.id";
+
+/// Clausola WHERE e parametri del filtro, compreso lo stato tradotto in date di scadenza.
+fn condizioni_filtro(filtro: &FiltroIscritti, riferimento: Riferimento) -> (String, Vec<Value>) {
     let mut condizioni = vec!["(i.archiviato = 0 OR ?1 = 1)".to_string()];
     let mut parametri: Vec<Value> = vec![Value::from(filtro.includi_archiviati)];
 
@@ -92,24 +149,27 @@ pub fn elenca_iscritti(
         ));
     }
 
-    let sql = format!(
-        "{SELEZIONE_ISCRITTI} WHERE {} ORDER BY i.cognome COLLATE NOCASE, i.nome COLLATE NOCASE, i.id",
-        condizioni.join(" AND ")
-    );
-    let mut query = connessione.prepare(&sql)?;
-    let iscritti = query
-        .query_map(params_from_iter(parametri), |riga| {
-            leggi_iscritto(riga, riferimento)
-        })?
-        .collect::<Result<Vec<_>, _>>()?;
+    if let Some(stato) = filtro.stato {
+        match condizione_scadenza_per_stato(stato, riferimento.oggi, riferimento.giorni_preavviso) {
+            CondizioneScadenza::Assente => {
+                condizioni.push("u.ultima_data_scadenza IS NULL".into());
+            }
+            CondizioneScadenza::Tra { dal, al } => {
+                condizioni.push("u.ultima_data_scadenza IS NOT NULL".into());
+                for (operatore, data) in [(">=", dal), ("<=", al)] {
+                    if let Some(data) = data {
+                        parametri.push(Value::from(data.to_string()));
+                        condizioni.push(format!(
+                            "u.ultima_data_scadenza {operatore} ?{}",
+                            parametri.len()
+                        ));
+                    }
+                }
+            }
+        }
+    }
 
-    Ok(match filtro.stato {
-        Some(stato) => iscritti
-            .into_iter()
-            .filter(|iscritto| iscritto.stato == stato)
-            .collect(),
-        None => iscritti,
-    })
+    (format!("WHERE {}", condizioni.join(" AND ")), parametri)
 }
 
 pub fn trova_iscritto(

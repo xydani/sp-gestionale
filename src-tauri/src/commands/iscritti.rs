@@ -1,6 +1,7 @@
 use tauri::State;
 
 use crate::db::iscritti::{self, DatiIscritto, FiltroIscritti, Iscritto, riferimento_per_oggi};
+use crate::db::paginazione::{Pagina, RichiestaPagina};
 use crate::errore::ErroreApp;
 use crate::stato_app::StatoApp;
 
@@ -8,11 +9,12 @@ use crate::stato_app::StatoApp;
 pub fn elenca_iscritti(
     stato: State<'_, StatoApp>,
     filtro: FiltroIscritti,
-) -> Result<Vec<Iscritto>, ErroreApp> {
+    pagina: RichiestaPagina,
+) -> Result<Pagina<Iscritto>, ErroreApp> {
     let oggi = stato.oggi();
     stato.con_connessione(|connessione| {
         let riferimento = riferimento_per_oggi(connessione, oggi)?;
-        iscritti::elenca_iscritti(connessione, &filtro, riferimento)
+        iscritti::elenca_iscritti_paginati(connessione, &filtro, riferimento, pagina)
     })
 }
 

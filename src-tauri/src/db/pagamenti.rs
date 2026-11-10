@@ -6,6 +6,7 @@ use rusqlite::{Connection, OptionalExtension, Row, params, params_from_iter};
 use serde::{Deserialize, Serialize};
 
 use super::ErroreDatabase;
+use super::paginazione::{ELEMENTI_PER_PAGINA, Pagina, RichiestaPagina};
 use super::tipologie::trova_tipologia;
 use crate::domain::date::calcola_data_scadenza;
 use crate::domain::pagamento::MetodoPagamento;
@@ -53,6 +54,15 @@ pub struct PropostaPagamento {
     pub data_scadenza: NaiveDate,
     /// Pagamento con la scadenza più recente: il nuovo pagamento ne è il rinnovo.
     pub rinnovo_di_id: Option<i64>,
+}
+
+/// Una pagina di pagamenti con il totale incassato di tutti quelli filtrati.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PaginaPagamenti {
+    #[serde(flatten)]
+    pub pagina: Pagina<Pagamento>,
+    pub totale_importo_cent: i64,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
@@ -154,6 +164,56 @@ pub fn elenca_pagamenti(
     connessione: &Connection,
     filtro: &FiltroPagamenti,
 ) -> Result<Vec<Pagamento>, ErroreDatabase> {
+    let (clausola_where, parametri) = condizioni_filtro(filtro);
+    let mut query = connessione.prepare(&format!(
+        "{SELEZIONE_PAGAMENTI} {clausola_where} ORDER BY p.data_pagamento DESC, p.id DESC"
+    ))?;
+    let pagamenti = query
+        .query_map(params_from_iter(parametri), leggi_pagamento)?
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(pagamenti)
+}
+
+/// Una pagina di pagamenti, più recenti per primi; conteggio e totale valgono per tutto il filtro.
+pub fn elenca_pagamenti_paginati(
+    connessione: &Connection,
+    filtro: &FiltroPagamenti,
+    richiesta: RichiestaPagina,
+) -> Result<PaginaPagamenti, ErroreDatabase> {
+    let (clausola_where, parametri) = condizioni_filtro(filtro);
+
+    let (totale_elementi, totale_importo_cent): (u32, i64) = connessione.query_row(
+        &format!(
+            "SELECT count(*), coalesce(sum(p.importo_cent), 0) FROM pagamenti p {clausola_where}"
+        ),
+        params_from_iter(parametri.iter()),
+        |riga| Ok((riga.get(0)?, riga.get(1)?)),
+    )?;
+
+    let mut parametri_pagina = parametri;
+    parametri_pagina.push(Value::from(i64::from(ELEMENTI_PER_PAGINA)));
+    parametri_pagina.push(Value::from(i64::from(richiesta.scarto())));
+    let mut query = connessione.prepare(&format!(
+        "{SELEZIONE_PAGAMENTI} {clausola_where}
+         ORDER BY p.data_pagamento DESC, p.id DESC LIMIT ? OFFSET ?"
+    ))?;
+    let elementi = query
+        .query_map(params_from_iter(parametri_pagina), leggi_pagamento)?
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(PaginaPagamenti {
+        pagina: Pagina {
+            elementi,
+            numero: richiesta.numero.max(1),
+            elementi_per_pagina: ELEMENTI_PER_PAGINA,
+            totale_elementi,
+        },
+        totale_importo_cent,
+    })
+}
+
+/// Clausola WHERE e parametri corrispondenti al filtro.
+fn condizioni_filtro(filtro: &FiltroPagamenti) -> (String, Vec<Value>) {
     let mut condizioni: Vec<&str> = Vec::new();
     let mut parametri: Vec<Value> = Vec::new();
     if let Some(dal) = filtro.dal {
@@ -177,13 +237,7 @@ pub fn elenca_pagamenti(
     } else {
         format!("WHERE {}", condizioni.join(" AND "))
     };
-    let mut query = connessione.prepare(&format!(
-        "{SELEZIONE_PAGAMENTI} {clausola_where} ORDER BY p.data_pagamento DESC, p.id DESC"
-    ))?;
-    let pagamenti = query
-        .query_map(params_from_iter(parametri), leggi_pagamento)?
-        .collect::<Result<Vec<_>, _>>()?;
-    Ok(pagamenti)
+    (clausola_where, parametri)
 }
 
 /// Elimina un pagamento registrato per errore. Gli eventuali rinnovi collegati restano.

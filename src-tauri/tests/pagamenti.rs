@@ -7,9 +7,10 @@ use sp_gestionale_lib::dati_prova::genera_dati_prova;
 use sp_gestionale_lib::db::ErroreDatabase;
 use sp_gestionale_lib::db::iscritti::{DatiIscritto, Riferimento, crea_iscritto, trova_iscritto};
 use sp_gestionale_lib::db::pagamenti::{
-    DatiPagamento, FiltroPagamenti, elenca_pagamenti, elimina_pagamento, proponi_pagamento,
-    registra_pagamento,
+    DatiPagamento, FiltroPagamenti, elenca_pagamenti, elenca_pagamenti_paginati, elimina_pagamento,
+    proponi_pagamento, registra_pagamento,
 };
+use sp_gestionale_lib::db::paginazione::{ELEMENTI_PER_PAGINA, RichiestaPagina};
 use sp_gestionale_lib::db::tipologie::{DatiTipologia, modifica_tipologia};
 use sp_gestionale_lib::domain::date::UnitaDurata;
 use sp_gestionale_lib::domain::pagamento::MetodoPagamento;
@@ -268,4 +269,40 @@ fn si_elimina_un_pagamento_registrato_per_errore() {
         elimina_pagamento(&connessione, primo),
         Err(ErroreDatabase::NonTrovato)
     ));
+}
+
+#[test]
+fn le_pagine_contengono_al_massimo_50_pagamenti_e_il_totale_e_su_tutto_il_filtro() {
+    let database = DatabaseTemporaneo::nuovo();
+    let mut connessione = database.crea_con_schema();
+    genera_dati_prova(&mut connessione, 250, OGGI, 5).unwrap();
+    let filtro = FiltroPagamenti::default();
+    let tutti = elenca_pagamenti(&connessione, &filtro).unwrap();
+    let totale_atteso: i64 = tutti.iter().map(|pagamento| pagamento.importo_cent).sum();
+
+    let prima =
+        elenca_pagamenti_paginati(&connessione, &filtro, RichiestaPagina { numero: 1 }).unwrap();
+    let seconda =
+        elenca_pagamenti_paginati(&connessione, &filtro, RichiestaPagina { numero: 2 }).unwrap();
+
+    assert_eq!(prima.pagina.elementi.len(), ELEMENTI_PER_PAGINA as usize);
+    assert_eq!(prima.pagina.totale_elementi as usize, tutti.len());
+    assert_eq!(prima.totale_importo_cent, totale_atteso);
+    assert_eq!(prima.pagina.elementi[..], tutti[..50]);
+    assert_eq!(seconda.pagina.elementi[..], tutti[50..100]);
+}
+
+#[test]
+fn senza_pagamenti_la_pagina_e_vuota_con_totale_zero() {
+    let database = DatabaseTemporaneo::nuovo();
+    let connessione = database.crea_con_schema();
+    let pagina = elenca_pagamenti_paginati(
+        &connessione,
+        &FiltroPagamenti::default(),
+        RichiestaPagina::default(),
+    )
+    .unwrap();
+    assert!(pagina.pagina.elementi.is_empty());
+    assert_eq!(pagina.pagina.totale_elementi, 0);
+    assert_eq!(pagina.totale_importo_cent, 0);
 }
