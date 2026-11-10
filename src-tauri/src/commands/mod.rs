@@ -2,5 +2,6 @@
 
 pub mod backup;
 pub mod iscritti;
+pub mod pagamenti;
 pub mod sblocco;
 pub mod tipologie;

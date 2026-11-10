@@ -5,6 +5,7 @@ pub mod crittografia;
 pub mod impostazioni;
 pub mod iscritti;
 pub mod migrazioni;
+pub mod pagamenti;
 pub mod tipologie;
 
 use thiserror::Error;

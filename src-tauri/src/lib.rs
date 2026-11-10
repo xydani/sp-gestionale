@@ -38,6 +38,10 @@ pub fn run() {
             commands::iscritti::crea_iscritto,
             commands::iscritti::modifica_iscritto,
             commands::iscritti::imposta_iscritto_archiviato,
+            commands::pagamenti::proponi_pagamento,
+            commands::pagamenti::registra_pagamento,
+            commands::pagamenti::elenca_pagamenti,
+            commands::pagamenti::elimina_pagamento,
         ])
         // Le due finestre (accesso e principale) vivono insieme: chiuderne una chiude il programma
         .on_window_event(|finestra, evento| {

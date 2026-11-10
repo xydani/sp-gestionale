@@ -7,6 +7,7 @@ use rusqlite::{Connection, params};
 use crate::db::ErroreDatabase;
 use crate::db::tipologie::elenca_tipologie;
 use crate::domain::date::calcola_data_scadenza;
+use crate::domain::pagamento::MetodoPagamento;
 
 pub const NUMERO_ISCRITTI_PREDEFINITO: u32 = 250;
 
@@ -86,8 +87,6 @@ const COGNOMI: &[&str] = &[
     "Vitale",
     "D'Angelo",
 ];
-
-const METODI_PAGAMENTO: &[&str] = &["contanti", "carta", "bonifico", "altro"];
 
 /// Percentuale di iscritti senza alcun pagamento.
 const PERCENTUALE_SENZA_PAGAMENTI: u64 = 8;
@@ -169,7 +168,7 @@ pub fn genera_dati_prova(
                     tipologia.nome,
                     tipologia.prezzo_cent,
                     data_inizio.to_string(),
-                    casuale.scegli(METODI_PAGAMENTO),
+                    casuale.scegli(&MetodoPagamento::TUTTI).come_testo(),
                     data_inizio.to_string(),
                     data_scadenza.to_string(),
                     pagamento_precedente_id,

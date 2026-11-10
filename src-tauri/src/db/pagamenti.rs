@@ -1,0 +1,251 @@
+//! Pagamenti e rinnovi degli abbonamenti.
+
+use chrono::NaiveDate;
+use rusqlite::types::Value;
+use rusqlite::{Connection, OptionalExtension, Row, params, params_from_iter};
+use serde::{Deserialize, Serialize};
+
+use super::ErroreDatabase;
+use super::tipologie::trova_tipologia;
+use crate::domain::date::calcola_data_scadenza;
+use crate::domain::pagamento::MetodoPagamento;
+use crate::domain::rinnovo::calcola_data_inizio_rinnovo;
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Pagamento {
+    pub id: i64,
+    pub iscritto_id: i64,
+    pub iscritto_nome: String,
+    pub iscritto_cognome: String,
+    pub tipologia_id: Option<i64>,
+    pub tipologia_nome: String,
+    pub importo_cent: i64,
+    pub data_pagamento: NaiveDate,
+    pub metodo: MetodoPagamento,
+    pub data_inizio: NaiveDate,
+    pub data_scadenza: NaiveDate,
+    pub note: Option<String>,
+    pub rinnovo_di_id: Option<i64>,
+}
+
+/// Dati inseriti dall'utente per registrare un pagamento.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DatiPagamento {
+    pub iscritto_id: i64,
+    pub tipologia_id: i64,
+    pub importo_cent: i64,
+    pub data_pagamento: NaiveDate,
+    pub metodo: MetodoPagamento,
+    pub data_inizio: NaiveDate,
+    pub data_scadenza: NaiveDate,
+    pub note: Option<String>,
+    pub rinnovo_di_id: Option<i64>,
+}
+
+/// Valori proposti nel modulo di pagamento: tutti modificabili dall'utente.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PropostaPagamento {
+    pub importo_cent: i64,
+    pub data_inizio: NaiveDate,
+    pub data_scadenza: NaiveDate,
+    /// Pagamento con la scadenza più recente: il nuovo pagamento ne è il rinnovo.
+    pub rinnovo_di_id: Option<i64>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FiltroPagamenti {
+    /// Date di pagamento comprese, estremi inclusi.
+    pub dal: Option<NaiveDate>,
+    pub al: Option<NaiveDate>,
+    pub metodo: Option<MetodoPagamento>,
+    pub iscritto_id: Option<i64>,
+}
+
+const SELEZIONE_PAGAMENTI: &str = "
+    SELECT p.id, p.iscritto_id, i.nome, i.cognome, p.tipologia_id, p.tipologia_nome,
+           p.importo_cent, p.data_pagamento, p.metodo, p.data_inizio, p.data_scadenza,
+           p.note, p.rinnovo_di_id
+    FROM pagamenti p
+    JOIN iscritti i ON i.id = p.iscritto_id";
+
+/// Propone importo e date per un nuovo pagamento dell'iscritto con la tipologia scelta.
+/// Se `data_inizio` non è indicata, il nuovo abbonamento parte dopo l'ultima scadenza
+/// (se ancora valida) oppure da oggi.
+pub fn proponi_pagamento(
+    connessione: &Connection,
+    iscritto_id: i64,
+    tipologia_id: i64,
+    data_inizio: Option<NaiveDate>,
+    oggi: NaiveDate,
+) -> Result<PropostaPagamento, ErroreDatabase> {
+    let tipologia = trova_tipologia(connessione, tipologia_id)?;
+    let ultimo = ultimo_pagamento(connessione, iscritto_id)?;
+    let data_inizio = data_inizio.unwrap_or_else(|| {
+        calcola_data_inizio_rinnovo(ultimo.map(|(_, data_scadenza)| data_scadenza), oggi)
+    });
+    let data_scadenza = calcola_data_scadenza(data_inizio, tipologia.durata())
+        .map_err(|errore| ErroreDatabase::DatiNonValidi(errore.to_string()))?;
+    Ok(PropostaPagamento {
+        importo_cent: tipologia.prezzo_cent,
+        data_inizio,
+        data_scadenza,
+        rinnovo_di_id: ultimo.map(|(id, _)| id),
+    })
+}
+
+pub fn registra_pagamento(
+    connessione: &Connection,
+    dati: &DatiPagamento,
+) -> Result<Pagamento, ErroreDatabase> {
+    valida_dati_pagamento(dati)?;
+    // Il nome della tipologia viene copiato: lo storico non cambia se il listino cambia
+    let tipologia = trova_tipologia(connessione, dati.tipologia_id)?;
+    let note = dati
+        .note
+        .as_deref()
+        .map(str::trim)
+        .filter(|nota| !nota.is_empty());
+    connessione
+        .execute(
+            "INSERT INTO pagamenti (iscritto_id, tipologia_id, tipologia_nome, importo_cent,
+                 data_pagamento, metodo, data_inizio, data_scadenza, note, rinnovo_di_id)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+            params![
+                dati.iscritto_id,
+                tipologia.id,
+                tipologia.nome,
+                dati.importo_cent,
+                dati.data_pagamento,
+                dati.metodo.come_testo(),
+                dati.data_inizio,
+                dati.data_scadenza,
+                note,
+                dati.rinnovo_di_id,
+            ],
+        )
+        .map_err(|errore| match &errore {
+            rusqlite::Error::SqliteFailure(dettaglio, _)
+                if dettaglio.extended_code == rusqlite::ffi::SQLITE_CONSTRAINT_FOREIGNKEY =>
+            {
+                ErroreDatabase::DatiNonValidi("Iscritto non trovato".into())
+            }
+            _ => errore.into(),
+        })?;
+    trova_pagamento(connessione, connessione.last_insert_rowid())
+}
+
+pub fn trova_pagamento(connessione: &Connection, id: i64) -> Result<Pagamento, ErroreDatabase> {
+    connessione
+        .query_row(
+            &format!("{SELEZIONE_PAGAMENTI} WHERE p.id = ?1"),
+            [id],
+            leggi_pagamento,
+        )
+        .optional()?
+        .ok_or(ErroreDatabase::NonTrovato)
+}
+
+/// Pagamenti più recenti per primi.
+pub fn elenca_pagamenti(
+    connessione: &Connection,
+    filtro: &FiltroPagamenti,
+) -> Result<Vec<Pagamento>, ErroreDatabase> {
+    let mut condizioni: Vec<&str> = Vec::new();
+    let mut parametri: Vec<Value> = Vec::new();
+    if let Some(dal) = filtro.dal {
+        condizioni.push("p.data_pagamento >= ?");
+        parametri.push(Value::from(dal.to_string()));
+    }
+    if let Some(al) = filtro.al {
+        condizioni.push("p.data_pagamento <= ?");
+        parametri.push(Value::from(al.to_string()));
+    }
+    if let Some(metodo) = filtro.metodo {
+        condizioni.push("p.metodo = ?");
+        parametri.push(Value::from(metodo.come_testo().to_string()));
+    }
+    if let Some(iscritto_id) = filtro.iscritto_id {
+        condizioni.push("p.iscritto_id = ?");
+        parametri.push(Value::from(iscritto_id));
+    }
+    let clausola_where = if condizioni.is_empty() {
+        String::new()
+    } else {
+        format!("WHERE {}", condizioni.join(" AND "))
+    };
+    let mut query = connessione.prepare(&format!(
+        "{SELEZIONE_PAGAMENTI} {clausola_where} ORDER BY p.data_pagamento DESC, p.id DESC"
+    ))?;
+    let pagamenti = query
+        .query_map(params_from_iter(parametri), leggi_pagamento)?
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(pagamenti)
+}
+
+/// Elimina un pagamento registrato per errore. Gli eventuali rinnovi collegati restano.
+pub fn elimina_pagamento(connessione: &Connection, id: i64) -> Result<(), ErroreDatabase> {
+    let righe_eliminate = connessione.execute("DELETE FROM pagamenti WHERE id = ?1", [id])?;
+    if righe_eliminate == 0 {
+        return Err(ErroreDatabase::NonTrovato);
+    }
+    Ok(())
+}
+
+pub fn valida_dati_pagamento(dati: &DatiPagamento) -> Result<(), ErroreDatabase> {
+    if dati.importo_cent < 0 {
+        return Err(ErroreDatabase::DatiNonValidi(
+            "L'importo non può essere negativo".into(),
+        ));
+    }
+    if dati.data_scadenza < dati.data_inizio {
+        return Err(ErroreDatabase::DatiNonValidi(
+            "La scadenza non può essere precedente all'inizio".into(),
+        ));
+    }
+    Ok(())
+}
+
+/// Id e scadenza del pagamento con la scadenza più lontana dell'iscritto.
+fn ultimo_pagamento(
+    connessione: &Connection,
+    iscritto_id: i64,
+) -> Result<Option<(i64, NaiveDate)>, ErroreDatabase> {
+    Ok(connessione
+        .query_row(
+            "SELECT id, data_scadenza FROM pagamenti WHERE iscritto_id = ?1
+             ORDER BY data_scadenza DESC, id DESC LIMIT 1",
+            [iscritto_id],
+            |riga| Ok((riga.get(0)?, riga.get(1)?)),
+        )
+        .optional()?)
+}
+
+fn leggi_pagamento(riga: &Row<'_>) -> rusqlite::Result<Pagamento> {
+    let testo_metodo: String = riga.get(8)?;
+    let metodo = MetodoPagamento::da_testo(&testo_metodo).ok_or_else(|| {
+        rusqlite::Error::FromSqlConversionFailure(
+            8,
+            rusqlite::types::Type::Text,
+            format!("metodo di pagamento sconosciuto: {testo_metodo}").into(),
+        )
+    })?;
+    Ok(Pagamento {
+        id: riga.get(0)?,
+        iscritto_id: riga.get(1)?,
+        iscritto_nome: riga.get(2)?,
+        iscritto_cognome: riga.get(3)?,
+        tipologia_id: riga.get(4)?,
+        tipologia_nome: riga.get(5)?,
+        importo_cent: riga.get(6)?,
+        data_pagamento: riga.get(7)?,
+        metodo,
+        data_inizio: riga.get(9)?,
+        data_scadenza: riga.get(10)?,
+        note: riga.get(11)?,
+        rinnovo_di_id: riga.get(12)?,
+    })
+}
