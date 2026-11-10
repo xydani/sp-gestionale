@@ -2,5 +2,7 @@
   import SezioneBackup from "$lib/components/SezioneBackup.svelte";
 </script>
 
-<h1>Impostazioni</h1>
-<SezioneBackup />
+<div class="pagina-stretta">
+  <h1>Impostazioni</h1>
+  <SezioneBackup />
+</div>

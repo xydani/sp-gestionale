@@ -2,5 +2,7 @@
   import SezioneTipologie from "$lib/components/SezioneTipologie.svelte";
 </script>
 
-<h1>Listino abbonamenti</h1>
-<SezioneTipologie />
+<div class="pagina-stretta">
+  <h1>Listino abbonamenti</h1>
+  <SezioneTipologie />
+</div>

@@ -97,7 +97,6 @@
   section {
     display: grid;
     gap: 0.75rem;
-    max-width: 720px;
     background: var(--colore-superficie);
     border: 1px solid var(--colore-bordo);
     border-radius: var(--raggio);

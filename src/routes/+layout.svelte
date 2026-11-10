@@ -60,8 +60,10 @@
       <div class="barra-superiore">
         <PulsanteSchermoIntero bind:this={pulsanteSchermoIntero} />
       </div>
-      <BarraAvvisi />
-      {@render children()}
+      <div class="pagina">
+        <BarraAvvisi />
+        {@render children()}
+      </div>
     </main>
   </div>
 {:else if statoDatabase === "bloccato"}
@@ -80,6 +82,12 @@
     flex: 1;
     min-width: 0;
     padding: 1rem 2rem 1.5rem;
+  }
+
+  /* Il contenuto resta centrato e leggibile anche su schermi molto larghi */
+  .pagina {
+    max-width: 1280px;
+    margin: 0 auto;
   }
 
   .barra-superiore {

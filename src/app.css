@@ -38,3 +38,9 @@ button {
 input {
   font: inherit;
 }
+
+/* Colonna centrata per le pagine con poco contenuto (moduli, impostazioni) */
+.pagina-stretta {
+  max-width: 760px;
+  margin: 0 auto;
+}
