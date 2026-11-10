@@ -2,6 +2,8 @@
 
 ## [Non rilasciato]
 
+- La configurazione iniziale non si può più saltare: il programma si sblocca solo a guida completata
+
 - Certificato medico: scadenza nella scheda, avvisi se manca o sta per scadere, scheda dedicata nelle Scadenze e riquadro in dashboard
 
 - Il nuovo iscritto si registra insieme alla quota annuale e al primo abbonamento
