@@ -62,7 +62,7 @@
   onMount(() => carica());
 </script>
 
-<table class={stato}>
+<table class="tabella riquadrata {stato}">
   <thead>
     <tr><th>Cognome e nome</th><th>Telefono</th><th>Scadenza</th><th></th></tr>
   </thead>
@@ -89,14 +89,9 @@
 {/if}
 
 <style>
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    background: var(--colore-superficie);
-    border: 1px solid var(--colore-bordo);
+  /* Il colore del bordo sinistro indica lo stato */
+  table.tabella {
     border-left-width: 4px;
-    border-radius: var(--raggio);
-    overflow: hidden;
   }
 
   table.in_scadenza {
@@ -105,19 +100,6 @@
 
   table.scaduto {
     border-left-color: #d92d20;
-  }
-
-  th,
-  td {
-    text-align: left;
-    padding: 0.6rem 1rem;
-    border-bottom: 1px solid var(--colore-bordo);
-  }
-
-  th {
-    color: var(--colore-testo-secondario);
-    font-weight: 500;
-    background: var(--colore-sfondo);
   }
 
   a {

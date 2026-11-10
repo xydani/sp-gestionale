@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Tendina from "./Tendina.svelte";
   import { untrack } from "svelte";
   import { centesimiInTestoEuro, euroInCentesimi, nomeMeseDaNumero } from "$lib/format";
   import type { Impostazioni } from "$lib/types";
@@ -60,11 +61,10 @@
   </label>
   <label>
     L'anno sportivo inizia a
-    <select bind:value={meseInizioAnnoSportivo}>
-      {#each MESI as mese (mese)}
-        <option value={mese}>{nomeMeseDaNumero(mese)}</option>
-      {/each}
-    </select>
+    <Tendina
+      bind:valore={meseInizioAnnoSportivo}
+      opzioni={MESI.map((mese) => ({ valore: mese, etichetta: nomeMeseDaNumero(mese) }))}
+    />
   </label>
 
   <label>
@@ -79,7 +79,9 @@
   {#if errore}<p class="errore largo" role="alert">{errore}</p>{/if}
 
   <div class="largo">
-    <button type="submit" disabled={inCorso}>{inCorso ? "Salvataggio…" : etichettaConferma}</button>
+    <button class="pulsante" type="submit" disabled={inCorso}
+      >{inCorso ? "Salvataggio…" : etichettaConferma}</button
+    >
   </div>
 </form>
 
@@ -100,22 +102,12 @@
     align-content: end;
   }
 
-  input,
-  select {
+  input {
     padding: 0.5rem 0.75rem;
     border: 1px solid var(--colore-bordo);
     border-radius: var(--raggio);
     font: inherit;
     background: var(--colore-superficie);
-  }
-
-  button {
-    padding: 0.6rem 1.2rem;
-    border-radius: var(--raggio);
-    border: none;
-    background: var(--colore-primario);
-    color: var(--colore-primario-testo);
-    font: inherit;
   }
 
   .errore {

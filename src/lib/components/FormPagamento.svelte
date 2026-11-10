@@ -1,10 +1,11 @@
 <script lang="ts">
+  import Tendina from "./Tendina.svelte";
   import CampoData from "./CampoData.svelte";
   import { onMount, untrack } from "svelte";
   import { elencaTipologie, messaggioErrore, proponiPagamento, registraPagamento } from "$lib/api";
-  import { centesimiInTestoEuro, euroInCentesimi, oggiIso } from "$lib/format";
+  import { centesimiInTestoEuro, euroInCentesimi, formattaEuro, oggiIso } from "$lib/format";
   import { iscrizioneNonValida } from "$lib/iscrizione";
-  import { ETICHETTE_METODO, METODI_PAGAMENTO } from "$lib/metodi-pagamento";
+  import { OPZIONI_METODO } from "$lib/metodi-pagamento";
   import type { Iscritto, MetodoPagamento, Pagamento, TipologiaAbbonamento } from "$lib/types";
   import RicercaIscritto from "./RicercaIscritto.svelte";
 
@@ -102,7 +103,7 @@
       <div class="iscritto-scelto">
         <strong>{iscritto.cognome} {iscritto.nome}</strong>
         {#if !iscrittoIniziale}
-          <button type="button" class="collegamento" onclick={() => (iscritto = null)}
+          <button type="button" class="pulsante-testo" onclick={() => (iscritto = null)}
             >Cambia</button
           >
         {/if}
@@ -123,12 +124,16 @@
   <div class="griglia">
     <label>
       Tipologia
-      <select bind:value={tipologiaId} onchange={() => applicaProposta()} required>
-        <option value={null} disabled>Scegli…</option>
-        {#each tipologie as tipologia (tipologia.id)}
-          <option value={tipologia.id}>{tipologia.nome}</option>
-        {/each}
-      </select>
+      <Tendina
+        bind:valore={tipologiaId}
+        opzioni={tipologie.map((tipologia) => ({
+          valore: tipologia.id,
+          etichetta: tipologia.nome,
+          dettaglio: formattaEuro(tipologia.prezzoCent),
+        }))}
+        obbligatoria
+        onCambia={() => applicaProposta()}
+      />
     </label>
     <label>
       Importo (€)
@@ -136,11 +141,7 @@
     </label>
     <label>
       Metodo
-      <select bind:value={metodo}>
-        {#each METODI_PAGAMENTO as valore (valore)}
-          <option value={valore}>{ETICHETTE_METODO[valore]}</option>
-        {/each}
-      </select>
+      <Tendina bind:valore={metodo} opzioni={OPZIONI_METODO} />
     </label>
     <label>
       Data pagamento
@@ -170,8 +171,8 @@
   {#if errore}<p class="errore" role="alert">{errore}</p>{/if}
 
   <div class="azioni">
-    <button type="submit" disabled={inCorso}>Registra pagamento</button>
-    <button type="button" class="secondario" onclick={onAnnulla}>Annulla</button>
+    <button class="pulsante" type="submit" disabled={inCorso}>Registra pagamento</button>
+    <button type="button" class="pulsante secondario" onclick={onAnnulla}>Annulla</button>
   </div>
 </form>
 
@@ -195,8 +196,7 @@
     font-size: 0.9rem;
   }
 
-  input,
-  select {
+  input {
     padding: 0.55rem 0.75rem;
     border: 1px solid var(--colore-bordo);
     border-radius: var(--raggio);
@@ -210,13 +210,6 @@
     gap: 1rem;
     align-items: center;
     font-weight: 400;
-  }
-
-  .collegamento {
-    border: none;
-    background: none;
-    color: var(--colore-primario);
-    padding: 0;
   }
 
   .informazione {
@@ -241,18 +234,5 @@
   .azioni {
     display: flex;
     gap: 0.5rem;
-  }
-
-  .azioni button {
-    padding: 0.55rem 1.1rem;
-    border-radius: var(--raggio);
-    border: 1px solid var(--colore-primario);
-    background: var(--colore-primario);
-    color: var(--colore-primario-testo);
-  }
-
-  .azioni button.secondario {
-    background: transparent;
-    color: var(--colore-primario);
   }
 </style>

@@ -55,7 +55,7 @@
     <BadgeStato stato={iscritto.statoIscrizione} />
     <span class="spazio"></span>
     {#if !formAperto && !iscritto.archiviato}
-      <button type="button" onclick={() => (formAperto = true)}>
+      <button class="pulsante" type="button" onclick={() => (formAperto = true)}>
         {iscrizioni.length > 0 ? "Rinnova iscrizione" : "Iscrivi"}
       </button>
     {/if}
@@ -78,7 +78,7 @@
   {/if}
 
   {#if iscrizioni.length > 0}
-    <table>
+    <table class="tabella">
       <thead>
         <tr
           ><th>Periodo</th><th>Pagata il</th><th>Metodo</th><th class="importo">Quota</th><th
@@ -112,7 +112,8 @@
     padding: 1.5rem;
     background: var(--colore-superficie);
     border: 1px solid var(--colore-bordo);
-    border-radius: var(--raggio);
+    border-radius: var(--raggio-grande);
+    box-shadow: var(--ombra-scheda);
   }
 
   .intestazione-sezione {
@@ -135,37 +136,12 @@
     color: var(--colore-testo-secondario);
   }
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  th,
-  td {
-    text-align: left;
-    padding: 0.5rem 0.75rem;
-    border-bottom: 1px solid var(--colore-bordo);
-  }
-
-  th {
-    color: var(--colore-testo-secondario);
-    font-weight: 500;
-  }
-
   .importo {
     text-align: right;
   }
 
   .azioni {
     text-align: right;
-  }
-
-  button {
-    padding: 0.55rem 1.1rem;
-    border-radius: var(--raggio);
-    border: 1px solid var(--colore-primario);
-    background: var(--colore-primario);
-    color: var(--colore-primario-testo);
   }
 
   button.elimina {

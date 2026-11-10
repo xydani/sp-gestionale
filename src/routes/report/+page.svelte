@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Tendina from "$lib/components/Tendina.svelte";
   import { save } from "@tauri-apps/plugin-dialog";
   import { onMount } from "svelte";
   import { esportaIncassiCsv, leggiRiepilogoIncassi, messaggioErrore } from "$lib/api";
@@ -20,6 +21,9 @@
     mese: "Per mese",
     anno: "Per anno",
   };
+  const OPZIONI_RAGGRUPPAMENTO = (Object.keys(ETICHETTE_RAGGRUPPAMENTO) as Raggruppamento[]).map(
+    (valore) => ({ valore, etichetta: ETICHETTE_RAGGRUPPAMENTO[valore] }),
+  );
   const PERIODI_RAPIDI = Object.keys(ETICHETTE_PERIODO_RAPIDO) as PeriodoRapido[];
 
   const iniziale = calcolaPeriodoRapido("mese");
@@ -74,11 +78,10 @@
 
 <h1>Incassi</h1>
 
-<div class="periodi-rapidi" role="group" aria-label="Periodo">
+<div class="segmenti periodi-rapidi" role="group" aria-label="Periodo">
   {#each PERIODI_RAPIDI as scelta (scelta)}
     <button
       type="button"
-      class:scelto={periodoRapido === scelta}
       aria-pressed={periodoRapido === scelta}
       onclick={() => scegliPeriodoRapido(scelta)}>{ETICHETTE_PERIODO_RAPIDO[scelta]}</button
     >
@@ -95,14 +98,17 @@
       ><CampoData bind:valore={al} minimaIso={dal} onCambia={cambiaDate} /></span
     ></label
   >
-  <select bind:value={raggruppamento} onchange={carica} aria-label="Raggruppamento">
-    {#each Object.entries(ETICHETTE_RAGGRUPPAMENTO) as [valore, etichetta] (valore)}
-      <option value={valore}>{etichetta}</option>
-    {/each}
-  </select>
+  <div class="raggruppamento">
+    <Tendina
+      bind:valore={raggruppamento}
+      opzioni={OPZIONI_RAGGRUPPAMENTO}
+      etichettaAccessibile="Raggruppamento"
+      onCambia={carica}
+    />
+  </div>
   <button
     type="button"
-    class="esporta"
+    class="pulsante secondario esporta"
     onclick={esporta}
     disabled={!riepilogo || riepilogo.numeroMovimenti === 0}>Esporta CSV</button
   >
@@ -136,7 +142,7 @@
   {:else}
     <section>
       <h2>Per metodo di pagamento</h2>
-      <table>
+      <table class="tabella riquadrata">
         <thead>
           <tr>
             <th>Metodo</th>
@@ -164,7 +170,7 @@
 
     <section>
       <h2>{ETICHETTE_RAGGRUPPAMENTO[raggruppamento]}</h2>
-      <table>
+      <table class="tabella riquadrata">
         <thead>
           <tr>
             <th>Periodo</th>
@@ -196,6 +202,10 @@
 {/if}
 
 <style>
+  .raggruppamento {
+    width: 10rem;
+  }
+
   h2 {
     margin: 0 0 0.75rem;
     font-size: 1.15rem;
@@ -206,25 +216,7 @@
   }
 
   .periodi-rapidi {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
     margin-bottom: 0.75rem;
-  }
-
-  .periodi-rapidi button {
-    padding: 0.4rem 0.9rem;
-    border: 1px solid var(--colore-bordo);
-    border-radius: 999px;
-    background: var(--colore-superficie);
-    font: inherit;
-    cursor: pointer;
-  }
-
-  .periodi-rapidi button.scelto {
-    background: var(--colore-primario);
-    border-color: var(--colore-primario);
-    color: var(--colore-primario-testo);
   }
 
   .filtri {
@@ -245,56 +237,14 @@
     width: 10rem;
   }
 
-  select {
-    padding: 0.5rem 0.7rem;
-    border: 1px solid var(--colore-bordo);
-    border-radius: var(--raggio);
-    font: inherit;
-    background: var(--colore-superficie);
-  }
-
   .esporta {
     margin-left: auto;
-    padding: 0.55rem 1.1rem;
-    border-radius: var(--raggio);
-    border: 1px solid var(--colore-primario);
-    background: var(--colore-superficie);
-    color: var(--colore-primario);
-    font: inherit;
-    cursor: pointer;
-  }
-
-  .esporta:disabled {
-    opacity: 0.5;
-    cursor: default;
   }
 
   .riquadri {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
     gap: 1rem;
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    background: var(--colore-superficie);
-    border: 1px solid var(--colore-bordo);
-    border-radius: var(--raggio);
-    overflow: hidden;
-  }
-
-  th,
-  td {
-    text-align: left;
-    padding: 0.55rem 1rem;
-    border-bottom: 1px solid var(--colore-bordo);
-  }
-
-  th {
-    color: var(--colore-testo-secondario);
-    font-weight: 500;
-    background: var(--colore-sfondo);
   }
 
   .importo {

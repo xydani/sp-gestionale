@@ -51,14 +51,14 @@
   <div class="azioni">
     <button
       type="button"
-      class="secondario"
+      class="pulsante secondario"
       onclick={() => verificaAggiornamenti()}
       disabled={inCorso}
     >
       {aggiornamento.fase === "controllo" ? "Verifica in corso…" : "Verifica aggiornamenti"}
     </button>
     {#if aggiornamento.fase === "disponibile"}
-      <button type="button" onclick={installaAggiornamento}>Aggiorna ora</button>
+      <button class="pulsante" type="button" onclick={installaAggiornamento}>Aggiorna ora</button>
     {/if}
   </div>
 </section>
@@ -68,20 +68,6 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
-  }
-
-  button {
-    padding: 0.6rem 1rem;
-    border-radius: var(--raggio);
-    border: 1px solid var(--colore-primario);
-    background: var(--colore-primario);
-    color: var(--colore-primario-testo);
-    font: inherit;
-  }
-
-  button.secondario {
-    background: transparent;
-    color: var(--colore-primario);
   }
 
   .note {

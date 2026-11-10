@@ -48,13 +48,13 @@
   onMount(ricarica);
 </script>
 
-<section>
+<section class="scheda">
   <p class="nota">
     Le modifiche valgono per i nuovi pagamenti; lo storico mantiene i valori del momento. Una
     tipologia non più in uso si disattiva invece di cancellarla.
   </p>
 
-  <table>
+  <table class="tabella">
     <thead>
       <tr><th>Nome</th><th>Durata</th><th>Prezzo</th><th>Stato</th><th></th></tr>
     </thead>
@@ -78,8 +78,12 @@
             <td>{formattaEuro(tipologia.prezzoCent)}</td>
             <td>{tipologia.attiva ? "Attiva" : "Disattivata"}</td>
             <td class="azioni">
-              <button type="button" onclick={() => (idInModifica = tipologia.id)}>Modifica</button>
-              <button type="button" onclick={() => alternaAttiva(tipologia)}>
+              <button
+                type="button"
+                class="pulsante-testo"
+                onclick={() => (idInModifica = tipologia.id)}>Modifica</button
+              >
+              <button type="button" class="pulsante-testo" onclick={() => alternaAttiva(tipologia)}>
                 {tipologia.attiva ? "Disattiva" : "Riattiva"}
               </button>
             </td>
@@ -95,12 +99,6 @@
 
 <style>
   section {
-    display: grid;
-    gap: 0.75rem;
-    background: var(--colore-superficie);
-    border: 1px solid var(--colore-bordo);
-    border-radius: var(--raggio);
-    padding: 1.5rem;
     margin-bottom: 1.5rem;
   }
 
@@ -117,23 +115,6 @@
     color: var(--colore-testo-secondario);
   }
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  th,
-  td {
-    text-align: left;
-    padding: 0.5rem;
-    border-bottom: 1px solid var(--colore-bordo);
-  }
-
-  th {
-    color: var(--colore-testo-secondario);
-    font-weight: 500;
-  }
-
   tr.disattiva td {
     color: var(--colore-testo-secondario);
   }
@@ -141,12 +122,5 @@
   .azioni {
     text-align: right;
     white-space: nowrap;
-  }
-
-  .azioni button {
-    background: none;
-    border: none;
-    color: var(--colore-primario);
-    padding: 0.25rem 0.5rem;
   }
 </style>

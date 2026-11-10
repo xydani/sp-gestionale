@@ -1,9 +1,10 @@
 <script lang="ts">
+  import Tendina from "./Tendina.svelte";
   import CampoData from "./CampoData.svelte";
   import { onMount } from "svelte";
   import { messaggioErrore, proponiIscrizione, registraIscrizione } from "$lib/api";
   import { centesimiInTestoEuro, euroInCentesimi, oggiIso } from "$lib/format";
-  import { ETICHETTE_METODO, METODI_PAGAMENTO } from "$lib/metodi-pagamento";
+  import { OPZIONI_METODO } from "$lib/metodi-pagamento";
   import type { MetodoPagamento } from "$lib/types";
 
   let {
@@ -79,11 +80,7 @@
     </label>
     <label>
       Metodo
-      <select bind:value={metodo}>
-        {#each METODI_PAGAMENTO as valore (valore)}
-          <option value={valore}>{ETICHETTE_METODO[valore]}</option>
-        {/each}
-      </select>
+      <Tendina bind:valore={metodo} opzioni={OPZIONI_METODO} />
     </label>
     <label>
       Data pagamento
@@ -96,8 +93,8 @@
   </label>
   {#if errore}<p class="errore" role="alert">{errore}</p>{/if}
   <div class="azioni">
-    <button type="submit" disabled={inCorso}>Registra iscrizione</button>
-    <button type="button" class="secondario" onclick={onAnnulla}>Annulla</button>
+    <button class="pulsante" type="submit" disabled={inCorso}>Registra iscrizione</button>
+    <button type="button" class="pulsante secondario" onclick={onAnnulla}>Annulla</button>
   </div>
 </form>
 
@@ -120,8 +117,7 @@
     font-size: 0.9rem;
   }
 
-  input,
-  select {
+  input {
     padding: 0.55rem 0.75rem;
     border: 1px solid var(--colore-bordo);
     border-radius: var(--raggio);
@@ -138,18 +134,5 @@
   .azioni {
     display: flex;
     gap: 0.5rem;
-  }
-
-  button {
-    padding: 0.55rem 1.1rem;
-    border-radius: var(--raggio);
-    border: 1px solid var(--colore-primario);
-    background: var(--colore-primario);
-    color: var(--colore-primario-testo);
-  }
-
-  button.secondario {
-    background: transparent;
-    color: var(--colore-primario);
   }
 </style>

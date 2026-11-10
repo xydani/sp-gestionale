@@ -90,8 +90,8 @@
     <textarea bind:value={note} rows="3"></textarea>
   </label>
   <div class="azioni">
-    <button type="submit" disabled={inCorso}>{etichettaConferma}</button>
-    <button type="button" class="secondario" onclick={onAnnulla}>Annulla</button>
+    <button class="pulsante" type="submit" disabled={inCorso}>{etichettaConferma}</button>
+    <button type="button" class="pulsante secondario" onclick={onAnnulla}>Annulla</button>
   </div>
 </form>
 
@@ -143,18 +143,5 @@
   .azioni {
     display: flex;
     gap: 0.5rem;
-  }
-
-  button {
-    padding: 0.55rem 1.1rem;
-    border-radius: var(--raggio);
-    border: 1px solid var(--colore-primario);
-    background: var(--colore-primario);
-    color: var(--colore-primario-testo);
-  }
-
-  button.secondario {
-    background: transparent;
-    color: var(--colore-primario);
   }
 </style>

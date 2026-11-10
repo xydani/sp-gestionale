@@ -35,17 +35,21 @@
     {/each}
   </ul>
   <div class="azioni">
-    <button type="button" onclick={onBlocca}>Blocca</button>
+    <button type="button" class="pulsante secondario" onclick={onBlocca}>Blocca</button>
   </div>
 </nav>
 
 <style>
   nav {
+    position: sticky;
+    top: 0;
+    height: 100vh;
     width: var(--larghezza-menu);
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
     background: var(--colore-menu);
+    border-right: 1px solid var(--colore-bordo);
     color: var(--colore-menu-testo);
     padding: 1rem 0.75rem;
   }
@@ -56,89 +60,61 @@
     padding: 0.5rem 0.75rem 1.25rem;
   }
 
-  /* Il logo è blu su bianco: su fondo scuro sta in un riquadro chiaro */
-  .logo:has(:global(img)) {
-    justify-self: start;
-    padding: 0.4rem 0.6rem;
-    border-radius: var(--raggio);
-    background: #ffffff;
-  }
-
   .titolo {
-    font-weight: 700;
-    font-size: 1.1rem;
+    font-weight: 650;
+    font-size: 1.05rem;
+    color: var(--colore-testo);
     overflow-wrap: anywhere;
-  }
-
-  ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    flex: 1;
   }
 
   ul {
     display: grid;
     gap: 2px;
     align-content: start;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    flex: 1;
   }
 
   a {
-    display: block;
-    padding: 0.6rem 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.55rem 0.75rem;
     border-radius: var(--raggio);
     color: inherit;
     text-decoration: none;
+    font-weight: 500;
     transition:
       background-color 0.15s,
       color 0.15s;
   }
 
+  a:hover {
+    background: var(--colore-sfondo-tenue);
+    color: var(--colore-testo);
+  }
+
+  a.attiva {
+    background: var(--colore-menu-attivo);
+    color: var(--colore-primario);
+    font-weight: 600;
+  }
+
   .badge {
-    float: right;
     min-width: 1.4rem;
     padding: 0 0.4rem;
     border-radius: 999px;
-    background: #e0a100;
-    color: #1d2330;
-    font-size: 0.8rem;
+    background: #fbbf24;
+    color: #3b2a00;
+    font-size: 0.75rem;
     font-weight: 600;
-    line-height: 1.4rem;
+    line-height: 1.35rem;
     text-align: center;
-  }
-
-  a:hover {
-    background: rgb(255 255 255 / 0.06);
-    color: #fff;
-  }
-
-  /* Voce attiva: fondo azzurrato e barretta a sinistra */
-  a.attiva {
-    background: var(--colore-menu-selezionato);
-    box-shadow: inset 3px 0 0 var(--colore-menu-accento);
-    color: #fff;
-    font-weight: 600;
-  }
-
-  a:focus-visible {
-    outline-color: var(--colore-menu-accento);
   }
 
   .azioni {
     display: grid;
-    gap: 0.5rem;
-  }
-
-  .azioni button {
-    background: transparent;
-    color: inherit;
-    border: 1px solid var(--colore-menu-attivo);
-    border-radius: var(--raggio);
-    padding: 0.5rem;
-  }
-
-  .azioni button:hover {
-    background: rgb(255 255 255 / 0.06);
-    border-color: var(--colore-menu-accento);
   }
 </style>

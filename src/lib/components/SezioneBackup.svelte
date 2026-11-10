@@ -70,10 +70,12 @@
   </p>
 
   <div class="azioni">
-    <button type="button" onclick={salvaBackup} disabled={inCorso}>Salva backup su…</button>
+    <button class="pulsante" type="button" onclick={salvaBackup} disabled={inCorso}
+      >Salva backup su…</button
+    >
     <button
       type="button"
-      class="secondario"
+      class="pulsante secondario"
       onclick={scegliBackupDaRipristinare}
       disabled={inCorso}
     >
@@ -92,10 +94,10 @@
         <input type="password" bind:value={passwordBackup} required />
       </label>
       <div class="azioni">
-        <button type="submit" disabled={inCorso}>Ripristina</button>
+        <button class="pulsante" type="submit" disabled={inCorso}>Ripristina</button>
         <button
           type="button"
-          class="secondario"
+          class="pulsante secondario"
           onclick={() => (percorsoBackupDaRipristinare = null)}
         >
           Annulla
@@ -114,19 +116,6 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
-  }
-
-  button {
-    padding: 0.6rem 1rem;
-    border-radius: var(--raggio);
-    border: 1px solid var(--colore-primario);
-    background: var(--colore-primario);
-    color: var(--colore-primario-testo);
-  }
-
-  button.secondario {
-    background: transparent;
-    color: var(--colore-primario);
   }
 
   .ripristino {

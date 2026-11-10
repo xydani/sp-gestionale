@@ -79,8 +79,8 @@
     list-style: none;
     background: var(--colore-superficie);
     border: 1px solid var(--colore-bordo);
-    border-radius: var(--raggio);
-    box-shadow: 0 8px 24px rgb(0 0 0 / 0.08);
+    border-radius: var(--raggio-grande);
+    box-shadow: var(--ombra-sospesa);
   }
 
   button {
@@ -97,6 +97,6 @@
   }
 
   button:hover {
-    background: #f0f4ff;
+    background: var(--colore-sfondo-tenue);
   }
 </style>

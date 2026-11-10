@@ -29,8 +29,10 @@
     {:else}
       <span>È disponibile la versione <strong>{aggiornamento.versione}</strong>.</span>
       <div class="azioni">
-        <button type="button" onclick={installaAggiornamento}>Aggiorna ora</button>
-        <button type="button" class="secondario" onclick={rimandaAggiornamento}>Più tardi</button>
+        <button class="pulsante" type="button" onclick={installaAggiornamento}>Aggiorna ora</button>
+        <button type="button" class="pulsante secondario" onclick={rimandaAggiornamento}
+          >Più tardi</button
+        >
       </div>
     {/if}
   </div>
@@ -53,20 +55,6 @@
   .azioni {
     display: flex;
     gap: 0.5rem;
-  }
-
-  button {
-    padding: 0.45rem 1rem;
-    border-radius: var(--raggio);
-    border: 1px solid var(--colore-primario);
-    background: var(--colore-primario);
-    color: var(--colore-primario-testo);
-    font: inherit;
-  }
-
-  button.secondario {
-    background: transparent;
-    color: var(--colore-primario);
   }
 
   progress {

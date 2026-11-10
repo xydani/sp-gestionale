@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Tendina from "$lib/components/Tendina.svelte";
   import CampoData from "$lib/components/CampoData.svelte";
   import { onMount } from "svelte";
   import { elencaPagamenti, eliminaPagamento, messaggioErrore } from "$lib/api";
@@ -7,7 +8,7 @@
   import Paginazione from "$lib/components/Paginazione.svelte";
   import TabellaPagamenti from "$lib/components/TabellaPagamenti.svelte";
   import { confermaEliminazionePagamento } from "$lib/conferma";
-  import { ETICHETTE_METODO, METODI_PAGAMENTO } from "$lib/metodi-pagamento";
+  import { OPZIONI_METODO } from "$lib/metodi-pagamento";
   import { meseCorrente } from "$lib/periodo";
   import type { MetodoPagamento, Pagamento, PaginaPagamenti } from "$lib/types";
 
@@ -69,7 +70,7 @@
 <div class="intestazione">
   <h1>Pagamenti</h1>
   {#if !nuovoPagamentoAperto}
-    <button type="button" class="primario" onclick={() => (nuovoPagamentoAperto = true)}>
+    <button type="button" class="pulsante" onclick={() => (nuovoPagamentoAperto = true)}>
       + Registra pagamento
     </button>
   {/if}
@@ -95,13 +96,15 @@
       ><CampoData bind:valore={al} minimaIso={dal} onCambia={() => carica()} /></span
     ></label
   >
-  <select bind:value={metodo} onchange={() => carica()}>
-    <option value="">Tutti i metodi</option>
-    {#each METODI_PAGAMENTO as valore (valore)}
-      <option value={valore}>{ETICHETTE_METODO[valore]}</option>
-    {/each}
-  </select>
-  <button type="button" class="collegamento" onclick={tuttoLoStorico}>Tutto lo storico</button>
+  <div class="filtro-metodo">
+    <Tendina
+      bind:valore={metodo}
+      opzioni={[{ valore: "", etichetta: "Tutti i metodi" }, ...OPZIONI_METODO]}
+      etichettaAccessibile="Metodo di pagamento"
+      onCambia={() => carica()}
+    />
+  </div>
+  <button type="button" class="pulsante-testo" onclick={tuttoLoStorico}>Tutto lo storico</button>
 </div>
 
 <Paginazione {pagina} onCambia={carica} />
@@ -116,6 +119,10 @@
 {/if}
 
 <style>
+  .filtro-metodo {
+    width: 12rem;
+  }
+
   .intestazione {
     display: flex;
     justify-content: space-between;
@@ -129,7 +136,8 @@
     padding: 1.5rem;
     background: var(--colore-superficie);
     border: 1px solid var(--colore-bordo);
-    border-radius: var(--raggio);
+    border-radius: var(--raggio-grande);
+    box-shadow: var(--ombra-scheda);
   }
 
   h2 {
@@ -151,30 +159,7 @@
     align-items: center;
   }
 
-  select {
-    padding: 0.5rem 0.7rem;
-    border: 1px solid var(--colore-bordo);
-    border-radius: var(--raggio);
-    font: inherit;
-    background: var(--colore-superficie);
-  }
-
   .campo-data {
     width: 10rem;
-  }
-
-  .collegamento {
-    border: none;
-    background: none;
-    color: var(--colore-primario);
-  }
-
-  .primario {
-    padding: 0.55rem 1.1rem;
-    border-radius: var(--raggio);
-    border: none;
-    background: var(--colore-primario);
-    color: var(--colore-primario-testo);
-    font-weight: 500;
   }
 </style>

@@ -59,7 +59,7 @@
     <BadgeStato stato={iscritto.statoAbbonamento} />
     <span class="spazio"></span>
     {#if !formAperto && !iscritto.archiviato}
-      <button type="button" onclick={() => (formAperto = true)}>
+      <button class="pulsante" type="button" onclick={() => (formAperto = true)}>
         {storico.totaleElementi > 0 ? "Rinnova abbonamento" : "Primo abbonamento"}
       </button>
     {/if}
@@ -101,7 +101,8 @@
     padding: 1.5rem;
     background: var(--colore-superficie);
     border: 1px solid var(--colore-bordo);
-    border-radius: var(--raggio);
+    border-radius: var(--raggio-grande);
+    box-shadow: var(--ombra-scheda);
   }
 
   .intestazione-sezione {
@@ -122,13 +123,5 @@
   .riepilogo {
     margin: 0;
     color: var(--colore-testo-secondario);
-  }
-
-  button {
-    padding: 0.55rem 1.1rem;
-    border-radius: var(--raggio);
-    border: 1px solid var(--colore-primario);
-    background: var(--colore-primario);
-    color: var(--colore-primario-testo);
   }
 </style>

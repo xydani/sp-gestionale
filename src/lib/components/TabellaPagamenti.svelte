@@ -21,7 +21,7 @@
   } = $props();
 </script>
 
-<table>
+<table class="tabella riquadrata">
   <thead>
     <tr>
       <th>Data</th>
@@ -74,28 +74,6 @@
 </table>
 
 <style>
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    background: var(--colore-superficie);
-    border: 1px solid var(--colore-bordo);
-    border-radius: var(--raggio);
-    overflow: hidden;
-  }
-
-  th,
-  td {
-    text-align: left;
-    padding: 0.6rem 1rem;
-    border-bottom: 1px solid var(--colore-bordo);
-  }
-
-  th {
-    color: var(--colore-testo-secondario);
-    font-weight: 500;
-    background: var(--colore-sfondo);
-  }
-
   .importo {
     text-align: right;
     white-space: nowrap;

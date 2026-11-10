@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Tendina from "./Tendina.svelte";
   import { untrack } from "svelte";
   import { centesimiInTestoEuro, euroInCentesimi } from "$lib/format";
   import type { DatiTipologia, UnitaDurata } from "$lib/types";
@@ -45,19 +46,29 @@
 <form onsubmit={conferma}>
   <input class="nome" placeholder="Nome (es. Mensile)" bind:value={nome} required />
   <input class="numero" type="number" min="1" bind:value={durataValore} required />
-  <select bind:value={durataUnita}>
-    <option value="mesi">mesi</option>
-    <option value="giorni">giorni</option>
-  </select>
+  <div class="unita">
+    <Tendina
+      bind:valore={durataUnita}
+      opzioni={[
+        { valore: "mesi", etichetta: "mesi" },
+        { valore: "giorni", etichetta: "giorni" },
+      ]}
+      etichettaAccessibile="Unità della durata"
+    />
+  </div>
   <input class="prezzo" placeholder="Prezzo €" bind:value={prezzo} inputmode="decimal" required />
-  <button type="submit">{etichettaConferma}</button>
+  <button class="pulsante" type="submit">{etichettaConferma}</button>
   {#if onAnnulla}
-    <button type="button" class="secondario" onclick={onAnnulla}>Annulla</button>
+    <button type="button" class="pulsante secondario" onclick={onAnnulla}>Annulla</button>
   {/if}
   {#if errore}<p class="errore" role="alert">{errore}</p>{/if}
 </form>
 
 <style>
+  .unita {
+    width: 7rem;
+  }
+
   form {
     display: flex;
     flex-wrap: wrap;
@@ -65,8 +76,7 @@
     gap: 0.5rem;
   }
 
-  input,
-  select {
+  input {
     padding: 0.45rem 0.6rem;
     border: 1px solid var(--colore-bordo);
     border-radius: var(--raggio);
@@ -83,19 +93,6 @@
 
   .prezzo {
     width: 7rem;
-  }
-
-  button {
-    padding: 0.45rem 0.9rem;
-    border-radius: var(--raggio);
-    border: 1px solid var(--colore-primario);
-    background: var(--colore-primario);
-    color: var(--colore-primario-testo);
-  }
-
-  button.secondario {
-    background: transparent;
-    color: var(--colore-primario);
   }
 
   .errore {

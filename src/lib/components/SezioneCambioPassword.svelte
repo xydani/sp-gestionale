@@ -54,7 +54,9 @@
     </label>
     {#if errore}<p class="errore" role="alert">{errore}</p>{/if}
     <div>
-      <button type="submit" disabled={inCorso}>{inCorso ? "Cambio…" : "Cambia password"}</button>
+      <button class="pulsante" type="submit" disabled={inCorso}
+        >{inCorso ? "Cambio…" : "Cambia password"}</button
+      >
     </div>
   </form>
 </section>
@@ -75,15 +77,6 @@
     padding: 0.5rem 0.75rem;
     border: 1px solid var(--colore-bordo);
     border-radius: var(--raggio);
-    font: inherit;
-  }
-
-  button {
-    padding: 0.6rem 1.2rem;
-    border-radius: var(--raggio);
-    border: none;
-    background: var(--colore-primario);
-    color: var(--colore-primario-testo);
     font: inherit;
   }
 

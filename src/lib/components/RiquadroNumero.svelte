@@ -34,7 +34,8 @@
     padding: 1.1rem 1.25rem;
     background: var(--colore-superficie);
     border: 1px solid var(--colore-bordo);
-    border-radius: var(--raggio);
+    border-radius: var(--raggio-grande);
+    box-shadow: var(--ombra-scheda);
     color: inherit;
     text-decoration: none;
   }

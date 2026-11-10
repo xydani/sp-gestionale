@@ -105,7 +105,7 @@
     {#if riepilogo.prossimeScadenze.length === 0}
       <p class="vuoto">Nessuna scadenza nei prossimi 30 giorni.</p>
     {:else}
-      <table>
+      <table class="tabella riquadrata">
         <thead>
           <tr><th>Cognome e nome</th><th>Cosa scade</th><th>Data</th><th></th></tr>
         </thead>
@@ -152,28 +152,6 @@
     color: var(--colore-testo-secondario);
     font-weight: 400;
     font-size: 0.95rem;
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    background: var(--colore-superficie);
-    border: 1px solid var(--colore-bordo);
-    border-radius: var(--raggio);
-    overflow: hidden;
-  }
-
-  th,
-  td {
-    text-align: left;
-    padding: 0.6rem 1rem;
-    border-bottom: 1px solid var(--colore-bordo);
-  }
-
-  th {
-    color: var(--colore-testo-secondario);
-    font-weight: 500;
-    background: var(--colore-sfondo);
   }
 
   td a {

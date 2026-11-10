@@ -63,7 +63,8 @@
     gap: 0.5rem;
     padding: 0.6rem 1rem;
     border: none;
-    border-bottom: 3px solid transparent;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
     background: none;
     color: var(--colore-testo-secondario);
     font-weight: 500;

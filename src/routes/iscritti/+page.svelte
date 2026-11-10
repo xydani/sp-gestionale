@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Tendina from "$lib/components/Tendina.svelte";
   import { resolve } from "$app/paths";
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
@@ -9,7 +10,7 @@
   import Paginazione from "$lib/components/Paginazione.svelte";
   import { formattaData } from "$lib/format";
   import { ritarda } from "$lib/ritarda";
-  import { ETICHETTE_STATO, STATI_VALIDITA } from "$lib/stato-validita";
+  import { opzioniStato } from "$lib/stato-validita";
   import type { DatiIscritto, Iscritto, Pagina, StatoValidita } from "$lib/types";
 
   const PAUSA_RICERCA_MS = 200;
@@ -67,7 +68,7 @@
 <div class="intestazione">
   <h1>Iscritti</h1>
   {#if !nuovoIscrittoAperto}
-    <button type="button" class="primario" onclick={() => (nuovoIscrittoAperto = true)}>
+    <button type="button" class="pulsante" onclick={() => (nuovoIscrittoAperto = true)}>
       + Nuovo iscritto
     </button>
   {/if}
@@ -92,18 +93,22 @@
     bind:value={testoRicerca}
     oninput={caricaDopoPausa}
   />
-  <select bind:value={filtroIscrizione} onchange={() => carica()} aria-label="Stato iscrizione">
-    <option value="">Iscrizione: tutte</option>
-    {#each STATI_VALIDITA as stato (stato)}
-      <option value={stato}>Iscrizione: {ETICHETTE_STATO[stato].toLowerCase()}</option>
-    {/each}
-  </select>
-  <select bind:value={filtroAbbonamento} onchange={() => carica()} aria-label="Stato abbonamento">
-    <option value="">Abbonamento: tutti</option>
-    {#each STATI_VALIDITA as stato (stato)}
-      <option value={stato}>Abbonamento: {ETICHETTE_STATO[stato].toLowerCase()}</option>
-    {/each}
-  </select>
+  <div class="filtro-stato">
+    <Tendina
+      bind:valore={filtroIscrizione}
+      opzioni={opzioniStato("Iscrizione", "tutte")}
+      etichettaAccessibile="Stato iscrizione"
+      onCambia={() => carica()}
+    />
+  </div>
+  <div class="filtro-stato">
+    <Tendina
+      bind:valore={filtroAbbonamento}
+      opzioni={opzioniStato("Abbonamento", "tutti")}
+      etichettaAccessibile="Stato abbonamento"
+      onCambia={() => carica()}
+    />
+  </div>
   <label class="spunta">
     <input type="checkbox" bind:checked={includiArchiviati} onchange={() => carica()} />
     Mostra archiviati
@@ -114,7 +119,7 @@
   <Paginazione {pagina} onCambia={carica} />
 {/if}
 
-<table>
+<table class="tabella riquadrata">
   <thead>
     <tr>
       <th>Cognome e nome</th>
@@ -158,6 +163,10 @@
 {/if}
 
 <style>
+  .filtro-stato {
+    width: 15rem;
+  }
+
   .intestazione {
     display: flex;
     justify-content: space-between;
@@ -171,7 +180,8 @@
     padding: 1.5rem;
     background: var(--colore-superficie);
     border: 1px solid var(--colore-bordo);
-    border-radius: var(--raggio);
+    border-radius: var(--raggio-grande);
+    box-shadow: var(--ombra-scheda);
   }
 
   h2 {
@@ -190,8 +200,7 @@
     flex: 1 1 280px;
   }
 
-  .filtri input:not([type="checkbox"]),
-  select {
+  .filtri input:not([type="checkbox"]) {
     padding: 0.55rem 0.75rem;
     border: 1px solid var(--colore-bordo);
     border-radius: var(--raggio);
@@ -205,34 +214,12 @@
     align-items: center;
   }
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    background: var(--colore-superficie);
-    border: 1px solid var(--colore-bordo);
-    border-radius: var(--raggio);
-    overflow: hidden;
-  }
-
-  th,
-  td {
-    text-align: left;
-    padding: 0.65rem 1rem;
-    border-bottom: 1px solid var(--colore-bordo);
-  }
-
-  th {
-    color: var(--colore-testo-secondario);
-    font-weight: 500;
-    background: var(--colore-sfondo);
-  }
-
   tbody tr {
     cursor: pointer;
   }
 
   tbody tr:hover {
-    background: #f0f4ff;
+    background: var(--colore-sfondo-tenue);
   }
 
   tr.archiviato td {
@@ -255,14 +242,5 @@
     text-align: center;
     color: var(--colore-testo-secondario);
     padding: 2rem;
-  }
-
-  .primario {
-    padding: 0.55rem 1.1rem;
-    border-radius: var(--raggio);
-    border: none;
-    background: var(--colore-primario);
-    color: var(--colore-primario-testo);
-    font-weight: 500;
   }
 </style>

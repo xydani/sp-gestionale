@@ -103,8 +103,10 @@
           <p class="avviso">Mancano data o luogo di nascita: completali con "Modifica dati".</p>
         {/if}
         <div class="azioni">
-          <button type="button" onclick={() => (inModifica = true)}>Modifica dati</button>
-          <button type="button" class="secondario" onclick={alternaArchiviazione}>
+          <button class="pulsante" type="button" onclick={() => (inModifica = true)}
+            >Modifica dati</button
+          >
+          <button type="button" class="pulsante secondario" onclick={alternaArchiviazione}>
             {iscritto.archiviato ? "Ripristina iscritto" : "Archivia iscritto"}
           </button>
         </div>
@@ -144,7 +146,8 @@
     padding: 1.5rem;
     background: var(--colore-superficie);
     border: 1px solid var(--colore-bordo);
-    border-radius: var(--raggio);
+    border-radius: var(--raggio-grande);
+    box-shadow: var(--ombra-scheda);
   }
 
   h2 {
@@ -179,19 +182,6 @@
   .azioni {
     display: flex;
     gap: 0.5rem;
-  }
-
-  button {
-    padding: 0.55rem 1.1rem;
-    border-radius: var(--raggio);
-    border: 1px solid var(--colore-primario);
-    background: var(--colore-primario);
-    color: var(--colore-primario-testo);
-  }
-
-  button.secondario {
-    background: transparent;
-    color: var(--colore-primario);
   }
 
   .errore {

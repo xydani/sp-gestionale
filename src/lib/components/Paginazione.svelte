@@ -18,6 +18,7 @@
   {#if totalePagine > 1}
     <div class="comandi">
       <button
+        class="pulsante secondario piccolo"
         type="button"
         disabled={pagina.numero <= 1}
         onclick={() => onCambia(pagina.numero - 1)}
@@ -26,6 +27,7 @@
       </button>
       <span>Pagina {pagina.numero} di {totalePagine}</span>
       <button
+        class="pulsante secondario piccolo"
         type="button"
         disabled={pagina.numero >= totalePagine}
         onclick={() => onCambia(pagina.numero + 1)}
@@ -52,18 +54,5 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-  }
-
-  button {
-    padding: 0.4rem 0.8rem;
-    border: 1px solid var(--colore-bordo);
-    border-radius: var(--raggio);
-    background: var(--colore-superficie);
-    color: var(--colore-testo);
-  }
-
-  button:disabled {
-    opacity: 0.45;
-    cursor: default;
   }
 </style>

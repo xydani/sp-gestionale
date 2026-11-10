@@ -66,8 +66,9 @@
     </p>
     <SezioneTipologie />
     <div class="azioni">
-      <button type="button" class="secondario" onclick={() => (passo = 0)}>Indietro</button>
-      <button type="button" onclick={termina}>Inizia a usare il programma</button>
+      <button type="button" class="pulsante secondario" onclick={() => (passo = 0)}>Indietro</button
+      >
+      <button class="pulsante" type="button" onclick={termina}>Inizia a usare il programma</button>
     </div>
   {/if}
 </div>
@@ -87,18 +88,5 @@
     display: flex;
     justify-content: space-between;
     margin-top: 1.25rem;
-  }
-
-  .azioni button {
-    padding: 0.6rem 1.2rem;
-    border-radius: var(--raggio);
-    border: 1px solid var(--colore-primario);
-    background: var(--colore-primario);
-    color: var(--colore-primario-testo);
-  }
-
-  .azioni button.secondario {
-    background: transparent;
-    color: var(--colore-primario);
   }
 </style>
