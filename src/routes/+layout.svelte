@@ -3,7 +3,13 @@
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { onDestroy, onMount, type Snippet } from "svelte";
-  import { bloccaDatabase, configurazioneInizialeCompletata, leggiStatoDatabase } from "$lib/api";
+  import { page } from "$app/state";
+  import { bloccaDatabase, leggiStatoDatabase } from "$lib/api";
+  import {
+    configurazione,
+    percorsoObbligato,
+    verificaConfigurazione,
+  } from "$lib/configurazione-guidata.svelte";
   import {
     adattaFinestraDiAccesso,
     eFinestraDiAccesso,
@@ -89,10 +95,20 @@
     }
   }
 
-  /** Un archivio appena creato parte dalla configurazione guidata. */
+  /** A ogni sblocco si controlla se la configurazione guidata è stata completata. */
   async function proponiConfigurazioneIniziale() {
-    if (!(await configurazioneInizialeCompletata())) await goto(resolve("/benvenuto"));
+    configurazione.completata = null;
+    await verificaConfigurazione();
   }
+
+  // Finché la configurazione non è completa si resta nella guida, qualunque pagina si apra
+  $effect(() => {
+    if (finestraDiAccesso || statoDatabase !== "sbloccato" || configurazione.completata === null) {
+      return;
+    }
+    const destinazione = percorsoObbligato(configurazione.completata, page.url.pathname);
+    if (destinazione) goto(resolve(destinazione));
+  });
 
   async function gestisciCambioStato(cambio: CambioStatoDatabase) {
     if (cambio.avviso && !finestraDiAccesso) mostraAvviso("avviso", cambio.avviso);
@@ -144,7 +160,7 @@
   {/if}
 {:else if statoDatabase === "sbloccato"}
   <div class="app">
-    <MenuLaterale onBlocca={blocca} />
+    {#if configurazione.completata}<MenuLaterale onBlocca={blocca} />{/if}
     <main>
       <div class="barra-superiore">
         <PulsanteSchermoIntero bind:this={pulsanteSchermoIntero} />
@@ -152,7 +168,7 @@
       <div class="pagina">
         <BannerAggiornamento />
         <BarraAvvisi />
-        {@render children()}
+        {#if configurazione.completata !== null}{@render children()}{/if}
       </div>
     </main>
   </div>

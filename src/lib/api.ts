@@ -188,6 +188,11 @@ export function configurazioneInizialeCompletata(): Promise<boolean> {
   return invoke<boolean>("configurazione_iniziale_completata");
 }
 
+/** Ultimo passo della configurazione guidata: da qui il programma è utilizzabile. */
+export function completaConfigurazioneIniziale(): Promise<void> {
+  return invoke<void>("completa_configurazione_iniziale");
+}
+
 export function cambiaPassword(
   passwordAttuale: string,
   nuovaPassword: string,

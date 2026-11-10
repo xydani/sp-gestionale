@@ -2,11 +2,16 @@
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { onMount } from "svelte";
-  import { leggiImpostazioni, messaggioErrore, salvaImpostazioni } from "$lib/api";
+  import {
+    completaConfigurazioneIniziale,
+    leggiImpostazioni,
+    messaggioErrore,
+    salvaImpostazioni,
+  } from "$lib/api";
   import { mostraAvviso } from "$lib/avvisi.svelte";
   import FormImpostazioni from "$lib/components/FormImpostazioni.svelte";
   import SezioneTipologie from "$lib/components/SezioneTipologie.svelte";
-  import { descriviPasso } from "$lib/configurazione-guidata";
+  import { configurazione, descriviPasso } from "$lib/configurazione-guidata.svelte";
   import { palestra } from "$lib/palestra.svelte";
   import type { Impostazioni } from "$lib/types";
 
@@ -32,6 +37,13 @@
   }
 
   async function termina() {
+    try {
+      await completaConfigurazioneIniziale();
+    } catch (errore) {
+      mostraAvviso("errore", messaggioErrore(errore));
+      return;
+    }
+    configurazione.completata = true;
     mostraAvviso(
       "successo",
       "Configurazione completata. Puoi cambiarla in Impostazioni e Listino.",
