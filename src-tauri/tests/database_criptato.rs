@@ -80,7 +80,7 @@ fn password_troppo_corta_e_rifiutata_alla_creazione() {
     let risultato = crea_database_criptato(&database.percorso, "corta");
     assert!(matches!(
         risultato,
-        Err(ErroreDatabase::PasswordTroppoCorta { minimo: 8 })
+        Err(ErroreDatabase::PasswordTroppoCorta { minimo: 12 })
     ));
     assert!(!database.percorso.exists());
 }
