@@ -3,15 +3,15 @@
   import { resolve } from "$app/paths";
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
-  import { creaIscritto, elencaIscritti, messaggioErrore } from "$lib/api";
+  import { elencaIscritti, messaggioErrore } from "$lib/api";
   import { mostraAvviso } from "$lib/avvisi.svelte";
   import BadgeStato from "$lib/components/BadgeStato.svelte";
-  import FormIscritto from "$lib/components/FormIscritto.svelte";
+  import FormNuovoIscritto from "$lib/components/FormNuovoIscritto.svelte";
   import Paginazione from "$lib/components/Paginazione.svelte";
   import { formattaData } from "$lib/format";
   import { ritarda } from "$lib/ritarda";
   import { opzioniStato } from "$lib/stato-validita";
-  import type { DatiIscritto, Iscritto, Pagina, StatoValidita } from "$lib/types";
+  import type { Iscritto, Pagina, StatoValidita } from "$lib/types";
 
   const PAUSA_RICERCA_MS = 200;
 
@@ -49,17 +49,10 @@
 
   const caricaDopoPausa = ritarda(() => carica(), PAUSA_RICERCA_MS);
 
-  async function salvaNuovoIscritto(dati: DatiIscritto): Promise<boolean> {
-    try {
-      const creato = await creaIscritto(dati);
-      mostraAvviso("successo", `${creato.nome} ${creato.cognome} aggiunto agli iscritti`);
-      nuovoIscrittoAperto = false;
-      await goto(resolve("/iscritti/[id]", { id: String(creato.id) }));
-      return true;
-    } catch (errore) {
-      mostraAvviso("errore", messaggioErrore(errore));
-      return false;
-    }
+  async function apriNuovoIscritto(creato: Iscritto) {
+    mostraAvviso("successo", `${creato.nome} ${creato.cognome} iscritto, pagamento registrato`);
+    nuovoIscrittoAperto = false;
+    await goto(resolve("/iscritti/[id]", { id: String(creato.id) }));
   }
 
   onMount(() => carica());
@@ -77,9 +70,8 @@
 {#if nuovoIscrittoAperto}
   <section class="pannello">
     <h2>Nuovo iscritto</h2>
-    <FormIscritto
-      etichettaConferma="Salva iscritto"
-      onConferma={salvaNuovoIscritto}
+    <FormNuovoIscritto
+      onIscritto={apriNuovoIscritto}
       onAnnulla={() => (nuovoIscrittoAperto = false)}
     />
   </section>

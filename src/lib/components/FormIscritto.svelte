@@ -1,6 +1,6 @@
 <script lang="ts">
   import CampoData from "./CampoData.svelte";
-  import { untrack } from "svelte";
+  import { untrack, type Snippet } from "svelte";
   import { oggiIso } from "$lib/format";
   import type { DatiIscritto } from "$lib/types";
 
@@ -9,11 +9,14 @@
     etichettaConferma,
     onConferma,
     onAnnulla,
+    sezioniAggiuntive,
   }: {
     iniziale?: Partial<DatiIscritto>;
     etichettaConferma: string;
     onConferma: (dati: DatiIscritto) => Promise<boolean>;
     onAnnulla: () => void;
+    /** Altre parti del modulo prima dei pulsanti (es. i pagamenti del nuovo iscritto). */
+    sezioniAggiuntive?: Snippet;
   } = $props();
 
   // Il form parte dai valori iniziali e poi li modifica in autonomia
@@ -89,6 +92,7 @@
     Note
     <textarea bind:value={note} rows="3"></textarea>
   </label>
+  {@render sezioniAggiuntive?.()}
   <div class="azioni">
     <button class="pulsante" type="submit" disabled={inCorso}>{etichettaConferma}</button>
     <button type="button" class="pulsante secondario" onclick={onAnnulla}>Annulla</button>
