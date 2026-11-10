@@ -11,6 +11,10 @@ use super::tipologie::trova_tipologia;
 use crate::domain::date::calcola_data_scadenza;
 use crate::domain::pagamento::MetodoPagamento;
 use crate::domain::rinnovo::calcola_data_inizio_rinnovo;
+use crate::domain::validazione::{
+    DURATA_MASSIMA_ABBONAMENTO_MESI, controlla_data_pagamento, controlla_importo, controlla_note,
+    controlla_periodo,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -110,11 +114,13 @@ pub fn proponi_pagamento(
     })
 }
 
+/// `oggi` serve a rifiutare pagamenti con date non plausibili (es. nel futuro).
 pub fn registra_pagamento(
     connessione: &Connection,
     dati: &DatiPagamento,
+    oggi: NaiveDate,
 ) -> Result<Pagamento, ErroreDatabase> {
-    valida_dati_pagamento(dati)?;
+    valida_dati_pagamento(dati, oggi)?;
     // Il nome della tipologia viene copiato: lo storico non cambia se il listino cambia
     let tipologia = trova_tipologia(connessione, dati.tipologia_id)?;
     let note = dati
@@ -252,18 +258,19 @@ pub fn elimina_pagamento(connessione: &Connection, id: i64) -> Result<(), Errore
     Ok(())
 }
 
-pub fn valida_dati_pagamento(dati: &DatiPagamento) -> Result<(), ErroreDatabase> {
-    if dati.importo_cent < 0 {
-        return Err(ErroreDatabase::DatiNonValidi(
-            "L'importo non può essere negativo".into(),
-        ));
-    }
-    if dati.data_scadenza < dati.data_inizio {
-        return Err(ErroreDatabase::DatiNonValidi(
-            "La scadenza non può essere precedente all'inizio".into(),
-        ));
-    }
-    Ok(())
+pub fn valida_dati_pagamento(dati: &DatiPagamento, oggi: NaiveDate) -> Result<(), ErroreDatabase> {
+    controlla_importo(dati.importo_cent, "L'importo")
+        .and_then(|()| controlla_data_pagamento(dati.data_pagamento, oggi))
+        .and_then(|()| {
+            controlla_periodo(
+                dati.data_inizio,
+                dati.data_scadenza,
+                dati.data_pagamento,
+                DURATA_MASSIMA_ABBONAMENTO_MESI,
+            )
+        })
+        .and_then(|()| dati.note.as_deref().map_or(Ok(()), controlla_note))
+        .map_err(ErroreDatabase::DatiNonValidi)
 }
 
 /// Id e scadenza del pagamento con la scadenza più lontana dell'iscritto.

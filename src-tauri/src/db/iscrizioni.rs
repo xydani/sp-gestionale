@@ -13,6 +13,12 @@ use crate::domain::anno_sportivo::{
     MESE_INIZIO_ANNO_SPORTIVO_PREDEFINITO, proponi_periodo_iscrizione,
 };
 use crate::domain::pagamento::MetodoPagamento;
+use crate::domain::validazione::{
+    controlla_data_pagamento, controlla_importo, controlla_note, controlla_periodo,
+};
+
+/// L'iscrizione copre un anno sportivo.
+const DURATA_ISCRIZIONE_MESI: u32 = 12;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -84,18 +90,24 @@ pub fn proponi_iscrizione(
     })
 }
 
+/// `oggi` serve a rifiutare iscrizioni con date non plausibili (es. pagate nel futuro).
 pub fn registra_iscrizione(
     connessione: &Connection,
     dati: &DatiIscrizione,
+    oggi: NaiveDate,
 ) -> Result<Iscrizione, ErroreDatabase> {
-    if dati.importo_cent < 0 {
-        return Err(dati_non_validi("La quota non può essere negativa"));
-    }
-    if dati.data_fine < dati.data_inizio {
-        return Err(dati_non_validi(
-            "La fine non può essere precedente all'inizio",
-        ));
-    }
+    controlla_importo(dati.importo_cent, "La quota")
+        .and_then(|()| controlla_data_pagamento(dati.data_pagamento, oggi))
+        .and_then(|()| {
+            controlla_periodo(
+                dati.data_inizio,
+                dati.data_fine,
+                dati.data_pagamento,
+                DURATA_ISCRIZIONE_MESI,
+            )
+        })
+        .and_then(|()| dati.note.as_deref().map_or(Ok(()), controlla_note))
+        .map_err(ErroreDatabase::DatiNonValidi)?;
     let note = dati
         .note
         .as_deref()

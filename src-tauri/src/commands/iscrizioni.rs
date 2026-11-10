@@ -20,7 +20,8 @@ pub fn registra_iscrizione(
     stato: State<'_, StatoApp>,
     dati: DatiIscrizione,
 ) -> Result<Iscrizione, ErroreApp> {
-    stato.con_connessione(|connessione| iscrizioni::registra_iscrizione(connessione, &dati))
+    let oggi = stato.oggi();
+    stato.con_connessione(|connessione| iscrizioni::registra_iscrizione(connessione, &dati, oggi))
 }
 
 #[tauri::command]

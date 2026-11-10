@@ -206,3 +206,36 @@ fn lo_stato_di_tutti_gli_iscritti_si_calcola_velocemente() {
     let durata = inizio.elapsed();
     assert!(durata < TEMPO_MASSIMO_QUERY, "calcolo stati in {durata:?}");
 }
+
+/// I dati inventati devono superare gli stessi controlli dei dati inseriti a mano,
+/// altrimenti "Modifica dati" su un iscritto di prova verrebbe rifiutato.
+#[test]
+fn gli_iscritti_inventati_superano_i_controlli_dell_anagrafica() {
+    use sp_gestionale_lib::db::iscritti::{
+        DatiIscritto, FiltroIscritti, Riferimento, elenca_iscritti, valida_dati_iscritto,
+    };
+    let (_database, connessione) = database_con_dati_prova();
+    let riferimento = Riferimento {
+        oggi: OGGI,
+        giorni_preavviso: GIORNI_PREAVVISO_PREDEFINITI,
+    };
+    let filtro = FiltroIscritti {
+        includi_archiviati: true,
+        ..Default::default()
+    };
+    for iscritto in elenca_iscritti(&connessione, &filtro, riferimento).unwrap() {
+        let dati = DatiIscritto {
+            nome: iscritto.nome,
+            cognome: iscritto.cognome,
+            data_nascita: iscritto.data_nascita.unwrap(),
+            luogo_nascita: iscritto.luogo_nascita.unwrap(),
+            telefono: iscritto.telefono,
+            email: iscritto.email,
+            note: iscritto.note,
+            data_scadenza_certificato: iscritto.data_scadenza_certificato,
+        };
+        if let Err(errore) = valida_dati_iscritto(&dati, OGGI) {
+            panic!("{} {}: {errore}", dati.nome, dati.cognome);
+        }
+    }
+}

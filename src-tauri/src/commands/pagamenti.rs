@@ -26,7 +26,8 @@ pub fn registra_pagamento(
     stato: State<'_, StatoApp>,
     dati: DatiPagamento,
 ) -> Result<Pagamento, ErroreApp> {
-    stato.con_connessione(|connessione| pagamenti::registra_pagamento(connessione, &dati))
+    let oggi = stato.oggi();
+    stato.con_connessione(|connessione| pagamenti::registra_pagamento(connessione, &dati, oggi))
 }
 
 #[tauri::command]

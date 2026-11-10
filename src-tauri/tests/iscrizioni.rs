@@ -57,7 +57,7 @@ fn iscrivi_come_proposto(connessione: &Connection, iscritto_id: i64, oggi: Naive
         data_fine: proposta.data_fine,
         note: None,
     };
-    registra_iscrizione(connessione, &dati).unwrap().id
+    registra_iscrizione(connessione, &dati, oggi).unwrap().id
 }
 
 #[test]
@@ -166,7 +166,7 @@ fn dati_non_validi_e_iscritto_inesistente_sono_rifiutati() {
         },
     ] {
         assert!(matches!(
-            registra_iscrizione(&connessione, &dati),
+            registra_iscrizione(&connessione, &dati, OGGI),
             Err(ErroreDatabase::DatiNonValidi(_))
         ));
     }

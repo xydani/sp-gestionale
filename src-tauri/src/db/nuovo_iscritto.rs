@@ -33,6 +33,7 @@ pub fn iscrivi_nuovo_iscritto(
             iscritto_id,
             ..dati.iscrizione.clone()
         },
+        riferimento.oggi,
     )?;
     registra_pagamento(
         &transazione,
@@ -41,6 +42,7 @@ pub fn iscrivi_nuovo_iscritto(
             rinnovo_di_id: None,
             ..dati.pagamento.clone()
         },
+        riferimento.oggi,
     )?;
     let iscritto = trova_iscritto(&transazione, iscritto_id, riferimento)?;
     transazione.commit()?;

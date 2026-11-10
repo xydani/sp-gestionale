@@ -7,6 +7,7 @@ pub mod pagamento;
 pub mod rinnovo;
 pub mod stato;
 pub mod testo;
+pub mod validazione;
 
 use thiserror::Error;
 

@@ -62,7 +62,7 @@ fn paga_come_proposto(
         note: None,
         rinnovo_di_id: proposta.rinnovo_di_id,
     };
-    registra_pagamento(connessione, &dati).unwrap().id
+    registra_pagamento(connessione, &dati, oggi).unwrap().id
 }
 
 #[test]
@@ -214,12 +214,12 @@ fn dati_non_validi_sono_rifiutati() {
 
     for dati in [importo_negativo, scadenza_prima, iscritto_inesistente] {
         assert!(matches!(
-            registra_pagamento(&connessione, &dati),
+            registra_pagamento(&connessione, &dati, OGGI),
             Err(ErroreDatabase::DatiNonValidi(_))
         ));
     }
     assert!(matches!(
-        registra_pagamento(&connessione, &tipologia_inesistente),
+        registra_pagamento(&connessione, &tipologia_inesistente, OGGI),
         Err(ErroreDatabase::NonTrovato)
     ));
 }

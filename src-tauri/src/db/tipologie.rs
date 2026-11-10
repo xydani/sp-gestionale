@@ -5,6 +5,12 @@ use serde::{Deserialize, Serialize};
 
 use super::ErroreDatabase;
 use crate::domain::date::{Durata, UnitaDurata};
+use crate::domain::validazione::{
+    DURATA_MASSIMA_ABBONAMENTO_MESI, LUNGHEZZA_MASSIMA_NOME, controlla_importo,
+};
+
+/// Lo stesso limite della durata in mesi, espresso in giorni.
+const DURATA_MASSIMA_ABBONAMENTO_GIORNI: u32 = 1095;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -138,12 +144,25 @@ pub fn valida_dati_tipologia(dati: &DatiTipologia) -> Result<DatiTipologia, Erro
     if nome.is_empty() {
         return Err(dati_non_validi("Il nome della tipologia è obbligatorio"));
     }
+    if nome.chars().count() > LUNGHEZZA_MASSIMA_NOME {
+        return Err(dati_non_validi(&format!(
+            "Il nome della tipologia può avere al massimo {LUNGHEZZA_MASSIMA_NOME} caratteri"
+        )));
+    }
     if dati.durata_valore == 0 {
         return Err(dati_non_validi("La durata deve essere maggiore di zero"));
     }
-    if dati.prezzo_cent < 0 {
-        return Err(dati_non_validi("Il prezzo non può essere negativo"));
+    let durata_massima = match dati.durata_unita {
+        UnitaDurata::Giorni => DURATA_MASSIMA_ABBONAMENTO_GIORNI,
+        UnitaDurata::Mesi => DURATA_MASSIMA_ABBONAMENTO_MESI,
+    };
+    if dati.durata_valore > durata_massima {
+        return Err(dati_non_validi(&format!(
+            "La durata è troppo lunga: al massimo {durata_massima} {}",
+            testo_unita(dati.durata_unita)
+        )));
     }
+    controlla_importo(dati.prezzo_cent, "Il prezzo").map_err(ErroreDatabase::DatiNonValidi)?;
     Ok(DatiTipologia {
         nome,
         ..dati.clone()

@@ -13,6 +13,10 @@ use crate::domain::stato::{
     condizione_scadenza_per_stato,
 };
 use crate::domain::testo::parole_di_ricerca;
+use crate::domain::validazione::{
+    LUNGHEZZA_MASSIMA_LUOGO, LUNGHEZZA_MASSIMA_NOME, controlla_data_nascita, controlla_email,
+    controlla_nome_proprio, controlla_note, controlla_scadenza_certificato, controlla_telefono,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -304,38 +308,40 @@ pub fn valida_dati_iscritto(
     let nome = obbligatorio(&dati.nome, "Il nome")?;
     let cognome = obbligatorio(&dati.cognome, "Il cognome")?;
     let luogo_nascita = obbligatorio(&dati.luogo_nascita, "Il luogo di nascita")?;
-    if dati.data_nascita > oggi {
-        return Err(dati_non_validi(
-            "La data di nascita non può essere nel futuro",
-        ));
-    }
+    let telefono = testo_facoltativo(dati.telefono.as_deref());
     let email = testo_facoltativo(dati.email.as_deref());
-    if let Some(email) = &email
-        && !sembra_un_email(email)
-    {
-        return Err(dati_non_validi("L'indirizzo email non è valido"));
-    }
+    let note = testo_facoltativo(dati.note.as_deref());
+
+    controlla_nome_proprio(&nome, "Il nome", LUNGHEZZA_MASSIMA_NOME)
+        .and_then(|()| controlla_nome_proprio(&cognome, "Il cognome", LUNGHEZZA_MASSIMA_NOME))
+        .and_then(|()| {
+            controlla_nome_proprio(
+                &luogo_nascita,
+                "Il luogo di nascita",
+                LUNGHEZZA_MASSIMA_LUOGO,
+            )
+        })
+        .and_then(|()| controlla_data_nascita(dati.data_nascita, oggi))
+        .and_then(|()| telefono.as_deref().map_or(Ok(()), controlla_telefono))
+        .and_then(|()| email.as_deref().map_or(Ok(()), controlla_email))
+        .and_then(|()| note.as_deref().map_or(Ok(()), controlla_note))
+        .and_then(|()| {
+            dati.data_scadenza_certificato.map_or(Ok(()), |scadenza| {
+                controlla_scadenza_certificato(scadenza, oggi)
+            })
+        })
+        .map_err(ErroreDatabase::DatiNonValidi)?;
+
     Ok(DatiIscritto {
         nome,
         cognome,
         data_nascita: dati.data_nascita,
         luogo_nascita,
-        telefono: testo_facoltativo(dati.telefono.as_deref()),
+        telefono,
         email,
-        note: testo_facoltativo(dati.note.as_deref()),
+        note,
         data_scadenza_certificato: dati.data_scadenza_certificato,
     })
-}
-
-/// Controllo volutamente semplice: qualcosa@dominio.estensione, senza spazi.
-fn sembra_un_email(testo: &str) -> bool {
-    let Some((utente, dominio)) = testo.split_once('@') else {
-        return false;
-    };
-    !utente.is_empty()
-        && !testo.contains(char::is_whitespace)
-        && dominio.split('.').count() >= 2
-        && dominio.split('.').all(|parte| !parte.is_empty())
 }
 
 /// Clausola WHERE e parametri del filtro; gli stati sono tradotti in intervalli di date.
