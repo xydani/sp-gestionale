@@ -1,5 +1,11 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { ErroreApp, EsitoSblocco, StatoDatabase } from "./types";
+import type {
+  DatiTipologia,
+  ErroreApp,
+  EsitoSblocco,
+  StatoDatabase,
+  TipologiaAbbonamento,
+} from "./types";
 
 /** Unico punto di accesso al backend: ogni comando Tauri ha qui il suo wrapper tipizzato. */
 
@@ -30,6 +36,22 @@ export function ripristinaBackup(percorsoBackup: string, passwordBackup: string)
 
 export function leggiCartellaBackupAutomatici(): Promise<string> {
   return invoke<string>("cartella_backup_automatici");
+}
+
+export function elencaTipologie(soloAttive: boolean): Promise<TipologiaAbbonamento[]> {
+  return invoke<TipologiaAbbonamento[]>("elenca_tipologie", { soloAttive });
+}
+
+export function creaTipologia(dati: DatiTipologia): Promise<TipologiaAbbonamento> {
+  return invoke<TipologiaAbbonamento>("crea_tipologia", { dati });
+}
+
+export function modificaTipologia(id: number, dati: DatiTipologia): Promise<TipologiaAbbonamento> {
+  return invoke<TipologiaAbbonamento>("modifica_tipologia", { id, dati });
+}
+
+export function impostaTipologiaAttiva(id: number, attiva: boolean): Promise<TipologiaAbbonamento> {
+  return invoke<TipologiaAbbonamento>("imposta_tipologia_attiva", { id, attiva });
 }
 
 /** Estrae un messaggio leggibile da un errore del backend o imprevisto. */

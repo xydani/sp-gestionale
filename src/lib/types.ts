@@ -11,3 +11,17 @@ export interface ErroreApp {
 export interface EsitoSblocco {
   avvisoBackup: string | null;
 }
+
+export type UnitaDurata = "giorni" | "mesi";
+
+export interface TipologiaAbbonamento {
+  id: number;
+  nome: string;
+  durataValore: number;
+  durataUnita: UnitaDurata;
+  prezzoCent: number;
+  attiva: boolean;
+}
+
+/** Dati inseriti dall'utente per creare o modificare una tipologia. */
+export type DatiTipologia = Omit<TipologiaAbbonamento, "id" | "attiva">;

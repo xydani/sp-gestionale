@@ -53,6 +53,34 @@ describe("api backup", () => {
   });
 });
 
+describe("api tipologie", () => {
+  beforeEach(() => invoke.mockReset());
+
+  it("elenca solo le tipologie attive se richiesto", async () => {
+    invoke.mockResolvedValue([]);
+    await api.elencaTipologie(true);
+    expect(invoke).toHaveBeenCalledWith("elenca_tipologie", { soloAttive: true });
+  });
+
+  it("modifica una tipologia inviando id e dati", async () => {
+    const dati = {
+      nome: "Mensile",
+      durataValore: 1,
+      durataUnita: "mesi" as const,
+      prezzoCent: 5500,
+    };
+    invoke.mockResolvedValue({ id: 1, attiva: true, ...dati });
+    await api.modificaTipologia(1, dati);
+    expect(invoke).toHaveBeenCalledWith("modifica_tipologia", { id: 1, dati });
+  });
+
+  it("disattiva una tipologia", async () => {
+    invoke.mockResolvedValue({});
+    await api.impostaTipologiaAttiva(4, false);
+    expect(invoke).toHaveBeenCalledWith("imposta_tipologia_attiva", { id: 4, attiva: false });
+  });
+});
+
 describe("messaggioErrore", () => {
   it("usa il messaggio degli errori del backend", () => {
     expect(api.messaggioErrore({ codice: "password_errata", messaggio: "Password errata" })).toBe(
