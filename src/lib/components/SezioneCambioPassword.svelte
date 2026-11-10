@@ -2,6 +2,7 @@
   import { cambiaPassword, messaggioErrore } from "$lib/api";
   import { mostraAvviso } from "$lib/avvisi.svelte";
   import { LUNGHEZZA_MINIMA_PASSWORD, validaNuovaPassword } from "$lib/password";
+  import IndicatoreRobustezza from "./IndicatoreRobustezza.svelte";
 
   let passwordAttuale = $state("");
   let nuovaPassword = $state("");
@@ -48,6 +49,7 @@
       Nuova password (almeno {LUNGHEZZA_MINIMA_PASSWORD} caratteri)
       <input type="password" bind:value={nuovaPassword} autocomplete="new-password" required />
     </label>
+    <IndicatoreRobustezza password={nuovaPassword} />
     <label>
       Ripeti la nuova password
       <input type="password" bind:value={confermaPassword} autocomplete="new-password" required />

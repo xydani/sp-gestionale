@@ -1,6 +1,7 @@
 <script lang="ts">
   import { creaDatabase, messaggioErrore } from "$lib/api";
   import { LUNGHEZZA_MINIMA_PASSWORD, validaNuovaPassword } from "$lib/password";
+  import IndicatoreRobustezza from "./IndicatoreRobustezza.svelte";
 
   let { onCompletato }: { onCompletato: () => void } = $props();
 
@@ -41,6 +42,7 @@
     Password (almeno {LUNGHEZZA_MINIMA_PASSWORD} caratteri)
     <input type="password" bind:value={password} autocomplete="new-password" required />
   </label>
+  <IndicatoreRobustezza {password} />
   <label>
     Ripeti la password
     <input type="password" bind:value={confermaPassword} autocomplete="new-password" required />

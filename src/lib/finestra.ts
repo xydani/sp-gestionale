@@ -11,7 +11,7 @@ export const ETICHETTA_FINESTRA_ACCESSO = "accesso";
 export const ETICHETTA_FINESTRA_PRINCIPALE = "principale";
 
 export const DIMENSIONE_SBLOCCO = { larghezza: 400, altezza: 520 };
-export const DIMENSIONE_PRIMO_AVVIO = { larghezza: 440, altezza: 680 };
+export const DIMENSIONE_PRIMO_AVVIO = { larghezza: 440, altezza: 740 };
 
 /** Evento inviato a tutte le finestre quando il database viene sbloccato o bloccato. */
 const EVENTO_STATO_DATABASE_CAMBIATO = "stato-database-cambiato";
@@ -46,7 +46,7 @@ export async function passaAllaFinestraDiAccesso(): Promise<void> {
   await principale.hide();
 }
 
-/** La finestra di accesso è più alta al primo avvio, per l'avviso sulla password. */
+/** La finestra di accesso è più alta al primo avvio, per l'avviso e la robustezza della password. */
 export async function adattaFinestraDiAccesso(primoAvvio: boolean): Promise<void> {
   const dimensione = primoAvvio ? DIMENSIONE_PRIMO_AVVIO : DIMENSIONE_SBLOCCO;
   const finestra = getCurrentWindow();
