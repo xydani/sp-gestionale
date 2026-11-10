@@ -2,7 +2,8 @@
 
 ## [Non rilasciato]
 
-- Nuovo stile grafico minimal: tendine, pulsanti, schede, tabelle e menu più puliti
+- Nuovo stile grafico minimal: tendine, pulsanti, schede, tabelle più puliti e menu blu notte
+- Icona del programma con lo stemma della palestra
 
 ## [0.1.0] - 2026-11-10
 
