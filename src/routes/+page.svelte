@@ -13,9 +13,15 @@
     variazionePercentuale,
   } from "$lib/format";
   import { aggiornaConteggioScadenze } from "$lib/promemoria.svelte";
-  import type { RiepilogoDashboard } from "$lib/types";
+  import type { RiepilogoDashboard, TipoScadenza } from "$lib/types";
 
   let riepilogo = $state<RiepilogoDashboard | null>(null);
+
+  const ETICHETTE_TIPO_SCADENZA: Record<TipoScadenza, string> = {
+    abbonamento: "Abbonamento",
+    iscrizione: "Iscrizione annuale",
+    certificato: "Certificato medico",
+  };
 
   const oggi = oggiIso();
   const meseCorrente = nomeMese(oggi);
@@ -65,12 +71,17 @@
 
     <RiquadroNumero
       etichetta="In scadenza"
-      valore={String(riepilogo.abbonamenti.inScadenza + riepilogo.iscrizioni.inScadenza)}
+      valore={String(
+        riepilogo.abbonamenti.inScadenza +
+          riepilogo.iscrizioni.inScadenza +
+          riepilogo.certificati.inScadenza,
+      )}
       tono="in_scadenza"
       href={resolve("/scadenze")}
     >
       {#snippet dettaglio()}
         {riepilogo!.abbonamenti.inScadenza} abbonamenti · {riepilogo!.iscrizioni.inScadenza} iscrizioni
+        · {riepilogo!.certificati.inScadenza} certificati
       {/snippet}
     </RiquadroNumero>
 
@@ -82,6 +93,19 @@
     >
       {#snippet dettaglio()}
         {riepilogo!.iscrizioni.scaduti} iscrizioni annuali scadute
+      {/snippet}
+    </RiquadroNumero>
+
+    <RiquadroNumero
+      etichetta="Certificati da sistemare"
+      valore={String(riepilogo.certificati.assenti + riepilogo.certificati.scaduti)}
+      tono={riepilogo.certificati.assenti + riepilogo.certificati.scaduti > 0
+        ? "scaduto"
+        : "attivo"}
+      href={resolve("/scadenze")}
+    >
+      {#snippet dettaglio()}
+        {riepilogo!.certificati.assenti} non presentati · {riepilogo!.certificati.scaduti} scaduti
       {/snippet}
     </RiquadroNumero>
 
@@ -118,7 +142,7 @@
                   {scadenza.nome}
                 </a>
               </td>
-              <td>{scadenza.tipo === "abbonamento" ? "Abbonamento" : "Iscrizione annuale"}</td>
+              <td>{ETICHETTE_TIPO_SCADENZA[scadenza.tipo]}</td>
               <td>{formattaData(scadenza.dataScadenza)}</td>
               <td class="distanza">{descriviScadenza(scadenza.dataScadenza, oggi)}</td>
             </tr>
