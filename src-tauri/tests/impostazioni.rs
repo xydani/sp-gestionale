@@ -3,8 +3,8 @@ mod comune;
 use comune::{DatabaseTemporaneo, PASSWORD_TEST};
 use sp_gestionale_lib::db::crittografia::crea_database_criptato;
 use sp_gestionale_lib::db::impostazioni::{
-    Impostazioni, configurazione_iniziale_completata, leggi_impostazioni,
-    richiedi_configurazione_iniziale, salva_impostazioni,
+    Impostazioni, completa_configurazione_iniziale, configurazione_iniziale_completata,
+    leggi_impostazioni, richiedi_configurazione_iniziale, salva_impostazioni,
 };
 use sp_gestionale_lib::db::migrazioni::{applica_migrazioni, applica_migrazioni_fino_a};
 
@@ -68,12 +68,14 @@ fn i_valori_fuori_intervallo_sono_rifiutati() {
 }
 
 #[test]
-fn il_salvataggio_completa_la_configurazione_iniziale() {
+fn la_configurazione_resta_da_completare_finche_non_si_conclude() {
     let database = DatabaseTemporaneo::nuovo();
     let mut connessione = database.crea_con_schema();
     richiedi_configurazione_iniziale(&connessione).unwrap();
-    assert!(!configurazione_iniziale_completata(&connessione).unwrap());
+    // Salvare le opzioni (primo passo) non basta: manca ancora il listino
     salva_impostazioni(&mut connessione, &impostazioni_valide()).unwrap();
+    assert!(!configurazione_iniziale_completata(&connessione).unwrap());
+    completa_configurazione_iniziale(&connessione).unwrap();
     assert!(configurazione_iniziale_completata(&connessione).unwrap());
 }
 

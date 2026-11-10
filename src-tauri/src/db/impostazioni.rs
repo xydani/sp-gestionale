@@ -64,7 +64,7 @@ pub fn leggi_impostazioni(connessione: &Connection) -> Result<Impostazioni, Erro
     })
 }
 
-/// Salva tutte le impostazioni e segna come completata la configurazione iniziale.
+/// Salva tutte le impostazioni.
 pub fn salva_impostazioni(
     connessione: &mut Connection,
     impostazioni: &Impostazioni,
@@ -89,7 +89,6 @@ pub fn salva_impostazioni(
             CHIAVE_BACKUP_CONSERVATI,
             impostazioni.backup_conservati.to_string(),
         ),
-        (CHIAVE_CONFIGURAZIONE_INIZIALE_COMPLETATA, "1".to_string()),
     ] {
         scrivi(&transazione, chiave, &valore)?;
     }
@@ -104,6 +103,11 @@ pub fn configurazione_iniziale_completata(
         leggi_impostazione_numerica(connessione, CHIAVE_CONFIGURAZIONE_INIZIALE_COMPLETATA, 1)?
             == 1,
     )
+}
+
+/// Chiamata all'ultimo passo della configurazione guidata: da qui il programma è utilizzabile.
+pub fn completa_configurazione_iniziale(connessione: &Connection) -> Result<(), ErroreDatabase> {
+    scrivi(connessione, CHIAVE_CONFIGURAZIONE_INIZIALE_COMPLETATA, "1")
 }
 
 /// Un database appena creato parte dalla configurazione guidata.

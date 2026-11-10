@@ -26,6 +26,11 @@ pub fn configurazione_iniziale_completata(stato: State<'_, StatoApp>) -> Result<
 }
 
 #[tauri::command]
+pub fn completa_configurazione_iniziale(stato: State<'_, StatoApp>) -> Result<(), ErroreApp> {
+    stato.con_connessione(impostazioni::completa_configurazione_iniziale)
+}
+
+#[tauri::command]
 pub fn cambia_password(
     stato: State<'_, StatoApp>,
     password_attuale: String,

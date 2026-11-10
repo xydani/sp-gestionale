@@ -60,6 +60,7 @@ pub fn run() {
             commands::impostazioni::leggi_impostazioni,
             commands::impostazioni::salva_impostazioni,
             commands::impostazioni::configurazione_iniziale_completata,
+            commands::impostazioni::completa_configurazione_iniziale,
             commands::impostazioni::cambia_password,
         ])
         // Le due finestre (accesso e principale) vivono insieme: chiuderne una chiude il programma
