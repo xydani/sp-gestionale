@@ -15,8 +15,8 @@ pub const VALIDITA_MASSIMA_CERTIFICATO_MESI: u32 = 13;
 /// Limite oltre il quale un importo è sicuramente un errore di battitura (10.000 €).
 pub const IMPORTO_MASSIMO_CENT: i64 = 1_000_000;
 pub const DURATA_MASSIMA_ABBONAMENTO_MESI: u32 = 36;
-/// L'inizio del periodo pagato non si discosta più di così dalla data di pagamento.
-pub const DISTANZA_MASSIMA_INIZIO_DAL_PAGAMENTO_MESI: u32 = 12;
+/// Un periodo non inizia più di così prima della data di pagamento.
+pub const MESI_MASSIMI_INIZIO_PRIMA_DEL_PAGAMENTO: u32 = 12;
 /// Pagamenti più vecchi di così sono sicuramente un errore di battitura dell'anno.
 pub const ANNI_MASSIMI_PAGAMENTO_PASSATO: u32 = 10;
 
@@ -164,10 +164,13 @@ pub fn controlla_periodo(
             "Il periodo è troppo lungo: al massimo {durata_massima_mesi} mesi"
         ));
     }
-    let distanza = Months::new(DISTANZA_MASSIMA_INIZIO_DAL_PAGAMENTO_MESI);
-    if data_inizio > data_pagamento + distanza || data_inizio < data_pagamento - distanza {
+    // In avanti si arriva fino alla durata massima: il rinnovo anticipato di un biennale
+    // parte dopo la scadenza attuale, anche tra più di un anno
+    let inizio_minimo = data_pagamento - Months::new(MESI_MASSIMI_INIZIO_PRIMA_DEL_PAGAMENTO);
+    let inizio_massimo = data_pagamento + Months::new(durata_massima_mesi);
+    if data_inizio < inizio_minimo || data_inizio > inizio_massimo {
         return Err(
-            "L'inizio del periodo è a più di un anno dalla data di pagamento: controllare le date"
+            "L'inizio del periodo è troppo lontano dalla data di pagamento: controllare le date"
                 .into(),
         );
     }
@@ -293,5 +296,8 @@ mod test {
         assert!(controlla("2026-09-01", "2027-08-31").is_ok());
         assert!(controlla("2025-09-01", "2026-08-31").is_err());
         assert!(controlla("2025-11-09", "2025-12-09").is_err());
+        // Rinnovo anticipato di un biennale: inizia tra più di un anno
+        let biennale = controlla_periodo(data("2028-06-01"), data("2030-05-31"), pagamento, 36);
+        assert!(biennale.is_ok());
     }
 }
