@@ -5,6 +5,7 @@
   import BarraAvvisi from "$lib/components/BarraAvvisi.svelte";
   import MenuLaterale from "$lib/components/MenuLaterale.svelte";
   import PrimoAvvio from "$lib/components/PrimoAvvio.svelte";
+  import PulsanteSchermoIntero from "$lib/components/PulsanteSchermoIntero.svelte";
   import SchermataSblocco from "$lib/components/SchermataSblocco.svelte";
   import {
     alternaSchermoIntero,
@@ -16,6 +17,7 @@
   let { children }: { children: Snippet } = $props();
 
   let statoDatabase = $state<StatoDatabase | null>(null);
+  let pulsanteSchermoIntero = $state<PulsanteSchermoIntero>();
 
   async function aggiornaStato() {
     statoDatabase = await leggiStatoDatabase();
@@ -26,13 +28,16 @@
     await aggiornaStato();
   }
 
-  function gestisciTasti(evento: KeyboardEvent) {
+  async function gestisciTasti(evento: KeyboardEvent) {
     if (eTastoSchermoIntero(evento)) {
       evento.preventDefault();
-      alternaSchermoIntero();
+      await alternaSchermoIntero();
     } else if (evento.key === "Escape") {
-      esciDaSchermoIntero();
+      await esciDaSchermoIntero();
+    } else {
+      return;
     }
+    await pulsanteSchermoIntero?.aggiornaStato();
   }
 
   onMount(aggiornaStato);
@@ -44,6 +49,9 @@
   <div class="app">
     <MenuLaterale onBlocca={blocca} />
     <main>
+      <div class="barra-superiore">
+        <PulsanteSchermoIntero bind:this={pulsanteSchermoIntero} />
+      </div>
       <BarraAvvisi />
       {@render children()}
     </main>
@@ -63,7 +71,13 @@
   main {
     flex: 1;
     min-width: 0;
-    padding: 1.5rem 2rem;
+    padding: 1rem 2rem 1.5rem;
+  }
+
+  .barra-superiore {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 0.5rem;
   }
 
   .centrato {

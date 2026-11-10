@@ -1,9 +1,15 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
-/** Passa da finestra a schermo intero e viceversa. */
-export async function alternaSchermoIntero(): Promise<void> {
+/** Passa da finestra a schermo intero e viceversa; restituisce il nuovo stato. */
+export async function alternaSchermoIntero(): Promise<boolean> {
   const finestra = getCurrentWindow();
-  await finestra.setFullscreen(!(await finestra.isFullscreen()));
+  const nuovoStato = !(await finestra.isFullscreen());
+  await finestra.setFullscreen(nuovoStato);
+  return nuovoStato;
+}
+
+export function leggiSchermoIntero(): Promise<boolean> {
+  return getCurrentWindow().isFullscreen();
 }
 
 export async function esciDaSchermoIntero(): Promise<void> {

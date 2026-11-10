@@ -2,7 +2,6 @@
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
   import { VOCI_MENU, eVoceAttiva } from "$lib/menu";
-  import { alternaSchermoIntero } from "$lib/schermo-intero";
 
   let { onBlocca }: { onBlocca: () => void } = $props();
 </script>
@@ -19,9 +18,6 @@
     {/each}
   </ul>
   <div class="azioni">
-    <button type="button" onclick={alternaSchermoIntero} title="Schermo intero (F11)">
-      Schermo intero
-    </button>
     <button type="button" onclick={onBlocca}>Blocca</button>
   </div>
 </nav>
