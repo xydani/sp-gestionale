@@ -29,6 +29,8 @@
   let telefono = $state(valoriIniziali?.telefono ?? "");
   let email = $state(valoriIniziali?.email ?? "");
   let note = $state(valoriIniziali?.note ?? "");
+  let certificatoPresentato = $state(Boolean(valoriIniziali?.dataScadenzaCertificato));
+  let scadenzaCertificato = $state(valoriIniziali?.dataScadenzaCertificato ?? "");
   let inCorso = $state(false);
 
   async function conferma(evento: SubmitEvent) {
@@ -43,6 +45,7 @@
         telefono: telefono || null,
         email: email || null,
         note: note || null,
+        dataScadenzaCertificato: certificatoPresentato ? scadenzaCertificato : null,
       });
     } finally {
       inCorso = false;
@@ -85,6 +88,24 @@
         Email
         <input type="email" bind:value={email} placeholder="nome@esempio.it" />
       </label>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Certificato medico</legend>
+    <div class="griglia certificato">
+      <label class="spunta">
+        <input type="checkbox" bind:checked={certificatoPresentato} />
+        Certificato presentato
+      </label>
+      {#if certificatoPresentato}
+        <label>
+          Scade il
+          <CampoData bind:valore={scadenzaCertificato} obbligatoria />
+        </label>
+      {:else}
+        <p class="avviso">Da portare: finché manca, l'iscritto compare tra le scadenze.</p>
+      {/if}
     </div>
   </fieldset>
 
@@ -142,6 +163,30 @@
     border-radius: var(--raggio);
     font: inherit;
     font-weight: 400;
+  }
+
+  .certificato {
+    align-items: end;
+  }
+
+  label.spunta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.5rem;
+  }
+
+  label.spunta input {
+    width: 1.1rem;
+    height: 1.1rem;
+    padding: 0;
+  }
+
+  .avviso {
+    margin: 0;
+    align-self: center;
+    color: var(--colore-avviso);
+    font-size: 0.9rem;
   }
 
   .azioni {

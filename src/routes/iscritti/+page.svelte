@@ -24,6 +24,7 @@
   let testoRicerca = $state("");
   let filtroAbbonamento = $state<StatoValidita | "">("");
   let filtroIscrizione = $state<StatoValidita | "">("");
+  let filtroCertificato = $state<StatoValidita | "">("");
   let includiArchiviati = $state(false);
   let nuovoIscrittoAperto = $state(false);
   let caricamento = $state(true);
@@ -37,6 +38,7 @@
           includiArchiviati,
           statoAbbonamento: filtroAbbonamento || null,
           statoIscrizione: filtroIscrizione || null,
+          statoCertificato: filtroCertificato || null,
         },
         numeroPagina,
       );
@@ -98,6 +100,14 @@
       bind:valore={filtroAbbonamento}
       opzioni={opzioniStato("Abbonamento", "tutti")}
       etichettaAccessibile="Stato abbonamento"
+      onCambia={() => carica()}
+    />
+  </div>
+  <div class="filtro-stato">
+    <Tendina
+      bind:valore={filtroCertificato}
+      opzioni={opzioniStato("Certificato", "tutti")}
+      etichettaAccessibile="Stato del certificato medico"
       onCambia={() => carica()}
     />
   </div>

@@ -8,7 +8,9 @@
     trovaIscritto,
   } from "$lib/api";
   import { mostraAvviso } from "$lib/avvisi.svelte";
+  import BadgeStato from "$lib/components/BadgeStato.svelte";
   import FormIscritto from "$lib/components/FormIscritto.svelte";
+  import { avvisoCertificato } from "$lib/certificato";
   import SezioneAbbonamento from "$lib/components/SezioneAbbonamento.svelte";
   import SezioneIscrizione from "$lib/components/SezioneIscrizione.svelte";
   import { formattaData } from "$lib/format";
@@ -96,9 +98,21 @@
           <dd>{iscritto.telefono ?? "—"}</dd>
           <dt>Email</dt>
           <dd>{iscritto.email ?? "—"}</dd>
+          <dt>Certificato medico</dt>
+          <dd class="certificato">
+            {#if iscritto.dataScadenzaCertificato}
+              <BadgeStato stato={iscritto.statoCertificato} />
+              scade il {formattaData(iscritto.dataScadenzaCertificato)}
+            {:else}
+              <BadgeStato stato="nessuno" /> non presentato
+            {/if}
+          </dd>
           <dt>Note</dt>
           <dd class="note">{iscritto.note ?? "—"}</dd>
         </dl>
+        {#if avvisoCertificato(iscritto)}
+          <p class="avviso">{avvisoCertificato(iscritto)}</p>
+        {/if}
         {#if !iscritto.dataNascita || !iscritto.luogoNascita}
           <p class="avviso">Mancano data o luogo di nascita: completali con "Modifica dati".</p>
         {/if}
@@ -121,6 +135,12 @@
 </div>
 
 <style>
+  .certificato {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
   .indietro {
     display: inline-block;
     margin-bottom: 0.5rem;
