@@ -8,9 +8,13 @@ pub fn calcola_data_inizio_rinnovo(
     data_scadenza_precedente: Option<NaiveDate>,
     oggi: NaiveDate,
 ) -> NaiveDate {
-    data_scadenza_precedente
-        .and_then(|data_scadenza| data_scadenza.succ_opt())
-        .map_or(oggi, |giorno_dopo_scadenza| giorno_dopo_scadenza.max(oggi))
+    let Some(data_scadenza) = data_scadenza_precedente else {
+        return oggi;
+    };
+    match data_scadenza.succ_opt() {
+        Some(giorno_dopo_scadenza) => giorno_dopo_scadenza.max(oggi),
+        None => oggi,
+    }
 }
 
 #[cfg(test)]

@@ -56,18 +56,26 @@ pub struct EsitoPromemoria {
     pub in_scadenza: ConteggioInScadenza,
 }
 
+impl ConteggioInScadenza {
+    fn imposta(&mut self, tipo: TipoScadenza, numero: u32) {
+        match tipo {
+            TipoScadenza::Abbonamento => self.abbonamenti = numero,
+            TipoScadenza::Iscrizione => self.iscrizioni = numero,
+            TipoScadenza::Certificato => self.certificati = numero,
+        }
+    }
+}
+
 pub fn conta_in_scadenza(
     connessione: &Connection,
     riferimento: Riferimento,
 ) -> Result<ConteggioInScadenza, ErroreDatabase> {
-    Ok(ConteggioInScadenza {
-        abbonamenti: scadenze_in_arrivo(connessione, TipoScadenza::Abbonamento, riferimento)?.len()
-            as u32,
-        iscrizioni: scadenze_in_arrivo(connessione, TipoScadenza::Iscrizione, riferimento)?.len()
-            as u32,
-        certificati: scadenze_in_arrivo(connessione, TipoScadenza::Certificato, riferimento)?.len()
-            as u32,
-    })
+    let mut conteggio = ConteggioInScadenza::default();
+    for tipo in TipoScadenza::TUTTI {
+        let in_arrivo = scadenze_in_arrivo(connessione, tipo, riferimento)?;
+        conteggio.imposta(tipo, in_arrivo.len() as u32);
+    }
+    Ok(conteggio)
 }
 
 /// Trova le scadenze entrate nel periodo di preavviso non ancora notificate,
@@ -81,32 +89,31 @@ pub fn controlla_promemoria(
 
     for tipo in TipoScadenza::TUTTI {
         let in_arrivo = scadenze_in_arrivo(&transazione, tipo, riferimento)?;
-        let mut nuovi = 0;
-        for (iscritto_id, data_scadenza) in &in_arrivo {
-            nuovi += transazione.execute(
-                "INSERT OR IGNORE INTO promemoria_inviati (tipo, iscritto_id, data_scadenza)
-                 VALUES (?1, ?2, ?3)",
-                params![tipo.come_testo(), iscritto_id, data_scadenza],
-            )? as u32;
-        }
-        match tipo {
-            TipoScadenza::Abbonamento => {
-                esito.nuovi.abbonamenti = nuovi;
-                esito.in_scadenza.abbonamenti = in_arrivo.len() as u32;
-            }
-            TipoScadenza::Iscrizione => {
-                esito.nuovi.iscrizioni = nuovi;
-                esito.in_scadenza.iscrizioni = in_arrivo.len() as u32;
-            }
-            TipoScadenza::Certificato => {
-                esito.nuovi.certificati = nuovi;
-                esito.in_scadenza.certificati = in_arrivo.len() as u32;
-            }
-        }
+        let nuovi = segna_come_notificate(&transazione, tipo, &in_arrivo)?;
+        esito.nuovi.imposta(tipo, nuovi);
+        esito.in_scadenza.imposta(tipo, in_arrivo.len() as u32);
     }
 
     transazione.commit()?;
     Ok(esito)
+}
+
+/// Registra le scadenze come notificate; restituisce quante non lo erano già.
+fn segna_come_notificate(
+    connessione: &Connection,
+    tipo: TipoScadenza,
+    scadenze: &[(i64, NaiveDate)],
+) -> Result<u32, ErroreDatabase> {
+    let mut nuove = 0;
+    for (iscritto_id, data_scadenza) in scadenze {
+        let inserite = connessione.execute(
+            "INSERT OR IGNORE INTO promemoria_inviati (tipo, iscritto_id, data_scadenza)
+             VALUES (?1, ?2, ?3)",
+            params![tipo.come_testo(), iscritto_id, data_scadenza],
+        )?;
+        nuove += inserite as u32;
+    }
+    Ok(nuove)
 }
 
 /// Iscritti non archiviati la cui ultima scadenza cade nel periodo di preavviso.

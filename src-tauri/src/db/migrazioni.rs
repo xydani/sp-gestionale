@@ -44,16 +44,12 @@ pub fn applica_migrazioni_fino_a(
     }
 
     let versione_finale = versione_finale.min(versione_supportata);
-    for (indice, sql) in MIGRAZIONI
-        .iter()
-        .enumerate()
-        .take(versione_finale as usize)
-        .skip(versione_database as usize)
-    {
-        let nuova_versione = indice as u32 + 1;
+    // La migrazione numero N (da 1) porta lo schema dalla versione N-1 alla N
+    for versione in versione_database..versione_finale {
+        let sql = MIGRAZIONI[versione as usize];
         let transazione = connessione.transaction()?;
         transazione.execute_batch(sql)?;
-        transazione.pragma_update(None, "user_version", nuova_versione)?;
+        transazione.pragma_update(None, "user_version", versione + 1)?;
         transazione.commit()?;
     }
 

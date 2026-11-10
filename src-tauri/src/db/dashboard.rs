@@ -116,32 +116,7 @@ fn conta_per_stato(
     colonna: &str,
     riferimento: Riferimento,
 ) -> Result<ConteggioStati, ErroreDatabase> {
-    let conta = |stato| -> Result<u32, ErroreDatabase> {
-        let condizione =
-            condizione_scadenza_per_stato(stato, riferimento.oggi, riferimento.giorni_preavviso);
-        let (filtro, dal, al) = match condizione {
-            CondizioneScadenza::Assente => (format!("v.{colonna} IS NULL"), None, None),
-            CondizioneScadenza::Tra { dal, al } => (
-                format!(
-                    "v.{colonna} IS NOT NULL
-                     AND (?1 IS NULL OR v.{colonna} >= ?1)
-                     AND (?2 IS NULL OR v.{colonna} <= ?2)"
-                ),
-                dal,
-                al,
-            ),
-        };
-        let sql = format!(
-            "SELECT count(*) FROM {vista} v JOIN iscritti i ON i.id = v.iscritto_id
-             WHERE i.archiviato = 0 AND {filtro}"
-        );
-        let parametri = if filtro.contains("?1") {
-            params![dal, al]
-        } else {
-            params![]
-        };
-        Ok(connessione.query_row(&sql, parametri, |riga| riga.get(0))?)
-    };
+    let conta = |stato| conta_in_stato(connessione, vista, colonna, stato, riferimento);
     Ok(ConteggioStati {
         attivi: conta(StatoValidita::Attivo)?,
         in_scadenza: conta(StatoValidita::InScadenza)?,
@@ -150,7 +125,39 @@ fn conta_per_stato(
     })
 }
 
-/// Incassi con data di pagamento tra le due date, estremi inclusi.
+/// Iscritti non archiviati la cui data nella vista corrisponde allo stato.
+fn conta_in_stato(
+    connessione: &Connection,
+    vista: &str,
+    colonna: &str,
+    stato: StatoValidita,
+    riferimento: Riferimento,
+) -> Result<u32, ErroreDatabase> {
+    let iscritti_della_vista = format!(
+        "SELECT count(*) FROM {vista} v JOIN iscritti i ON i.id = v.iscritto_id
+         WHERE i.archiviato = 0"
+    );
+    let condizione =
+        condizione_scadenza_per_stato(stato, riferimento.oggi, riferimento.giorni_preavviso);
+    let numero = match condizione {
+        CondizioneScadenza::Assente => connessione.query_row(
+            &format!("{iscritti_della_vista} AND v.{colonna} IS NULL"),
+            [],
+            |riga| riga.get(0),
+        )?,
+        CondizioneScadenza::Tra { dal, al } => connessione.query_row(
+            &format!(
+                "{iscritti_della_vista} AND v.{colonna} IS NOT NULL
+                 AND (?1 IS NULL OR v.{colonna} >= ?1)
+                 AND (?2 IS NULL OR v.{colonna} <= ?2)"
+            ),
+            params![dal, al],
+            |riga| riga.get(0),
+        )?,
+    };
+    Ok(numero)
+}
+
 pub fn incassi_tra(
     connessione: &Connection,
     dal: NaiveDate,

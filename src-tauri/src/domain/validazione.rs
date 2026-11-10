@@ -22,6 +22,13 @@ pub const ANNI_MASSIMI_PAGAMENTO_PASSATO: u32 = 10;
 
 pub type EsitoControllo = Result<(), String>;
 
+pub fn controlla_obbligatorio(testo: &str, campo: &str) -> EsitoControllo {
+    if testo.is_empty() {
+        return Err(format!("{campo} è obbligatorio"));
+    }
+    Ok(())
+}
+
 /// Nome, cognome o luogo: lettere (anche accentate), spazi, apostrofi, trattini e punti.
 /// Serve almeno una lettera: "123" o "--" non sono un nome.
 pub fn controlla_nome_proprio(
@@ -66,7 +73,8 @@ pub fn controlla_telefono(telefono: &str) -> EsitoControllo {
         || !(CIFRE_TELEFONO_MINIME..=CIFRE_TELEFONO_MASSIME).contains(&cifre)
     {
         return Err(format!(
-            "Il telefono non è valido: servono da {CIFRE_TELEFONO_MINIME} a {CIFRE_TELEFONO_MASSIME} cifre (es. 333 1234567 o +39 333 1234567)"
+            "Il telefono non è valido: servono da {CIFRE_TELEFONO_MINIME} a \
+             {CIFRE_TELEFONO_MASSIME} cifre (es. 333 1234567 o +39 333 1234567)"
         ));
     }
     Ok(())
@@ -74,19 +82,24 @@ pub fn controlla_telefono(telefono: &str) -> EsitoControllo {
 
 /// Controllo volutamente semplice: qualcosa@dominio.estensione, senza spazi.
 pub fn controlla_email(email: &str) -> EsitoControllo {
-    let valida = email.chars().count() <= LUNGHEZZA_MASSIMA_EMAIL
-        && !email.contains(char::is_whitespace)
-        && email.split_once('@').is_some_and(|(utente, dominio)| {
-            !utente.is_empty()
-                && !dominio.contains('@')
-                && dominio.split('.').count() >= 2
-                && dominio.split('.').all(|parte| !parte.is_empty())
-        });
-    if valida {
-        Ok(())
-    } else {
-        Err("L'indirizzo email non è valido (es. nome@esempio.it)".into())
+    if !sembra_un_email(email) {
+        return Err("L'indirizzo email non è valido (es. nome@esempio.it)".into());
     }
+    Ok(())
+}
+
+fn sembra_un_email(email: &str) -> bool {
+    if email.chars().count() > LUNGHEZZA_MASSIMA_EMAIL || email.contains(char::is_whitespace) {
+        return false;
+    }
+    let Some((utente, dominio)) = email.split_once('@') else {
+        return false;
+    };
+    let parti_dominio: Vec<&str> = dominio.split('.').collect();
+    !utente.is_empty()
+        && !dominio.contains('@')
+        && parti_dominio.len() >= 2
+        && parti_dominio.iter().all(|parte| !parte.is_empty())
 }
 
 pub fn controlla_note(note: &str) -> EsitoControllo {

@@ -66,19 +66,17 @@ pub fn rimuovi_logo(cartella_dati: &Path) -> Result<(), ErroreApp> {
 fn estensione_accettata(origine: &Path) -> Result<&'static str, ErroreApp> {
     let estensione = origine
         .extension()
-        .and_then(|estensione| estensione.to_str())
-        .map(str::to_lowercase)
+        .map(|estensione| estensione.to_string_lossy().to_lowercase())
         .unwrap_or_default();
-    FORMATI_LOGO
-        .iter()
-        .map(|(accettata, _)| *accettata)
-        .find(|accettata| *accettata == estensione)
-        .ok_or_else(|| {
-            ErroreApp::nuovo(
-                "formato_logo_non_valido",
-                "Formato non supportato: scegliere un'immagine PNG, JPG, WEBP o SVG",
-            )
-        })
+    for (accettata, _) in FORMATI_LOGO {
+        if accettata == estensione {
+            return Ok(accettata);
+        }
+    }
+    Err(ErroreApp::nuovo(
+        "formato_logo_non_valido",
+        "Formato non supportato: scegliere un'immagine PNG, JPG, WEBP o SVG",
+    ))
 }
 
 fn percorso_logo(cartella_dati: &Path, estensione: &str) -> PathBuf {

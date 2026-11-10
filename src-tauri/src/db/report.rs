@@ -75,21 +75,18 @@ pub fn riepilogo_incassi(
     raggruppamento: Raggruppamento,
 ) -> Result<RiepilogoIncassi, ErroreDatabase> {
     valida_periodo(dal, al)?;
-    let per_periodo = raggruppa(
-        connessione,
-        dal,
-        al,
-        &format!("substr(data, 1, {})", raggruppamento.lunghezza_chiave()),
-    )?
-    .into_iter()
-    .map(|(periodo, incassi)| IncassiPeriodo { periodo, incassi })
-    .collect();
-    let per_metodo = raggruppa(connessione, dal, al, "metodo")?
-        .into_iter()
-        .filter_map(|(metodo, incassi)| {
-            MetodoPagamento::da_testo(&metodo).map(|metodo| IncassiMetodo { metodo, incassi })
-        })
-        .collect();
+    let chiave_periodo = format!("substr(data, 1, {})", raggruppamento.lunghezza_chiave());
+    let mut per_periodo = Vec::new();
+    for (periodo, incassi) in raggruppa(connessione, dal, al, &chiave_periodo)? {
+        per_periodo.push(IncassiPeriodo { periodo, incassi });
+    }
+    let mut per_metodo = Vec::new();
+    for (testo_metodo, incassi) in raggruppa(connessione, dal, al, "metodo")? {
+        // Il vincolo della tabella ammette solo metodi noti: un testo diverso non può esserci
+        if let Some(metodo) = MetodoPagamento::da_testo(&testo_metodo) {
+            per_metodo.push(IncassiMetodo { metodo, incassi });
+        }
+    }
     let (numero_movimenti, abbonamenti_cent, iscrizioni_cent) = connessione.query_row(
         &format!("SELECT count(*), {SOMME_PER_TIPO} FROM ({MOVIMENTI})"),
         params![dal, al],
@@ -132,8 +129,8 @@ fn componi_incassi(abbonamenti_cent: i64, iscrizioni_cent: i64) -> Incassi {
 
 fn valida_periodo(dal: NaiveDate, al: NaiveDate) -> Result<(), ErroreDatabase> {
     if dal > al {
-        return Err(ErroreDatabase::DatiNonValidi(
-            "La data di inizio è successiva alla data di fine".into(),
+        return Err(ErroreDatabase::non_valido(
+            "La data di inizio è successiva alla data di fine",
         ));
     }
     Ok(())

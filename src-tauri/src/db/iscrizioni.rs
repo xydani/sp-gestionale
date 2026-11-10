@@ -4,17 +4,18 @@ use chrono::NaiveDate;
 use rusqlite::{Connection, OptionalExtension, Row, params};
 use serde::{Deserialize, Serialize};
 
-use super::ErroreDatabase;
 use super::impostazioni::{
     CHIAVE_MESE_INIZIO_ANNO_SPORTIVO, CHIAVE_QUOTA_ISCRIZIONE_CENT,
     QUOTA_ISCRIZIONE_PREDEFINITA_CENT, leggi_impostazione_numerica,
 };
+use super::{ErroreDatabase, errore_inserimento_per_iscritto};
 use crate::domain::anno_sportivo::{
     MESE_INIZIO_ANNO_SPORTIVO_PREDEFINITO, proponi_periodo_iscrizione,
 };
 use crate::domain::pagamento::MetodoPagamento;
+use crate::domain::testo::testo_facoltativo;
 use crate::domain::validazione::{
-    controlla_data_pagamento, controlla_importo, controlla_note, controlla_periodo,
+    EsitoControllo, controlla_data_pagamento, controlla_importo, controlla_note, controlla_periodo,
 };
 
 /// L'iscrizione copre un anno sportivo.
@@ -96,23 +97,8 @@ pub fn registra_iscrizione(
     dati: &DatiIscrizione,
     oggi: NaiveDate,
 ) -> Result<Iscrizione, ErroreDatabase> {
-    controlla_importo(dati.importo_cent, "La quota")
-        .and_then(|()| controlla_data_pagamento(dati.data_pagamento, oggi))
-        .and_then(|()| {
-            controlla_periodo(
-                dati.data_inizio,
-                dati.data_fine,
-                dati.data_pagamento,
-                DURATA_ISCRIZIONE_MESI,
-            )
-        })
-        .and_then(|()| dati.note.as_deref().map_or(Ok(()), controlla_note))
-        .map_err(ErroreDatabase::DatiNonValidi)?;
-    let note = dati
-        .note
-        .as_deref()
-        .map(str::trim)
-        .filter(|nota| !nota.is_empty());
+    controlla_iscrizione(dati, oggi).map_err(ErroreDatabase::non_valido)?;
+    let note = testo_facoltativo(dati.note.as_deref());
     connessione
         .execute(
             "INSERT INTO iscrizioni (iscritto_id, importo_cent, data_pagamento, metodo,
@@ -128,15 +114,23 @@ pub fn registra_iscrizione(
                 note,
             ],
         )
-        .map_err(|errore| match &errore {
-            rusqlite::Error::SqliteFailure(dettaglio, _)
-                if dettaglio.extended_code == rusqlite::ffi::SQLITE_CONSTRAINT_FOREIGNKEY =>
-            {
-                dati_non_validi("Iscritto non trovato")
-            }
-            _ => errore.into(),
-        })?;
+        .map_err(errore_inserimento_per_iscritto)?;
     trova_iscrizione(connessione, connessione.last_insert_rowid())
+}
+
+fn controlla_iscrizione(dati: &DatiIscrizione, oggi: NaiveDate) -> EsitoControllo {
+    controlla_importo(dati.importo_cent, "La quota")?;
+    controlla_data_pagamento(dati.data_pagamento, oggi)?;
+    controlla_periodo(
+        dati.data_inizio,
+        dati.data_fine,
+        dati.data_pagamento,
+        DURATA_ISCRIZIONE_MESI,
+    )?;
+    if let Some(note) = &dati.note {
+        controlla_note(note)?;
+    }
+    Ok(())
 }
 
 pub fn trova_iscrizione(connessione: &Connection, id: i64) -> Result<Iscrizione, ErroreDatabase> {
@@ -171,10 +165,6 @@ pub fn elimina_iscrizione(connessione: &Connection, id: i64) -> Result<(), Error
         return Err(ErroreDatabase::NonTrovato);
     }
     Ok(())
-}
-
-fn dati_non_validi(messaggio: &str) -> ErroreDatabase {
-    ErroreDatabase::DatiNonValidi(messaggio.to_string())
 }
 
 fn leggi_iscrizione(riga: &Row<'_>) -> rusqlite::Result<Iscrizione> {

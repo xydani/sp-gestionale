@@ -7,6 +7,16 @@ pub fn normalizza_per_ricerca(testo: &str) -> String {
         .collect()
 }
 
+/// Testo facoltativo ripulito dagli spazi: vuoto diventa `None`.
+pub fn testo_facoltativo(testo: Option<&str>) -> Option<String> {
+    let pulito = testo?.trim();
+    if pulito.is_empty() {
+        None
+    } else {
+        Some(pulito.to_string())
+    }
+}
+
 /// Divide la ricerca in parole già normalizzate, ignorando gli spazi in eccesso.
 pub fn parole_di_ricerca(testo: &str) -> Vec<String> {
     normalizza_per_ricerca(testo)
@@ -38,6 +48,13 @@ mod test {
         assert_eq!(normalizza_per_ricerca("D'ANGELO"), "d'angelo");
         assert_eq!(normalizza_per_ricerca("Pérez Núñez"), "perez nunez");
         assert_eq!(normalizza_per_ricerca("ÈLÌA"), "elia");
+    }
+
+    #[test]
+    fn il_testo_facoltativo_vuoto_diventa_assente() {
+        assert_eq!(testo_facoltativo(None), None);
+        assert_eq!(testo_facoltativo(Some("   ")), None);
+        assert_eq!(testo_facoltativo(Some(" nota ")), Some("nota".into()));
     }
 
     #[test]

@@ -12,10 +12,11 @@ use crate::domain::stato::{
     CondizioneScadenza, GIORNI_PREAVVISO_PREDEFINITI, StatoValidita, calcola_stato_validita,
     condizione_scadenza_per_stato,
 };
-use crate::domain::testo::parole_di_ricerca;
+use crate::domain::testo::{parole_di_ricerca, testo_facoltativo};
 use crate::domain::validazione::{
-    LUNGHEZZA_MASSIMA_LUOGO, LUNGHEZZA_MASSIMA_NOME, controlla_data_nascita, controlla_email,
-    controlla_nome_proprio, controlla_note, controlla_scadenza_certificato, controlla_telefono,
+    EsitoControllo, LUNGHEZZA_MASSIMA_LUOGO, LUNGHEZZA_MASSIMA_NOME, controlla_data_nascita,
+    controlla_email, controlla_nome_proprio, controlla_note, controlla_obbligatorio,
+    controlla_scadenza_certificato, controlla_telefono,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -297,51 +298,46 @@ pub fn valida_dati_iscritto(
     dati: &DatiIscritto,
     oggi: NaiveDate,
 ) -> Result<DatiIscritto, ErroreDatabase> {
-    let obbligatorio = |valore: &str, nome_campo: &str| {
-        let pulito = valore.trim().to_string();
-        if pulito.is_empty() {
-            Err(dati_non_validi(&format!("{nome_campo} è obbligatorio")))
-        } else {
-            Ok(pulito)
-        }
-    };
-    let nome = obbligatorio(&dati.nome, "Il nome")?;
-    let cognome = obbligatorio(&dati.cognome, "Il cognome")?;
-    let luogo_nascita = obbligatorio(&dati.luogo_nascita, "Il luogo di nascita")?;
-    let telefono = testo_facoltativo(dati.telefono.as_deref());
-    let email = testo_facoltativo(dati.email.as_deref());
-    let note = testo_facoltativo(dati.note.as_deref());
-
-    controlla_nome_proprio(&nome, "Il nome", LUNGHEZZA_MASSIMA_NOME)
-        .and_then(|()| controlla_nome_proprio(&cognome, "Il cognome", LUNGHEZZA_MASSIMA_NOME))
-        .and_then(|()| {
-            controlla_nome_proprio(
-                &luogo_nascita,
-                "Il luogo di nascita",
-                LUNGHEZZA_MASSIMA_LUOGO,
-            )
-        })
-        .and_then(|()| controlla_data_nascita(dati.data_nascita, oggi))
-        .and_then(|()| telefono.as_deref().map_or(Ok(()), controlla_telefono))
-        .and_then(|()| email.as_deref().map_or(Ok(()), controlla_email))
-        .and_then(|()| note.as_deref().map_or(Ok(()), controlla_note))
-        .and_then(|()| {
-            dati.data_scadenza_certificato.map_or(Ok(()), |scadenza| {
-                controlla_scadenza_certificato(scadenza, oggi)
-            })
-        })
-        .map_err(ErroreDatabase::DatiNonValidi)?;
-
-    Ok(DatiIscritto {
-        nome,
-        cognome,
+    let pulito = DatiIscritto {
+        nome: dati.nome.trim().to_string(),
+        cognome: dati.cognome.trim().to_string(),
         data_nascita: dati.data_nascita,
-        luogo_nascita,
-        telefono,
-        email,
-        note,
+        luogo_nascita: dati.luogo_nascita.trim().to_string(),
+        telefono: testo_facoltativo(dati.telefono.as_deref()),
+        email: testo_facoltativo(dati.email.as_deref()),
+        note: testo_facoltativo(dati.note.as_deref()),
         data_scadenza_certificato: dati.data_scadenza_certificato,
-    })
+    };
+    controlla_anagrafica(&pulito, oggi).map_err(ErroreDatabase::non_valido)?;
+    Ok(pulito)
+}
+
+/// Controlla i dati già ripuliti dagli spazi; si ferma al primo errore.
+fn controlla_anagrafica(dati: &DatiIscritto, oggi: NaiveDate) -> EsitoControllo {
+    controlla_obbligatorio(&dati.nome, "Il nome")?;
+    controlla_obbligatorio(&dati.cognome, "Il cognome")?;
+    controlla_obbligatorio(&dati.luogo_nascita, "Il luogo di nascita")?;
+    controlla_nome_proprio(&dati.nome, "Il nome", LUNGHEZZA_MASSIMA_NOME)?;
+    controlla_nome_proprio(&dati.cognome, "Il cognome", LUNGHEZZA_MASSIMA_NOME)?;
+    controlla_nome_proprio(
+        &dati.luogo_nascita,
+        "Il luogo di nascita",
+        LUNGHEZZA_MASSIMA_LUOGO,
+    )?;
+    controlla_data_nascita(dati.data_nascita, oggi)?;
+    if let Some(telefono) = &dati.telefono {
+        controlla_telefono(telefono)?;
+    }
+    if let Some(email) = &dati.email {
+        controlla_email(email)?;
+    }
+    if let Some(note) = &dati.note {
+        controlla_note(note)?;
+    }
+    if let Some(scadenza) = dati.data_scadenza_certificato {
+        controlla_scadenza_certificato(scadenza, oggi)?;
+    }
+    Ok(())
 }
 
 /// Clausola WHERE e parametri del filtro; gli stati sono tradotti in intervalli di date.
@@ -357,7 +353,8 @@ fn condizioni_filtro(filtro: &FiltroIscritti, riferimento: Riferimento) -> (Stri
         parametri.push(Value::from(format!("%{}%", escape_like(&parola))));
         let indice = parametri.len();
         condizioni.push(format!(
-            "(normalizza(i.nome) LIKE ?{indice} ESCAPE '\\' OR normalizza(i.cognome) LIKE ?{indice} ESCAPE '\\')"
+            "(normalizza(i.nome) LIKE ?{indice} ESCAPE '\\'
+              OR normalizza(i.cognome) LIKE ?{indice} ESCAPE '\\')"
         ));
     }
 
@@ -382,25 +379,21 @@ fn aggiungi_condizione_stato(
     condizioni: &mut Vec<String>,
     parametri: &mut Vec<Value>,
 ) {
-    match condizione_scadenza_per_stato(stato, riferimento.oggi, riferimento.giorni_preavviso) {
-        CondizioneScadenza::Assente => condizioni.push(format!("{colonna} IS NULL")),
-        CondizioneScadenza::Tra { dal, al } => {
-            condizioni.push(format!("{colonna} IS NOT NULL"));
-            for (operatore, data) in [(">=", dal), ("<=", al)] {
-                if let Some(data) = data {
-                    parametri.push(Value::from(data.to_string()));
-                    condizioni.push(format!("{colonna} {operatore} ?{}", parametri.len()));
-                }
-            }
-        }
+    let condizione =
+        condizione_scadenza_per_stato(stato, riferimento.oggi, riferimento.giorni_preavviso);
+    let CondizioneScadenza::Tra { dal, al } = condizione else {
+        condizioni.push(format!("{colonna} IS NULL"));
+        return;
+    };
+    condizioni.push(format!("{colonna} IS NOT NULL"));
+    if let Some(dal) = dal {
+        parametri.push(Value::from(dal.to_string()));
+        condizioni.push(format!("{colonna} >= ?{}", parametri.len()));
     }
-}
-
-fn testo_facoltativo(testo: Option<&str>) -> Option<String> {
-    testo
-        .map(str::trim)
-        .filter(|testo| !testo.is_empty())
-        .map(str::to_string)
+    if let Some(al) = al {
+        parametri.push(Value::from(al.to_string()));
+        condizioni.push(format!("{colonna} <= ?{}", parametri.len()));
+    }
 }
 
 /// I caratteri % e _ sono jolly in LIKE: vanno protetti se l'utente li scrive.
@@ -409,10 +402,6 @@ fn escape_like(testo: &str) -> String {
         .replace('\\', "\\\\")
         .replace('%', "\\%")
         .replace('_', "\\_")
-}
-
-fn dati_non_validi(messaggio: &str) -> ErroreDatabase {
-    ErroreDatabase::DatiNonValidi(messaggio.to_string())
 }
 
 fn leggi_iscritto(riga: &Row<'_>, riferimento: Riferimento) -> rusqlite::Result<Iscritto> {

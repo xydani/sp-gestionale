@@ -7,13 +7,21 @@ const FINE_RIGA: &str = "\r\n";
 /// Unisce intestazione e righe in un testo CSV.
 pub fn componi_csv(intestazione: &[&str], righe: &[Vec<String>]) -> String {
     let mut testo = String::from(BOM_UTF8);
-    let intestazione: Vec<String> = intestazione.iter().map(|campo| campo.to_string()).collect();
-    for riga in std::iter::once(&intestazione).chain(righe) {
-        let campi: Vec<String> = riga.iter().map(|campo| proteggi_campo(campo)).collect();
-        testo.push_str(&campi.join(&SEPARATORE.to_string()));
-        testo.push_str(FINE_RIGA);
+    testo.push_str(&componi_riga(intestazione));
+    for riga in righe {
+        testo.push_str(&componi_riga(riga));
     }
     testo
+}
+
+fn componi_riga(campi: &[impl AsRef<str>]) -> String {
+    let protetti: Vec<String> = campi
+        .iter()
+        .map(|campo| proteggi_campo(campo.as_ref()))
+        .collect();
+    let mut riga = protetti.join(&SEPARATORE.to_string());
+    riga.push_str(FINE_RIGA);
+    riga
 }
 
 /// Racchiude tra virgolette i campi con separatori, virgolette o a capo.

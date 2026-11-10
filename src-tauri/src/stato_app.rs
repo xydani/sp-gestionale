@@ -9,6 +9,7 @@ use rusqlite::Connection;
 use serde::Serialize;
 use zeroize::Zeroizing;
 
+use crate::db::ErroreDatabase;
 use crate::db::backup::{
     crea_cartella, esegui_backup, esegui_backup_giornaliero, nome_backup_manuale,
     nome_backup_pre_aggiornamento, nome_backup_pre_migrazione, nome_backup_pre_ripristino,
@@ -61,13 +62,11 @@ impl StatoApp {
 
     /// Come `nuovo`, con un orologio sostituibile nei test.
     pub fn con_orologio(percorso_database: PathBuf, adesso: fn() -> NaiveDateTime) -> Self {
-        let cartella_backup = percorso_database.parent().map_or_else(
-            || PathBuf::from(NOME_CARTELLA_BACKUP),
-            |cartella| cartella.join(NOME_CARTELLA_BACKUP),
-        );
-        let cartella_dati = percorso_database
-            .parent()
-            .map_or_else(PathBuf::new, Path::to_path_buf);
+        let cartella_dati = match percorso_database.parent() {
+            Some(cartella) => cartella.to_path_buf(),
+            None => PathBuf::new(),
+        };
+        let cartella_backup = cartella_dati.join(NOME_CARTELLA_BACKUP);
         Self {
             percorso_database,
             cartella_dati,
@@ -270,22 +269,25 @@ impl StatoApp {
 
     /// Un backup giornaliero fallito non deve impedire di lavorare: diventa un avviso.
     fn backup_giornaliero(&self, connessione: &Connection) -> Option<String> {
-        let esito = leggi_impostazione_numerica(
+        match self.esegui_backup_giornaliero(connessione) {
+            Ok(()) => None,
+            Err(errore) => Some(format!("Backup automatico non riuscito: {errore}")),
+        }
+    }
+
+    fn esegui_backup_giornaliero(&self, connessione: &Connection) -> Result<(), ErroreDatabase> {
+        let da_conservare = leggi_impostazione_numerica(
             connessione,
             CHIAVE_BACKUP_CONSERVATI,
             BACKUP_CONSERVATI_PREDEFINITI,
-        )
-        .and_then(|da_conservare| {
-            esegui_backup_giornaliero(
-                connessione,
-                &self.cartella_backup,
-                (self.adesso)(),
-                da_conservare,
-            )
-        });
-        esito
-            .err()
-            .map(|errore| format!("Backup automatico non riuscito: {errore}"))
+        )?;
+        esegui_backup_giornaliero(
+            connessione,
+            &self.cartella_backup,
+            (self.adesso)(),
+            da_conservare,
+        )?;
+        Ok(())
     }
 
     fn connessione_bloccata(&self) -> MutexGuard<'_, Option<Connection>> {

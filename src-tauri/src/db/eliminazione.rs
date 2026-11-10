@@ -25,8 +25,8 @@ pub fn elimina_dati_iscritto(
         .optional()?
         .ok_or(ErroreDatabase::NonTrovato)?;
     if !archiviato {
-        return Err(ErroreDatabase::DatiNonValidi(
-            "Prima di eliminarlo definitivamente l'iscritto va archiviato".into(),
+        return Err(ErroreDatabase::non_valido(
+            "Prima di eliminarlo definitivamente l'iscritto va archiviato",
         ));
     }
 

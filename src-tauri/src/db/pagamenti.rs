@@ -5,15 +5,16 @@ use rusqlite::types::Value;
 use rusqlite::{Connection, OptionalExtension, Row, params, params_from_iter};
 use serde::{Deserialize, Serialize};
 
-use super::ErroreDatabase;
 use super::paginazione::{ELEMENTI_PER_PAGINA, Pagina, RichiestaPagina};
-use super::tipologie::trova_tipologia;
+use super::tipologie::{TipologiaAbbonamento, trova_tipologia};
+use super::{ErroreDatabase, errore_inserimento_per_iscritto};
 use crate::domain::date::calcola_data_scadenza;
 use crate::domain::pagamento::MetodoPagamento;
 use crate::domain::rinnovo::calcola_data_inizio_rinnovo;
+use crate::domain::testo::testo_facoltativo;
 use crate::domain::validazione::{
-    DURATA_MASSIMA_ABBONAMENTO_MESI, controlla_data_pagamento, controlla_importo, controlla_note,
-    controlla_periodo,
+    DURATA_MASSIMA_ABBONAMENTO_MESI, EsitoControllo, controlla_data_pagamento, controlla_importo,
+    controlla_note, controlla_periodo,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -105,7 +106,7 @@ pub fn proponi_pagamento(
         calcola_data_inizio_rinnovo(ultimo.map(|(_, data_scadenza)| data_scadenza), oggi)
     });
     let data_scadenza = calcola_data_scadenza(data_inizio, tipologia.durata())
-        .map_err(|errore| ErroreDatabase::DatiNonValidi(errore.to_string()))?;
+        .map_err(|errore| ErroreDatabase::non_valido(errore.to_string()))?;
     Ok(PropostaPagamento {
         importo_cent: tipologia.prezzo_cent,
         data_inizio,
@@ -122,19 +123,8 @@ pub fn registra_pagamento(
 ) -> Result<Pagamento, ErroreDatabase> {
     valida_dati_pagamento(dati, oggi)?;
     // Il nome della tipologia viene copiato: lo storico non cambia se il listino cambia
-    let tipologia = trova_tipologia(connessione, dati.tipologia_id)?;
-    // Lo storico tiene i tipi disattivati, ma i pagamenti nuovi usano solo il listino in vigore
-    if !tipologia.attiva {
-        return Err(ErroreDatabase::DatiNonValidi(format!(
-            "L'abbonamento «{}» non è più nel listino: sceglierne uno attivo",
-            tipologia.nome
-        )));
-    }
-    let note = dati
-        .note
-        .as_deref()
-        .map(str::trim)
-        .filter(|nota| !nota.is_empty());
+    let tipologia = trova_tipologia_in_vendita(connessione, dati.tipologia_id)?;
+    let note = testo_facoltativo(dati.note.as_deref());
     connessione
         .execute(
             "INSERT INTO pagamenti (iscritto_id, tipologia_id, tipologia_nome, importo_cent,
@@ -153,14 +143,7 @@ pub fn registra_pagamento(
                 dati.rinnovo_di_id,
             ],
         )
-        .map_err(|errore| match &errore {
-            rusqlite::Error::SqliteFailure(dettaglio, _)
-                if dettaglio.extended_code == rusqlite::ffi::SQLITE_CONSTRAINT_FOREIGNKEY =>
-            {
-                ErroreDatabase::DatiNonValidi("Iscritto non trovato".into())
-            }
-            _ => errore.into(),
-        })?;
+        .map_err(errore_inserimento_per_iscritto)?;
     trova_pagamento(connessione, connessione.last_insert_rowid())
 }
 
@@ -266,18 +249,37 @@ pub fn elimina_pagamento(connessione: &Connection, id: i64) -> Result<(), Errore
 }
 
 pub fn valida_dati_pagamento(dati: &DatiPagamento, oggi: NaiveDate) -> Result<(), ErroreDatabase> {
-    controlla_importo(dati.importo_cent, "L'importo")
-        .and_then(|()| controlla_data_pagamento(dati.data_pagamento, oggi))
-        .and_then(|()| {
-            controlla_periodo(
-                dati.data_inizio,
-                dati.data_scadenza,
-                dati.data_pagamento,
-                DURATA_MASSIMA_ABBONAMENTO_MESI,
-            )
-        })
-        .and_then(|()| dati.note.as_deref().map_or(Ok(()), controlla_note))
-        .map_err(ErroreDatabase::DatiNonValidi)
+    controlla_pagamento(dati, oggi).map_err(ErroreDatabase::non_valido)
+}
+
+fn controlla_pagamento(dati: &DatiPagamento, oggi: NaiveDate) -> EsitoControllo {
+    controlla_importo(dati.importo_cent, "L'importo")?;
+    controlla_data_pagamento(dati.data_pagamento, oggi)?;
+    controlla_periodo(
+        dati.data_inizio,
+        dati.data_scadenza,
+        dati.data_pagamento,
+        DURATA_MASSIMA_ABBONAMENTO_MESI,
+    )?;
+    if let Some(note) = &dati.note {
+        controlla_note(note)?;
+    }
+    Ok(())
+}
+
+/// Lo storico tiene i tipi disattivati, ma i pagamenti nuovi usano solo il listino in vigore.
+fn trova_tipologia_in_vendita(
+    connessione: &Connection,
+    tipologia_id: i64,
+) -> Result<TipologiaAbbonamento, ErroreDatabase> {
+    let tipologia = trova_tipologia(connessione, tipologia_id)?;
+    if !tipologia.attiva {
+        return Err(ErroreDatabase::non_valido(format!(
+            "L'abbonamento «{}» non è più nel listino: sceglierne uno attivo",
+            tipologia.nome
+        )));
+    }
+    Ok(tipologia)
 }
 
 /// Id e scadenza del pagamento con la scadenza più lontana dell'iscritto.

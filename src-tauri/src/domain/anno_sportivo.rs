@@ -35,12 +35,13 @@ pub fn proponi_periodo_iscrizione(
     oggi: NaiveDate,
     mese_inizio: u32,
 ) -> Periodo {
-    match ultima_data_fine.and_then(|fine| fine.succ_opt()) {
-        Some(giorno_dopo_la_fine) if giorno_dopo_la_fine > oggi => {
-            anno_sportivo_contenente(giorno_dopo_la_fine, mese_inizio)
-        }
-        _ => anno_sportivo_contenente(oggi, mese_inizio),
+    if let Some(fine) = ultima_data_fine
+        && fine >= oggi
+    {
+        let giorno_dopo_la_fine = fine.succ_opt().expect("data nell'intervallo supportato");
+        return anno_sportivo_contenente(giorno_dopo_la_fine, mese_inizio);
     }
+    anno_sportivo_contenente(oggi, mese_inizio)
 }
 
 #[cfg(test)]

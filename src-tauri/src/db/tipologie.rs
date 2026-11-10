@@ -142,27 +142,31 @@ pub fn imposta_tipologia_attiva(
 pub fn valida_dati_tipologia(dati: &DatiTipologia) -> Result<DatiTipologia, ErroreDatabase> {
     let nome = dati.nome.trim().to_string();
     if nome.is_empty() {
-        return Err(dati_non_validi("Il nome della tipologia è obbligatorio"));
+        return Err(ErroreDatabase::non_valido(
+            "Il nome della tipologia è obbligatorio",
+        ));
     }
     if nome.chars().count() > LUNGHEZZA_MASSIMA_NOME {
-        return Err(dati_non_validi(&format!(
+        return Err(ErroreDatabase::non_valido(format!(
             "Il nome della tipologia può avere al massimo {LUNGHEZZA_MASSIMA_NOME} caratteri"
         )));
     }
     if dati.durata_valore == 0 {
-        return Err(dati_non_validi("La durata deve essere maggiore di zero"));
+        return Err(ErroreDatabase::non_valido(
+            "La durata deve essere maggiore di zero",
+        ));
     }
     let durata_massima = match dati.durata_unita {
         UnitaDurata::Giorni => DURATA_MASSIMA_ABBONAMENTO_GIORNI,
         UnitaDurata::Mesi => DURATA_MASSIMA_ABBONAMENTO_MESI,
     };
     if dati.durata_valore > durata_massima {
-        return Err(dati_non_validi(&format!(
+        return Err(ErroreDatabase::non_valido(format!(
             "La durata è troppo lunga: al massimo {durata_massima} {}",
             testo_unita(dati.durata_unita)
         )));
     }
-    controlla_importo(dati.prezzo_cent, "Il prezzo").map_err(ErroreDatabase::DatiNonValidi)?;
+    controlla_importo(dati.prezzo_cent, "Il prezzo").map_err(ErroreDatabase::non_valido)?;
     Ok(DatiTipologia {
         nome,
         ..dati.clone()
@@ -208,14 +212,10 @@ fn errore_nome_duplicato(errore: rusqlite::Error) -> ErroreDatabase {
         rusqlite::Error::SqliteFailure(dettaglio, _)
             if dettaglio.code == ErrorCode::ConstraintViolation =>
         {
-            dati_non_validi("Esiste già una tipologia con questo nome")
+            ErroreDatabase::non_valido("Esiste già una tipologia con questo nome")
         }
         _ => errore.into(),
     }
-}
-
-fn dati_non_validi(messaggio: &str) -> ErroreDatabase {
-    ErroreDatabase::DatiNonValidi(messaggio.to_string())
 }
 
 #[cfg(test)]

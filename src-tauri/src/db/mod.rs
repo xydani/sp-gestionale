@@ -44,3 +44,25 @@ pub enum ErroreDatabase {
     #[error("Errore del database: {0}")]
     Sqlite(#[from] rusqlite::Error),
 }
+
+impl ErroreDatabase {
+    /// Dati inseriti non accettabili, con il messaggio da mostrare all'utente.
+    pub fn non_valido(messaggio: impl Into<String>) -> Self {
+        Self::DatiNonValidi(messaggio.into())
+    }
+}
+
+/// Un inserimento per un iscritto che non esiste viola la chiave esterna:
+/// il messaggio tecnico diventa uno comprensibile.
+pub(crate) fn errore_inserimento_per_iscritto(errore: rusqlite::Error) -> ErroreDatabase {
+    let viola_chiave_esterna = matches!(
+        &errore,
+        rusqlite::Error::SqliteFailure(dettaglio, _)
+            if dettaglio.extended_code == rusqlite::ffi::SQLITE_CONSTRAINT_FOREIGNKEY
+    );
+    if viola_chiave_esterna {
+        ErroreDatabase::non_valido("Iscritto non trovato")
+    } else {
+        errore.into()
+    }
+}
