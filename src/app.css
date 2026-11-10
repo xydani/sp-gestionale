@@ -1,11 +1,11 @@
-/* Token colore provvisori: verranno ricavati dal logo (Fase 13) */
+/* Token colore: il primario è il blu del logo della palestra */
 :root {
   --colore-sfondo: #f5f6f8;
   --colore-superficie: #ffffff;
   --colore-testo: #1d2330;
   --colore-testo-secondario: #5b6476;
   --colore-bordo: #dde1e8;
-  --colore-primario: #1f6feb;
+  --colore-primario: #0e2ab9;
   --colore-primario-testo: #ffffff;
   --colore-errore: #c62828;
   --colore-avviso: #b26a00;
