@@ -1,6 +1,7 @@
 //! Regole di dominio pure: nessun accesso a database o Tauri.
 
 pub mod anno_sportivo;
+pub mod csv;
 pub mod date;
 pub mod pagamento;
 pub mod rinnovo;
