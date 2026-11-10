@@ -23,9 +23,16 @@ jobs:
         id: release
         env:
           GH_TOKEN: ${{ github.token }}
+        # L'API restituisce subito l'id della bozza, che serve a tauri-action per caricare i file
         run: |
-          gh release create "$GITHUB_REF_NAME" --draft --title "SP Gestionale $GITHUB_REF_NAME" --notes-file note.md
-          echo "id=$(gh api "repos/$GITHUB_REPOSITORY/releases" -q ".[] | select(.tag_name == \"$GITHUB_REF_NAME\") | .id")" >> "$GITHUB_OUTPUT"
+          id=$(gh api "repos/$GITHUB_REPOSITORY/releases" \
+            -f tag_name="$GITHUB_REF_NAME" \
+            -f name="SP Gestionale $GITHUB_REF_NAME" \
+            -F draft=true \
+            -F body=@note.md \
+            -q .id)
+          test -n "$id" || { echo "Id della release non ricevuto"; exit 1; }
+          echo "id=$id" >> "$GITHUB_OUTPUT"
 
   compila:
     needs: crea-release
@@ -78,6 +85,16 @@ jobs:
     needs: [crea-release, compila]
     runs-on: ubuntu-24.04
     steps:
+      - name: Verifica che i file siano stati caricati
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          file=$(gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name')
+          echo "$file"
+          for atteso in latest.json -setup.exe .AppImage .deb .dmg; do
+            echo "$file" | grep -q -- "$atteso" || { echo "Manca $atteso"; exit 1; }
+          done
+
       # Solo una release pubblicata è "latest": è lì che l'app cerca latest.json
       - name: Pubblica la release
         env:
