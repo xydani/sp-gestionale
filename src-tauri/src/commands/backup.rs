@@ -7,7 +7,8 @@ use crate::errore::ErroreApp;
 use crate::stato_app::StatoApp;
 
 /// Restituisce il percorso del file di backup creato.
-#[tauri::command]
+// Operazione lenta: gira fuori dal thread principale, così la finestra non si blocca
+#[tauri::command(async)]
 pub fn esegui_backup_manuale(
     stato: State<'_, StatoApp>,
     cartella_destinazione: PathBuf,
@@ -16,7 +17,8 @@ pub fn esegui_backup_manuale(
 }
 
 /// Backup prima di installare un aggiornamento: se qualcosa va storto i dati sono al sicuro.
-#[tauri::command]
+// Operazione lenta: gira fuori dal thread principale, così la finestra non si blocca
+#[tauri::command(async)]
 pub fn esegui_backup_pre_aggiornamento(
     app: tauri::AppHandle,
     stato: State<'_, StatoApp>,
@@ -24,7 +26,8 @@ pub fn esegui_backup_pre_aggiornamento(
     stato.esegui_backup_pre_aggiornamento(&app.package_info().version.to_string())
 }
 
-#[tauri::command]
+// Operazione lenta: gira fuori dal thread principale, così la finestra non si blocca
+#[tauri::command(async)]
 pub fn ripristina_backup(
     stato: State<'_, StatoApp>,
     percorso_backup: PathBuf,

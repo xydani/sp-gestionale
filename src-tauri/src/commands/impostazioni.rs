@@ -30,7 +30,8 @@ pub fn completa_configurazione_iniziale(stato: State<'_, StatoApp>) -> Result<()
     stato.con_connessione(impostazioni::completa_configurazione_iniziale)
 }
 
-#[tauri::command]
+// Operazione lenta: gira fuori dal thread principale, così la finestra non si blocca
+#[tauri::command(async)]
 pub fn cambia_password(
     stato: State<'_, StatoApp>,
     password_attuale: String,

@@ -80,7 +80,8 @@ pub fn imposta_iscritto_archiviato(
 }
 
 /// Cancella per sempre l'anagrafica di un iscritto archiviato (richiesta GDPR).
-#[tauri::command]
+// Operazione lenta: gira fuori dal thread principale, così la finestra non si blocca
+#[tauri::command(async)]
 pub fn elimina_iscritto_definitivamente(
     stato: State<'_, StatoApp>,
     id: i64,

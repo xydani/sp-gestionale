@@ -9,7 +9,8 @@ pub fn stato_database(stato: State<'_, StatoApp>) -> StatoDatabase {
     stato.stato_database()
 }
 
-#[tauri::command]
+// Operazione lenta: gira fuori dal thread principale, così la finestra non si blocca
+#[tauri::command(async)]
 pub fn crea_database(
     stato: State<'_, StatoApp>,
     password: String,
@@ -18,7 +19,8 @@ pub fn crea_database(
     stato.crea_database(Zeroizing::new(password), Zeroizing::new(conferma_password))
 }
 
-#[tauri::command]
+// Operazione lenta: gira fuori dal thread principale, così la finestra non si blocca
+#[tauri::command(async)]
 pub fn sblocca_database(
     stato: State<'_, StatoApp>,
     password: String,

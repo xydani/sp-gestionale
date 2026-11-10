@@ -20,7 +20,8 @@ pub fn riepilogo_incassi(
     })
 }
 
-#[tauri::command]
+// Operazione lenta: gira fuori dal thread principale, così la finestra non si blocca
+#[tauri::command(async)]
 pub fn esporta_incassi_csv(
     stato: State<'_, StatoApp>,
     dal: NaiveDate,
