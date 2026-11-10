@@ -1,6 +1,7 @@
 //! Regole di dominio pure: nessun accesso a database o Tauri.
 
 pub mod date;
+pub mod stato;
 
 use thiserror::Error;
 
