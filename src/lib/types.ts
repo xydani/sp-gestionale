@@ -6,3 +6,8 @@ export interface ErroreApp {
   codice: string;
   messaggio: string;
 }
+
+/** Esito dello sblocco: un backup automatico fallito non impedisce di lavorare. */
+export interface EsitoSblocco {
+  avvisoBackup: string | null;
+}

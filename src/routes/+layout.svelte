@@ -2,6 +2,7 @@
   import "../app.css";
   import { onMount, type Snippet } from "svelte";
   import { bloccaDatabase, leggiStatoDatabase } from "$lib/api";
+  import BarraAvvisi from "$lib/components/BarraAvvisi.svelte";
   import MenuLaterale from "$lib/components/MenuLaterale.svelte";
   import PrimoAvvio from "$lib/components/PrimoAvvio.svelte";
   import SchermataSblocco from "$lib/components/SchermataSblocco.svelte";
@@ -42,7 +43,10 @@
 {#if statoDatabase === "sbloccato"}
   <div class="app">
     <MenuLaterale onBlocca={blocca} />
-    <main>{@render children()}</main>
+    <main>
+      <BarraAvvisi />
+      {@render children()}
+    </main>
   </div>
 {:else if statoDatabase === "bloccato"}
   <div class="centrato"><SchermataSblocco onSbloccato={aggiornaStato} /></div>

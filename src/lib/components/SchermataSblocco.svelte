@@ -1,5 +1,6 @@
 <script lang="ts">
   import { messaggioErrore, sbloccaDatabase } from "$lib/api";
+  import { mostraAvviso } from "$lib/avvisi.svelte";
 
   let { onSbloccato }: { onSbloccato: () => void } = $props();
 
@@ -12,7 +13,8 @@
     inCorso = true;
     errore = null;
     try {
-      await sbloccaDatabase(password);
+      const esito = await sbloccaDatabase(password);
+      if (esito.avvisoBackup) mostraAvviso("avviso", esito.avvisoBackup);
       onSbloccato();
     } catch (erroreBackend) {
       errore = messaggioErrore(erroreBackend);
