@@ -82,3 +82,8 @@ export function formattaPercentuale(parte: number, totale: number): string {
   if (totale === 0) return "0%";
   return `${Math.round((parte / totale) * 100)}%`;
 }
+
+/** Nome del mese dal numero (1 = gennaio). */
+export function nomeMeseDaNumero(mese: number): string {
+  return nomeMese(`2000-${String(mese).padStart(2, "0")}-01`);
+}

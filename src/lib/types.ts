@@ -216,3 +216,11 @@ export interface RiepilogoIncassi {
   perPeriodo: IncassiPeriodo[];
   perMetodo: IncassiMetodo[];
 }
+
+export interface Impostazioni {
+  nomePalestra: string;
+  giorniPreavviso: number;
+  quotaIscrizioneCent: number;
+  meseInizioAnnoSportivo: number;
+  backupConservati: number;
+}

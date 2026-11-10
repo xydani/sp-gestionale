@@ -10,6 +10,7 @@ import type {
   EsitoSblocco,
   FiltroIscritti,
   FiltroPagamenti,
+  Impostazioni,
   Iscritto,
   Iscrizione,
   Pagamento,
@@ -159,6 +160,27 @@ export function leggiRiepilogoIncassi(
 /** Scrive nel file indicato i movimenti del periodo in formato CSV. */
 export function esportaIncassiCsv(dal: string, al: string, percorso: string): Promise<void> {
   return invoke<void>("esporta_incassi_csv", { dal, al, percorso });
+}
+
+export function leggiImpostazioni(): Promise<Impostazioni> {
+  return invoke<Impostazioni>("leggi_impostazioni");
+}
+
+/** Salva le impostazioni e restituisce i valori come registrati (es. nome senza spazi ai lati). */
+export function salvaImpostazioni(impostazioni: Impostazioni): Promise<Impostazioni> {
+  return invoke<Impostazioni>("salva_impostazioni", { impostazioni });
+}
+
+export function configurazioneInizialeCompletata(): Promise<boolean> {
+  return invoke<boolean>("configurazione_iniziale_completata");
+}
+
+export function cambiaPassword(
+  passwordAttuale: string,
+  nuovaPassword: string,
+  confermaPassword: string,
+): Promise<void> {
+  return invoke<void>("cambia_password", { passwordAttuale, nuovaPassword, confermaPassword });
 }
 
 /** Estrae un messaggio leggibile da un errore del backend o imprevisto. */

@@ -5,6 +5,7 @@ import {
   descriviScadenza,
   giorniTra,
   nomeMese,
+  nomeMeseDaNumero,
   variazionePercentuale,
   euroInCentesimi,
   formattaData,
@@ -130,5 +131,13 @@ describe("formattaPercentuale", () => {
 
   it("restituisce 0% con totale zero", () => {
     expect(formattaPercentuale(0, 0)).toBe("0%");
+  });
+});
+
+describe("nomeMeseDaNumero", () => {
+  it("restituisce il nome italiano del mese", () => {
+    expect(nomeMeseDaNumero(1)).toBe("gennaio");
+    expect(nomeMeseDaNumero(9)).toBe("settembre");
+    expect(nomeMeseDaNumero(12)).toBe("dicembre");
   });
 });

@@ -182,6 +182,31 @@ describe("riepilogo economico", () => {
   });
 });
 
+describe("impostazioni", () => {
+  beforeEach(() => invoke.mockReset());
+
+  it("salva le impostazioni passandole intere", async () => {
+    const impostazioni = {
+      nomePalestra: "Palestra Esempio",
+      giorniPreavviso: 7,
+      quotaIscrizioneCent: 3000,
+      meseInizioAnnoSportivo: 9,
+      backupConservati: 30,
+    };
+    await api.salvaImpostazioni(impostazioni);
+    expect(invoke).toHaveBeenCalledWith("salva_impostazioni", { impostazioni });
+  });
+
+  it("cambia la password con quella attuale e la conferma", async () => {
+    await api.cambiaPassword("vecchia-password", "nuova-password", "nuova-password");
+    expect(invoke).toHaveBeenCalledWith("cambia_password", {
+      passwordAttuale: "vecchia-password",
+      nuovaPassword: "nuova-password",
+      confermaPassword: "nuova-password",
+    });
+  });
+});
+
 describe("messaggioErrore", () => {
   it("usa il messaggio degli errori del backend", () => {
     expect(api.messaggioErrore({ codice: "password_errata", messaggio: "Password errata" })).toBe(
