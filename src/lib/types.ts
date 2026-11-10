@@ -196,3 +196,23 @@ export interface RiepilogoDashboard {
   incassiMesePrecedente: Incassi;
   prossimeScadenze: ProssimaScadenza[];
 }
+
+export type Raggruppamento = "giorno" | "mese" | "anno";
+
+export interface IncassiPeriodo {
+  /** "AAAA", "AAAA-MM" o "AAAA-MM-GG" secondo il raggruppamento. */
+  periodo: string;
+  incassi: Incassi;
+}
+
+export interface IncassiMetodo {
+  metodo: MetodoPagamento;
+  incassi: Incassi;
+}
+
+export interface RiepilogoIncassi {
+  totale: Incassi;
+  numeroMovimenti: number;
+  perPeriodo: IncassiPeriodo[];
+  perMetodo: IncassiMetodo[];
+}

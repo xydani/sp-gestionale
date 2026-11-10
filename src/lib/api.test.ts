@@ -160,6 +160,28 @@ describe("api promemoria", () => {
   });
 });
 
+describe("riepilogo economico", () => {
+  beforeEach(() => invoke.mockReset());
+
+  it("chiede il riepilogo del periodo con il raggruppamento", async () => {
+    await api.leggiRiepilogoIncassi("2026-01-01", "2026-12-31", "mese");
+    expect(invoke).toHaveBeenCalledWith("riepilogo_incassi", {
+      dal: "2026-01-01",
+      al: "2026-12-31",
+      raggruppamento: "mese",
+    });
+  });
+
+  it("esporta il CSV nel percorso scelto", async () => {
+    await api.esportaIncassiCsv("2026-11-01", "2026-11-30", "/tmp/incassi.csv");
+    expect(invoke).toHaveBeenCalledWith("esporta_incassi_csv", {
+      dal: "2026-11-01",
+      al: "2026-11-30",
+      percorso: "/tmp/incassi.csv",
+    });
+  });
+});
+
 describe("messaggioErrore", () => {
   it("usa il messaggio degli errori del backend", () => {
     expect(api.messaggioErrore({ codice: "password_errata", messaggio: "Password errata" })).toBe(

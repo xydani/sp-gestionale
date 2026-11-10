@@ -17,7 +17,9 @@ import type {
   PaginaPagamenti,
   PropostaIscrizione,
   PropostaPagamento,
+  Raggruppamento,
   RiepilogoDashboard,
+  RiepilogoIncassi,
   StatoDatabase,
   TipologiaAbbonamento,
 } from "./types";
@@ -144,6 +146,19 @@ export function contaInScadenza(): Promise<ConteggioInScadenza> {
 
 export function leggiRiepilogoDashboard(): Promise<RiepilogoDashboard> {
   return invoke<RiepilogoDashboard>("riepilogo_dashboard");
+}
+
+export function leggiRiepilogoIncassi(
+  dal: string,
+  al: string,
+  raggruppamento: Raggruppamento,
+): Promise<RiepilogoIncassi> {
+  return invoke<RiepilogoIncassi>("riepilogo_incassi", { dal, al, raggruppamento });
+}
+
+/** Scrive nel file indicato i movimenti del periodo in formato CSV. */
+export function esportaIncassiCsv(dal: string, al: string, percorso: string): Promise<void> {
+  return invoke<void>("esporta_incassi_csv", { dal, al, percorso });
 }
 
 /** Estrae un messaggio leggibile da un errore del backend o imprevisto. */
