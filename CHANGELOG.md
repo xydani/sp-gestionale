@@ -2,13 +2,18 @@
 
 ## [Non rilasciato]
 
-- La configurazione iniziale non si può più saltare: il programma si sblocca solo a guida completata
-
-- Certificato medico: scadenza nella scheda, avvisi se manca o sta per scadere, scheda dedicata nelle Scadenze e riquadro in dashboard
+## [0.1.1] - 2026-11-10
 
 - Il nuovo iscritto si registra insieme alla quota annuale e al primo abbonamento
-
-- Le nuove password devono avere almeno 12 caratteri (quelle esistenti restano valide)
+- Certificato medico: scadenza nella scheda, avvisi se manca o sta per scadere, scheda dedicata nelle Scadenze e riquadro in dashboard
+- La configurazione iniziale non si può più saltare: il programma si sblocca solo a guida completata
+- Logo della palestra scelto da Impostazioni; senza logo si vede lo stemma
+- Avvisi e conferme in basso a destra, verdi se positivi, che si chiudono da soli
+- Blocco automatico dopo alcuni minuti di inattività (impostabile)
+- Indicatore di robustezza della password; le nuove password devono avere almeno 12 caratteri
+- Avviso prima di esportare il CSV, che non è criptato
+- Eliminazione definitiva dei dati di un iscritto archiviato, su sua richiesta (GDPR)
+- Aggiornamento in-app anche su macOS
 
 ## [0.1.0] - 2026-11-10
 
