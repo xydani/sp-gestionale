@@ -50,6 +50,8 @@ pub fn run() {
             commands::promemoria::controlla_promemoria,
             commands::promemoria::conta_in_scadenza,
             commands::dashboard::riepilogo_dashboard,
+            commands::report::riepilogo_incassi,
+            commands::report::esporta_incassi_csv,
         ])
         // Le due finestre (accesso e principale) vivono insieme: chiuderne una chiude il programma
         .on_window_event(|finestra, evento| {

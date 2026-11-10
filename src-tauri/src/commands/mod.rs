@@ -6,5 +6,6 @@ pub mod iscritti;
 pub mod iscrizioni;
 pub mod pagamenti;
 pub mod promemoria;
+pub mod report;
 pub mod sblocco;
 pub mod tipologie;

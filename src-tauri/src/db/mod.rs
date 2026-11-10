@@ -10,6 +10,7 @@ pub mod migrazioni;
 pub mod pagamenti;
 pub mod paginazione;
 pub mod promemoria;
+pub mod report;
 pub mod tipologie;
 
 use thiserror::Error;
