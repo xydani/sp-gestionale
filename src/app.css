@@ -17,9 +17,12 @@
   --colore-focus: rgb(14 42 185 / 0.2);
   --colore-errore: #c62828;
   --colore-avviso: #b26a00;
-  --colore-menu: #ffffff;
-  --colore-menu-testo: #3f3f46;
-  --colore-menu-attivo: var(--colore-primario-tenue);
+  /* Menu blu notte, ricavato dal blu del logo */
+  --colore-menu: #0f1a4a;
+  --colore-menu-testo: #c3cae6;
+  --colore-menu-hover: rgb(255 255 255 / 0.07);
+  --colore-menu-attivo: var(--colore-primario);
+  --colore-menu-bordo: rgb(255 255 255 / 0.12);
   --raggio: 8px;
   --raggio-grande: 12px;
   --ombra-campo: 0 1px 2px rgb(24 24 27 / 0.04);

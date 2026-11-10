@@ -35,7 +35,7 @@
     {/each}
   </ul>
   <div class="azioni">
-    <button type="button" class="pulsante secondario" onclick={onBlocca}>Blocca</button>
+    <button type="button" class="blocca" onclick={onBlocca}>Blocca</button>
   </div>
 </nav>
 
@@ -49,7 +49,6 @@
     display: flex;
     flex-direction: column;
     background: var(--colore-menu);
-    border-right: 1px solid var(--colore-bordo);
     color: var(--colore-menu-testo);
     padding: 1rem 0.75rem;
   }
@@ -60,10 +59,18 @@
     padding: 0.5rem 0.75rem 1.25rem;
   }
 
+  /* Il logo è blu: sul fondo scuro sta in un riquadro bianco */
+  .logo:has(:global(img)) {
+    justify-self: start;
+    padding: 0.4rem 0.6rem;
+    border-radius: var(--raggio);
+    background: #ffffff;
+  }
+
   .titolo {
     font-weight: 650;
     font-size: 1.05rem;
-    color: var(--colore-testo);
+    color: #ffffff;
     overflow-wrap: anywhere;
   }
 
@@ -92,14 +99,19 @@
   }
 
   a:hover {
-    background: var(--colore-sfondo-tenue);
-    color: var(--colore-testo);
+    background: var(--colore-menu-hover);
+    color: #ffffff;
   }
 
   a.attiva {
     background: var(--colore-menu-attivo);
-    color: var(--colore-primario);
+    color: #ffffff;
     font-weight: 600;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.25);
+  }
+
+  a:focus-visible {
+    outline-color: #ffffff;
   }
 
   .badge {
@@ -116,5 +128,19 @@
 
   .azioni {
     display: grid;
+  }
+
+  .blocca {
+    padding: 0.5rem;
+    border: 1px solid var(--colore-menu-bordo);
+    border-radius: var(--raggio);
+    background: transparent;
+    color: var(--colore-menu-testo);
+    font-weight: 500;
+  }
+
+  .blocca:hover {
+    background: var(--colore-menu-hover);
+    color: #ffffff;
   }
 </style>
