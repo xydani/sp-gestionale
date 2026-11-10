@@ -2,9 +2,6 @@
 
 ## [Non rilasciato]
 
-- Nuovo stile grafico minimal: tendine, pulsanti, schede, tabelle più puliti e menu blu notte
-- Icona del programma con lo stemma della palestra
-
 ## [0.1.0] - 2026-11-10
 
 Prima versione.
@@ -17,4 +14,5 @@ Prima versione.
 - Riepilogo incassi per giorno, mese e anno, per metodo, con esportazione CSV
 - Impostazioni, cambio password, avvio automatico e configurazione guidata con il listino
 - Calendario per scegliere le date
+- Stile grafico minimal con menu blu notte e icona con lo stemma della palestra
 - Aggiornamento in-app con backup automatico prima dell'installazione
