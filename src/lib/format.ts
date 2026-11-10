@@ -10,9 +10,20 @@ export function formattaEuro(importoCent: number): string {
  * Restituisce null se il testo non è un importo valido.
  */
 export function euroInCentesimi(testo: string): number | null {
-  const pulito = testo.replace(/\s|€/g, "").replace(/\./g, "").replace(",", ".");
-  if (!/^\d+(\.\d{1,2})?$/.test(pulito)) return null;
-  return Math.round(Number(pulito) * 100);
+  const numero = inFormatoNumerico(testo.replace(/\s|€/g, ""));
+  if (!/^\d+(\.\d{1,2})?$/.test(numero)) return null;
+  return Math.round(Number(numero) * 100);
+}
+
+/**
+ * Con la virgola, i punti separano le migliaia ("1.234,56").
+ * Senza virgola, un punto seguito da una o due cifre finali è decimale ("30.50", dal tastierino);
+ * altrimenti i punti separano le migliaia ("1.000").
+ */
+function inFormatoNumerico(testo: string): string {
+  if (testo.includes(",")) return testo.replace(/\./g, "").replace(",", ".");
+  if (/^\d+\.\d{1,2}$/.test(testo)) return testo;
+  return testo.replace(/\./g, "");
 }
 
 /** Importo in centesimi nel formato da modificare in un campo: "45,50". */

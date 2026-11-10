@@ -37,6 +37,14 @@ describe("euroInCentesimi", () => {
     expect(euroInCentesimi("0")).toBe(0);
   });
 
+  it("legge il punto come decimale quando è seguito da una o due cifre", () => {
+    expect(euroInCentesimi("30.50")).toBe(3050);
+    expect(euroInCentesimi("30.5")).toBe(3050);
+    expect(euroInCentesimi("45.00")).toBe(4500);
+    expect(euroInCentesimi("1.000")).toBe(100000);
+    expect(euroInCentesimi("1.000.000")).toBe(100000000);
+  });
+
   it("evita errori di arrotondamento", () => {
     expect(euroInCentesimi("0,29")).toBe(29);
     expect(euroInCentesimi("1,15")).toBe(115);
