@@ -19,6 +19,8 @@
   --colore-menu-accento: #8197ff;
   --raggio: 8px;
   --larghezza-menu: 220px;
+  /* L'interfaccia è chiara: anche gli elenchi delle tendine, disegnati dal sistema, lo seguono */
+  color-scheme: light;
   font-family: system-ui, "Segoe UI", Roboto, sans-serif;
   font-size: 16px;
   color: var(--colore-testo);
@@ -86,6 +88,11 @@ textarea {
   background-position: right 0.75rem center;
   background-size: 0.75rem;
   cursor: pointer;
+}
+
+option {
+  background: var(--colore-superficie);
+  color: var(--colore-testo);
 }
 
 input[type="checkbox"],
