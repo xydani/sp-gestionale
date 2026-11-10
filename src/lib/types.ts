@@ -44,6 +44,9 @@ export interface Iscritto {
   statoIscrizione: StatoValidita;
   ultimaDataScadenzaAbbonamento: string | null;
   statoAbbonamento: StatoValidita;
+  /** Assente se il certificato medico non è stato presentato. */
+  dataScadenzaCertificato: string | null;
+  statoCertificato: StatoValidita;
 }
 
 /** Dati inseriti dall'utente per creare o modificare un iscritto. */
@@ -55,6 +58,8 @@ export interface DatiIscritto {
   telefono: string | null;
   email: string | null;
   note: string | null;
+  /** Scadenza del certificato medico; null se non è stato presentato. */
+  dataScadenzaCertificato: string | null;
 }
 
 export type OrdinamentoIscritti =
@@ -62,13 +67,16 @@ export type OrdinamentoIscritti =
   | "scadenza_abbonamento_crescente"
   | "scadenza_abbonamento_decrescente"
   | "fine_iscrizione_crescente"
-  | "fine_iscrizione_decrescente";
+  | "fine_iscrizione_decrescente"
+  | "scadenza_certificato_crescente"
+  | "scadenza_certificato_decrescente";
 
 export interface FiltroIscritti {
   testo: string;
   includiArchiviati: boolean;
   statoAbbonamento: StatoValidita | null;
   statoIscrizione: StatoValidita | null;
+  statoCertificato?: StatoValidita | null;
   /** Se assente, ordine alfabetico. */
   ordinamento?: OrdinamentoIscritti;
 }
@@ -158,6 +166,7 @@ export interface PaginaPagamenti extends Pagina<Pagamento> {
 export interface ConteggioInScadenza {
   abbonamenti: number;
   iscrizioni: number;
+  certificati: number;
 }
 
 export interface EsitoPromemoria {
@@ -180,7 +189,7 @@ export interface Incassi {
 }
 
 export interface ProssimaScadenza {
-  tipo: "abbonamento" | "iscrizione";
+  tipo: TipoScadenza;
   iscrittoId: number;
   nome: string;
   cognome: string;
@@ -192,6 +201,8 @@ export interface RiepilogoDashboard {
   iscritti: number;
   abbonamenti: ConteggioStati;
   iscrizioni: ConteggioStati;
+  /** "assenti" sono gli iscritti che non hanno presentato il certificato medico. */
+  certificati: ConteggioStati;
   incassiMese: Incassi;
   incassiMesePrecedente: Incassi;
   prossimeScadenze: ProssimaScadenza[];
@@ -231,3 +242,6 @@ export interface DatiNuovoIscritto {
   iscrizione: DatiIscrizione;
   pagamento: DatiPagamento;
 }
+
+/** Cosa scade: abbonamento, iscrizione annuale o certificato medico. */
+export type TipoScadenza = "abbonamento" | "iscrizione" | "certificato";

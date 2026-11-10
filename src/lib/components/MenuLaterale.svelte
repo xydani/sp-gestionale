@@ -4,7 +4,7 @@
   import { VOCI_MENU, eVoceAttiva } from "$lib/menu";
   import { onMount } from "svelte";
   import { palestra, caricaNomePalestra } from "$lib/palestra.svelte";
-  import { scadenzeInArrivo } from "$lib/promemoria.svelte";
+  import { scadenzeInArrivo, totaleInScadenza } from "$lib/promemoria.svelte";
   import LogoPalestra from "./LogoPalestra.svelte";
 
   let { onBlocca }: { onBlocca: () => void } = $props();
@@ -14,7 +14,7 @@
     caricaNomePalestra().catch(() => {});
   });
 
-  const totaleInScadenza = $derived(scadenzeInArrivo.abbonamenti + scadenzeInArrivo.iscrizioni);
+  const totaleScadenze = $derived(totaleInScadenza(scadenzeInArrivo));
 </script>
 
 <nav>
@@ -27,8 +27,8 @@
       <li>
         <a href={resolve(voce.percorso)} class:attiva={eVoceAttiva(voce, page.url.pathname)}>
           {voce.etichetta}
-          {#if voce.percorso === "/scadenze" && totaleInScadenza > 0}
-            <span class="badge" title="Scadenze nei prossimi giorni">{totaleInScadenza}</span>
+          {#if voce.percorso === "/scadenze" && totaleScadenze > 0}
+            <span class="badge" title="Scadenze nei prossimi giorni">{totaleScadenze}</span>
           {/if}
         </a>
       </li>

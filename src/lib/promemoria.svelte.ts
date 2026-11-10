@@ -10,7 +10,22 @@ import type { ConteggioInScadenza } from "./types";
 export const INTERVALLO_CONTROLLO_MS = 60 * 60 * 1000;
 
 /** Conteggio mostrato nel badge del menu, condiviso tra i componenti. */
-export const scadenzeInArrivo = $state<ConteggioInScadenza>({ abbonamenti: 0, iscrizioni: 0 });
+export const scadenzeInArrivo = $state<ConteggioInScadenza>({
+  abbonamenti: 0,
+  iscrizioni: 0,
+  certificati: 0,
+});
+
+/** Totale delle scadenze in arrivo, per il badge del menu. */
+export function totaleInScadenza(conteggio: ConteggioInScadenza): number {
+  return conteggio.abbonamenti + conteggio.iscrizioni + conteggio.certificati;
+}
+
+/** "a", "a e b", "a, b e c". */
+function unisciElenco(parti: string[]): string {
+  if (parti.length <= 1) return parti.join("");
+  return `${parti.slice(0, -1).join(", ")} e ${parti.at(-1)}`;
+}
 
 /** Testo della notifica, oppure null se non c'è nulla di nuovo. */
 export function testoNotifica(nuovi: ConteggioInScadenza, giorniPreavviso?: number): string | null {
@@ -21,9 +36,14 @@ export function testoNotifica(nuovi: ConteggioInScadenza, giorniPreavviso?: numb
   if (nuovi.iscrizioni > 0) {
     parti.push(`${nuovi.iscrizioni} ${nuovi.iscrizioni === 1 ? "iscrizione" : "iscrizioni"}`);
   }
+  if (nuovi.certificati > 0) {
+    parti.push(
+      `${nuovi.certificati} ${nuovi.certificati === 1 ? "certificato medico" : "certificati medici"}`,
+    );
+  }
   if (parti.length === 0) return null;
   const periodo = giorniPreavviso ? ` nei prossimi ${giorniPreavviso} giorni` : "";
-  return `In scadenza${periodo}: ${parti.join(" e ")}. Apri "Scadenze" per i dettagli.`;
+  return `In scadenza${periodo}: ${unisciElenco(parti)}. Apri "Scadenze" per i dettagli.`;
 }
 
 /** Controlla le scadenze, invia una notifica riassuntiva se ce ne sono di nuove e aggiorna il badge. */
