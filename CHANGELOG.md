@@ -2,6 +2,8 @@
 
 ## [Non rilasciato]
 
+- Le nuove password devono avere almeno 12 caratteri (quelle esistenti restano valide)
+
 ## [0.1.0] - 2026-11-10
 
 Prima versione.
