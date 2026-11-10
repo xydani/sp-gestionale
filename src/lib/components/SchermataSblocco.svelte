@@ -26,7 +26,7 @@
 </script>
 
 <form class="riquadro" onsubmit={sblocca}>
-  <h1>SP Gestionale</h1>
+  <h1>Bentornato</h1>
   <p>Inserisci la password per aprire l'archivio.</p>
 
   <label>

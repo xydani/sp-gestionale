@@ -25,7 +25,9 @@
     const nuovoStato = await leggiStatoDatabase();
     // Prima si adatta la finestra, poi si cambia schermata: evita di vedere
     // per un istante il layout principale nella finestra compatta
-    await adattaFinestra(modalitaFinestraPerStato(nuovoStato));
+    const modalita = modalitaFinestraPerStato(nuovoStato);
+    document.documentElement.classList.toggle("finestra-compatta", modalita !== "principale");
+    await adattaFinestra(modalita);
     statoDatabase = nuovoStato;
   }
 
@@ -84,54 +86,5 @@
     display: flex;
     justify-content: flex-end;
     margin-bottom: 0.5rem;
-  }
-
-  /* Stili condivisi dai riquadri di primo avvio e sblocco */
-  :global(.riquadro) {
-    display: grid;
-    gap: 1rem;
-  }
-
-  :global(.riquadro h1) {
-    margin: 0;
-    font-size: 1.5rem;
-  }
-
-  :global(.riquadro p) {
-    margin: 0;
-    color: var(--colore-testo-secondario);
-  }
-
-  :global(.riquadro label) {
-    display: grid;
-    gap: 0.35rem;
-    font-weight: 500;
-  }
-
-  :global(.riquadro input) {
-    padding: 0.6rem 0.75rem;
-    border: 1px solid var(--colore-bordo);
-    border-radius: var(--raggio);
-  }
-
-  :global(.riquadro button) {
-    padding: 0.7rem;
-    border: none;
-    border-radius: var(--raggio);
-    background: var(--colore-primario);
-    color: var(--colore-primario-testo);
-    font-weight: 600;
-  }
-
-  :global(.riquadro button:disabled) {
-    opacity: 0.6;
-  }
-
-  :global(.riquadro .avviso) {
-    color: var(--colore-avviso);
-  }
-
-  :global(.riquadro .errore) {
-    color: var(--colore-errore);
   }
 </style>

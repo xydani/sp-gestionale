@@ -15,6 +15,11 @@ vite.config.ts.timestamp-*
 *.db-shm
 *.key
 CLAUDE.md
+PIANO.md
 
 # Database fittizio generato da npm run dati:prova
 /dati-prova
+
+# Logo della palestra: resta solo in locale
+/static/logo-palestra.png
+/img
