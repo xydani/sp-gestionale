@@ -165,3 +165,34 @@ export interface EsitoPromemoria {
   nuovi: ConteggioInScadenza;
   inScadenza: ConteggioInScadenza;
 }
+
+export interface ConteggioStati {
+  attivi: number;
+  inScadenza: number;
+  scaduti: number;
+  assenti: number;
+}
+
+export interface Incassi {
+  abbonamentiCent: number;
+  iscrizioniCent: number;
+  totaleCent: number;
+}
+
+export interface ProssimaScadenza {
+  tipo: "abbonamento" | "iscrizione";
+  iscrittoId: number;
+  nome: string;
+  cognome: string;
+  dataScadenza: string;
+}
+
+export interface RiepilogoDashboard {
+  /** Iscritti non archiviati. */
+  iscritti: number;
+  abbonamenti: ConteggioStati;
+  iscrizioni: ConteggioStati;
+  incassiMese: Incassi;
+  incassiMesePrecedente: Incassi;
+  prossimeScadenze: ProssimaScadenza[];
+}

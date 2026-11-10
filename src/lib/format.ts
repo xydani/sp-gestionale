@@ -54,3 +54,17 @@ export function descriviScadenza(scadenzaIso: string, oggi: string = oggiIso()):
   if (giorni === -1) return "ieri";
   return `da ${-giorni} giorni`;
 }
+
+/** Nome del mese in italiano di una data ISO: "novembre". */
+export function nomeMese(dataIso: string): string {
+  const [anno, mese] = dataIso.split("-").map(Number);
+  return new Date(anno, mese - 1, 1).toLocaleDateString("it-IT", { month: "long" });
+}
+
+/** Variazione percentuale rispetto al valore precedente: "+12%", "−5%", null se non calcolabile. */
+export function variazionePercentuale(attuale: number, precedente: number): string | null {
+  if (precedente === 0) return null;
+  const percentuale = Math.round(((attuale - precedente) / precedente) * 100);
+  if (percentuale === 0) return "invariato";
+  return percentuale > 0 ? `+${percentuale}%` : `−${Math.abs(percentuale)}%`;
+}

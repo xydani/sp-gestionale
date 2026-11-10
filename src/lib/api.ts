@@ -17,6 +17,7 @@ import type {
   PaginaPagamenti,
   PropostaIscrizione,
   PropostaPagamento,
+  RiepilogoDashboard,
   StatoDatabase,
   TipologiaAbbonamento,
 } from "./types";
@@ -139,6 +140,10 @@ export function controllaPromemoria(): Promise<EsitoPromemoria> {
 
 export function contaInScadenza(): Promise<ConteggioInScadenza> {
   return invoke<ConteggioInScadenza>("conta_in_scadenza");
+}
+
+export function leggiRiepilogoDashboard(): Promise<RiepilogoDashboard> {
+  return invoke<RiepilogoDashboard>("riepilogo_dashboard");
 }
 
 /** Estrae un messaggio leggibile da un errore del backend o imprevisto. */

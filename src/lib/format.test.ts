@@ -4,6 +4,8 @@ import {
   descriviDurata,
   descriviScadenza,
   giorniTra,
+  nomeMese,
+  variazionePercentuale,
   euroInCentesimi,
   formattaData,
   formattaEuro,
@@ -88,5 +90,24 @@ describe("descriviScadenza", () => {
     expect(descriviScadenza("2026-11-15", "2026-11-10")).toBe("tra 5 giorni");
     expect(descriviScadenza("2026-11-09", "2026-11-10")).toBe("ieri");
     expect(descriviScadenza("2026-10-29", "2026-11-10")).toBe("da 12 giorni");
+  });
+});
+
+describe("nomeMese", () => {
+  it("restituisce il nome del mese in italiano", () => {
+    expect(nomeMese("2026-11-10")).toBe("novembre");
+    expect(nomeMese("2026-01-31")).toBe("gennaio");
+  });
+});
+
+describe("variazionePercentuale", () => {
+  it("calcola la variazione arrotondata con il segno", () => {
+    expect(variazionePercentuale(11200, 10000)).toBe("+12%");
+    expect(variazionePercentuale(9500, 10000)).toBe("−5%");
+    expect(variazionePercentuale(10000, 10000)).toBe("invariato");
+  });
+
+  it("non calcola la variazione da zero", () => {
+    expect(variazionePercentuale(5000, 0)).toBeNull();
   });
 });
