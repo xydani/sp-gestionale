@@ -6,11 +6,13 @@ use rusqlite::{Connection, params};
 
 use crate::db::ErroreDatabase;
 use crate::db::tipologie::elenca_tipologie;
+use crate::domain::anno_sportivo::Periodo;
 use crate::domain::anno_sportivo::{
     MESE_INIZIO_ANNO_SPORTIVO_PREDEFINITO, anno_sportivo_contenente,
 };
 use crate::domain::date::calcola_data_scadenza;
 use crate::domain::pagamento::MetodoPagamento;
+use crate::domain::stato::GIORNI_PREAVVISO_PREDEFINITI;
 
 pub const NUMERO_ISCRITTI_PREDEFINITO: u32 = 250;
 
@@ -103,6 +105,41 @@ const PERCENTUALE_CON_EMAIL: u64 = 60;
 /// Percentuale di iscritti senza alcun pagamento.
 const PERCENTUALE_SENZA_PAGAMENTI: u64 = 8;
 const ANNI_MASSIMI_DI_STORICO: u64 = 3;
+/// Quote di iscritti con casi particolari di iscrizione annuale, per provare stati e avvisi.
+const PERCENTUALE_ISCRIZIONE_IN_SCADENZA: u64 = 5;
+const PERCENTUALE_ISCRIZIONE_NON_RINNOVATA: u64 = 6;
+const PERCENTUALE_SENZA_ISCRIZIONE: u64 = 3;
+
+/// Come viene generata l'iscrizione annuale di un iscritto.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum CasoIscrizione {
+    /// Un'iscrizione per ogni anno sportivo di attività.
+    Regolare,
+    /// L'iscrizione in corso termina entro i giorni di preavviso.
+    InScadenza,
+    /// Manca l'iscrizione dell'anno sportivo in corso, anche se l'abbonamento è attivo.
+    NonRinnovata,
+    /// Nessuna iscrizione mai pagata.
+    Assente,
+}
+
+impl CasoIscrizione {
+    fn scegli(casuale: &mut GeneratoreCasuale) -> Self {
+        let estratto = casuale.tra(1, 100);
+        let soglia_in_scadenza = PERCENTUALE_ISCRIZIONE_IN_SCADENZA;
+        let soglia_non_rinnovata = soglia_in_scadenza + PERCENTUALE_ISCRIZIONE_NON_RINNOVATA;
+        let soglia_assente = soglia_non_rinnovata + PERCENTUALE_SENZA_ISCRIZIONE;
+        if estratto <= soglia_in_scadenza {
+            Self::InScadenza
+        } else if estratto <= soglia_non_rinnovata {
+            Self::NonRinnovata
+        } else if estratto <= soglia_assente {
+            Self::Assente
+        } else {
+            Self::Regolare
+        }
+    }
+}
 
 /// Generatore pseudo-casuale xorshift: con lo stesso seme produce sempre gli stessi dati.
 struct GeneratoreCasuale(u64);
@@ -213,12 +250,21 @@ pub fn genera_dati_prova(
             data_inizio = data_scadenza + Days::new(1 + giorni_di_pausa);
         }
 
+        let caso = CasoIscrizione::scegli(&mut casuale);
         inserisci_iscrizioni(
             &transazione,
             &mut casuale,
             iscritto_id,
-            data_iscrizione,
-            ultima_data_coperta,
+            Periodo {
+                inizio: data_iscrizione,
+                fine: if caso == CasoIscrizione::InScadenza {
+                    ultima_data_coperta.max(oggi)
+                } else {
+                    ultima_data_coperta
+                },
+            },
+            oggi,
+            caso,
         )?;
     }
 
@@ -226,17 +272,30 @@ pub fn genera_dati_prova(
     Ok(())
 }
 
-/// Un'iscrizione per ogni anno sportivo di attività, dal primo all'ultimo abbonamento.
+/// Un'iscrizione per ogni anno sportivo del periodo di attività, salvo i casi particolari.
 fn inserisci_iscrizioni(
     transazione: &rusqlite::Transaction<'_>,
     casuale: &mut GeneratoreCasuale,
     iscritto_id: i64,
-    primo_giorno: NaiveDate,
-    ultimo_giorno: NaiveDate,
+    attivita: Periodo,
+    oggi: NaiveDate,
+    caso: CasoIscrizione,
 ) -> Result<(), ErroreDatabase> {
-    let mut periodo = anno_sportivo_contenente(primo_giorno, MESE_INIZIO_ANNO_SPORTIVO_PREDEFINITO);
-    while periodo.inizio <= ultimo_giorno {
-        let data_pagamento = periodo.inizio.max(primo_giorno);
+    if caso == CasoIscrizione::Assente {
+        return Ok(());
+    }
+    let mut periodo =
+        anno_sportivo_contenente(attivita.inizio, MESE_INIZIO_ANNO_SPORTIVO_PREDEFINITO);
+    while periodo.inizio <= attivita.fine {
+        let comprende_oggi = periodo.inizio <= oggi && oggi <= periodo.fine;
+        if comprende_oggi && caso == CasoIscrizione::NonRinnovata {
+            break;
+        }
+        let data_fine = if comprende_oggi && caso == CasoIscrizione::InScadenza {
+            oggi + Days::new(casuale.tra(0, GIORNI_PREAVVISO_PREDEFINITI.into()))
+        } else {
+            periodo.fine
+        };
         transazione.execute(
             "INSERT INTO iscrizioni (iscritto_id, importo_cent, data_pagamento, metodo,
                  data_inizio, data_fine)
@@ -244,10 +303,10 @@ fn inserisci_iscrizioni(
             params![
                 iscritto_id,
                 QUOTA_ISCRIZIONE_CENT,
-                data_pagamento,
+                periodo.inizio.max(attivita.inizio),
                 casuale.scegli(&MetodoPagamento::TUTTI).come_testo(),
                 periodo.inizio,
-                periodo.fine,
+                data_fine,
             ],
         )?;
         let inizio_anno_dopo = periodo

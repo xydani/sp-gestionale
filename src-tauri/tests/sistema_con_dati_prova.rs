@@ -29,9 +29,14 @@ fn conta(connessione: &Connection, sql: &str) -> i64 {
 }
 
 fn conta_iscritti_per_stato(connessione: &Connection) -> HashMap<StatoValidita, u32> {
-    let mut query = connessione
-        .prepare("SELECT ultima_data_scadenza FROM v_ultima_scadenza_iscritti")
-        .unwrap();
+    conta_per_stato(
+        connessione,
+        "SELECT ultima_data_scadenza FROM v_ultima_scadenza_iscritti",
+    )
+}
+
+fn conta_per_stato(connessione: &Connection, sql: &str) -> HashMap<StatoValidita, u32> {
+    let mut query = connessione.prepare(sql).unwrap();
     let mut conteggi = HashMap::new();
     let scadenze = query
         .query_map([], |riga| riga.get::<_, Option<String>>(0))
@@ -80,6 +85,44 @@ fn sono_presenti_tutti_gli_stati_di_abbonamento() {
         );
     }
     assert_eq!(conteggi.values().sum::<u32>(), NUMERO_ISCRITTI);
+}
+
+#[test]
+fn sono_presenti_tutti_gli_stati_di_iscrizione() {
+    let (_database, connessione) = database_con_dati_prova();
+    let conteggi = conta_per_stato(
+        &connessione,
+        "SELECT ultima_data_fine_iscrizione FROM iscritti
+         LEFT JOIN v_ultima_iscrizione_iscritti ON iscritto_id = iscritti.id",
+    );
+    for stato in [
+        StatoValidita::Attivo,
+        StatoValidita::InScadenza,
+        StatoValidita::Scaduto,
+        StatoValidita::Nessuno,
+    ] {
+        assert!(
+            conteggi.get(&stato).copied().unwrap_or(0) > 0,
+            "manca lo stato di iscrizione {stato:?}"
+        );
+    }
+}
+
+#[test]
+fn esistono_abbonamenti_attivi_senza_iscrizione_valida() {
+    let (_database, connessione) = database_con_dati_prova();
+    let oggi = OGGI.to_string();
+    let senza_iscrizione: i64 = connessione
+        .query_row(
+            "SELECT COUNT(*) FROM v_ultima_scadenza_iscritti a
+             LEFT JOIN v_ultima_iscrizione_iscritti i USING (iscritto_id)
+             WHERE a.ultima_data_scadenza >= ?1
+               AND (i.ultima_data_fine_iscrizione IS NULL OR i.ultima_data_fine_iscrizione < ?1)",
+            [&oggi],
+            |riga| riga.get(0),
+        )
+        .unwrap();
+    assert!(senza_iscrizione > 0);
 }
 
 #[test]
