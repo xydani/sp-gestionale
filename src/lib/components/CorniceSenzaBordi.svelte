@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
   import { chiudiApp } from "$lib/finestra";
+  import LogoPalestra from "./LogoPalestra.svelte";
 
   let { children }: { children: Snippet } = $props();
 </script>
@@ -16,13 +17,7 @@
   </div>
 
   <div class="contenuto">
-    <!-- Il logo non è nel repository: se manca, l'immagine si nasconde -->
-    <img
-      class="logo"
-      src="/logo-palestra.png"
-      alt="Logo della palestra"
-      onerror={(evento) => ((evento.currentTarget as HTMLImageElement).hidden = true)}
-    />
+    <div class="logo"><LogoPalestra altezza="76px" /></div>
     {@render children()}
   </div>
 </div>
@@ -86,11 +81,7 @@
   }
 
   .logo {
-    width: 112px;
-    height: 112px;
     margin-bottom: 1.25rem;
-    border-radius: 50%;
-    box-shadow: 0 6px 20px rgb(26 47 176 / 0.18);
     user-select: none;
     pointer-events: none;
   }
