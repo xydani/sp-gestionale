@@ -47,10 +47,10 @@
           <button
             type="button"
             class="pulsante secondario"
-            onclick={() => esegui(rimuoviLogoPalestra, "Ripristinato lo stemma predefinito")}
+            onclick={() => esegui(rimuoviLogoPalestra, "Ripristinato il logo predefinito")}
             disabled={inCorso}
           >
-            Usa lo stemma predefinito
+            Usa il logo predefinito
           </button>
         {/if}
       </div>

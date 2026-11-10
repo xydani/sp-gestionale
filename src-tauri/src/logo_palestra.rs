@@ -52,7 +52,7 @@ pub fn leggi_logo(cartella_dati: &Path) -> Result<Option<String>, ErroreApp> {
     Ok(None)
 }
 
-/// Torna allo stemma predefinito.
+/// Torna al logo predefinito incluso nel programma.
 pub fn rimuovi_logo(cartella_dati: &Path) -> Result<(), ErroreApp> {
     for (estensione, _) in FORMATI_LOGO {
         let percorso = percorso_logo(cartella_dati, estensione);
@@ -156,7 +156,7 @@ mod test {
     }
 
     #[test]
-    fn dopo_la_rimozione_torna_lo_stemma() {
+    fn dopo_la_rimozione_non_resta_nessun_logo_scelto() {
         let cartella = tempfile::tempdir().unwrap();
         salva_logo(cartella.path(), &immagine(cartella.path(), "a.jpg", b"a")).unwrap();
         rimuovi_logo(cartella.path()).unwrap();

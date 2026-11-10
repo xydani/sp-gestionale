@@ -2,6 +2,8 @@
 
 ## [Non rilasciato]
 
+- Il logo della palestra è incluso nel programma: si vede subito anche su Windows e macOS
+
 ## [0.1.1] - 2026-11-10
 
 - Il nuovo iscritto si registra insieme alla quota annuale e al primo abbonamento
