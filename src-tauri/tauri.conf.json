@@ -50,6 +50,16 @@
       "icons/icon.ico"
     ],
     "category": "Business",
-    "shortDescription": "Gestione abbonamenti palestra"
+    "shortDescription": "Gestione abbonamenti palestra",
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEQyQzhEMTg3Mjk4MDNCQUIKUldTck80QXBoOUhJMGxMU3VSdlEzZklTZ3RIRVhPNE1DdnBsdFpubWxSYWIwNjlNa3FEUVJXWHQK",
+      "endpoints": ["https://github.com/xydani/sp-gestionale/releases/latest/download/latest.json"],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
   }
 }
