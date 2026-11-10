@@ -11,7 +11,7 @@ export const VOCI_MENU: VoceMenu[] = [
   { etichetta: "Iscritti", percorso: "/iscritti" },
   { etichetta: "Pagamenti", percorso: "/pagamenti" },
   { etichetta: "Scadenze", percorso: "/scadenze" },
-  { etichetta: "Report", percorso: "/report" },
+  { etichetta: "Incassi", percorso: "/report" },
   { etichetta: "Listino", percorso: "/listino" },
   { etichetta: "Impostazioni", percorso: "/impostazioni" },
 ];
