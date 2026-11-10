@@ -1,11 +1,15 @@
 import { invoke } from "@tauri-apps/api/core";
 import type {
   DatiIscritto,
+  DatiPagamento,
   DatiTipologia,
   ErroreApp,
   EsitoSblocco,
   FiltroIscritti,
+  FiltroPagamenti,
   Iscritto,
+  Pagamento,
+  PropostaPagamento,
   StatoDatabase,
   TipologiaAbbonamento,
 } from "./types";
@@ -75,6 +79,27 @@ export function modificaIscritto(id: number, dati: DatiIscritto): Promise<Iscrit
 
 export function impostaIscrittoArchiviato(id: number, archiviato: boolean): Promise<Iscritto> {
   return invoke<Iscritto>("imposta_iscritto_archiviato", { id, archiviato });
+}
+
+/** Propone importo e date; con `dataInizio` ricalcola la scadenza da quella data. */
+export function proponiPagamento(
+  iscrittoId: number,
+  tipologiaId: number,
+  dataInizio: string | null = null,
+): Promise<PropostaPagamento> {
+  return invoke<PropostaPagamento>("proponi_pagamento", { iscrittoId, tipologiaId, dataInizio });
+}
+
+export function registraPagamento(dati: DatiPagamento): Promise<Pagamento> {
+  return invoke<Pagamento>("registra_pagamento", { dati });
+}
+
+export function elencaPagamenti(filtro: FiltroPagamenti): Promise<Pagamento[]> {
+  return invoke<Pagamento[]>("elenca_pagamenti", { filtro });
+}
+
+export function eliminaPagamento(id: number): Promise<void> {
+  return invoke("elimina_pagamento", { id });
 }
 
 /** Estrae un messaggio leggibile da un errore del backend o imprevisto. */

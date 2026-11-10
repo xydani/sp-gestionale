@@ -98,6 +98,37 @@ describe("api iscritti", () => {
   });
 });
 
+describe("api pagamenti", () => {
+  beforeEach(() => invoke.mockReset());
+
+  it("chiede la proposta senza data di inizio per il rinnovo automatico", async () => {
+    invoke.mockResolvedValue({});
+    await api.proponiPagamento(3, 1);
+    expect(invoke).toHaveBeenCalledWith("proponi_pagamento", {
+      iscrittoId: 3,
+      tipologiaId: 1,
+      dataInizio: null,
+    });
+  });
+
+  it("chiede la proposta con una data di inizio scelta", async () => {
+    invoke.mockResolvedValue({});
+    await api.proponiPagamento(3, 1, "2026-12-01");
+    expect(invoke).toHaveBeenCalledWith("proponi_pagamento", {
+      iscrittoId: 3,
+      tipologiaId: 1,
+      dataInizio: "2026-12-01",
+    });
+  });
+
+  it("elenca i pagamenti con il filtro", async () => {
+    invoke.mockResolvedValue([]);
+    const filtro = { dal: "2026-11-01", al: "2026-11-30", metodo: null, iscrittoId: null };
+    await api.elencaPagamenti(filtro);
+    expect(invoke).toHaveBeenCalledWith("elenca_pagamenti", { filtro });
+  });
+});
+
 describe("messaggioErrore", () => {
   it("usa il messaggio degli errori del backend", () => {
     expect(api.messaggioErrore({ codice: "password_errata", messaggio: "Password errata" })).toBe(

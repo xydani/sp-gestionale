@@ -52,3 +52,49 @@ export interface FiltroIscritti {
   includiArchiviati: boolean;
   stato: StatoAbbonamento | null;
 }
+
+export type MetodoPagamento = "contanti" | "carta" | "bonifico" | "altro";
+
+export interface Pagamento {
+  id: number;
+  iscrittoId: number;
+  iscrittoNome: string;
+  iscrittoCognome: string;
+  tipologiaId: number | null;
+  tipologiaNome: string;
+  importoCent: number;
+  dataPagamento: string;
+  metodo: MetodoPagamento;
+  dataInizio: string;
+  dataScadenza: string;
+  note: string | null;
+  rinnovoDiId: number | null;
+}
+
+/** Dati inseriti dall'utente per registrare un pagamento. */
+export interface DatiPagamento {
+  iscrittoId: number;
+  tipologiaId: number;
+  importoCent: number;
+  dataPagamento: string;
+  metodo: MetodoPagamento;
+  dataInizio: string;
+  dataScadenza: string;
+  note: string | null;
+  rinnovoDiId: number | null;
+}
+
+/** Valori proposti dal programma per un nuovo pagamento, tutti modificabili. */
+export interface PropostaPagamento {
+  importoCent: number;
+  dataInizio: string;
+  dataScadenza: string;
+  rinnovoDiId: number | null;
+}
+
+export interface FiltroPagamenti {
+  dal: string | null;
+  al: string | null;
+  metodo: MetodoPagamento | null;
+  iscrittoId: number | null;
+}
