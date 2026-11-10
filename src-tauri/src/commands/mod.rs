@@ -1,6 +1,7 @@
 //! Comandi Tauri: adattatori sottili che delegano a `stato_app`, `db` e `domain`.
 
 pub mod backup;
+pub mod dashboard;
 pub mod iscritti;
 pub mod iscrizioni;
 pub mod pagamenti;

@@ -49,6 +49,7 @@ pub fn run() {
             commands::pagamenti::elimina_pagamento,
             commands::promemoria::controlla_promemoria,
             commands::promemoria::conta_in_scadenza,
+            commands::dashboard::riepilogo_dashboard,
         ])
         // Le due finestre (accesso e principale) vivono insieme: chiuderne una chiude il programma
         .on_window_event(|finestra, evento| {
