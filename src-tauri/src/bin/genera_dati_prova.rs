@@ -2,7 +2,7 @@
 //!
 //! Uso: genera_dati_prova <percorso.db> [password] [numero_iscritti]
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use sp_gestionale_lib::dati_prova::{NUMERO_ISCRITTI_PREDEFINITO, genera_dati_prova};
@@ -33,6 +33,11 @@ fn main() -> ExitCode {
     if let Some(cartella) = percorso.parent() {
         let _ = std::fs::create_dir_all(cartella);
     }
+    // Il file di prova viene sempre ricreato da zero
+    if let Err(errore) = elimina_database_precedente(&percorso) {
+        eprintln!("Impossibile eliminare il database di prova precedente: {errore}");
+        return ExitCode::FAILURE;
+    }
 
     let oggi = chrono::Local::now().date_naive();
     let risultato = crea_database_criptato(&percorso, password).and_then(|mut connessione| {
@@ -53,4 +58,14 @@ fn main() -> ExitCode {
             ExitCode::FAILURE
         }
     }
+}
+
+fn elimina_database_precedente(percorso: &Path) -> std::io::Result<()> {
+    for suffisso in ["", "-wal", "-shm"] {
+        let file = PathBuf::from(format!("{}{suffisso}", percorso.display()));
+        if file.exists() {
+            std::fs::remove_file(file)?;
+        }
+    }
+    Ok(())
 }
