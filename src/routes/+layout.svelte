@@ -14,6 +14,11 @@
   } from "$lib/finestra";
   import { mostraAvviso } from "$lib/avvisi.svelte";
   import { INTERVALLO_CONTROLLO_MS, eseguiControlloPromemoria } from "$lib/promemoria.svelte";
+  import {
+    INTERVALLO_CONTROLLO_AGGIORNAMENTI_MS,
+    verificaAggiornamenti,
+  } from "$lib/aggiornamento.svelte";
+  import BannerAggiornamento from "$lib/components/BannerAggiornamento.svelte";
   import BarraAvvisi from "$lib/components/BarraAvvisi.svelte";
   import CorniceSenzaBordi from "$lib/components/CorniceSenzaBordi.svelte";
   import MenuLaterale from "$lib/components/MenuLaterale.svelte";
@@ -36,6 +41,17 @@
   const finestraDiAccesso = eFinestraDiAccesso();
   let smettiDiAscoltare: (() => void) | undefined;
   let timerPromemoria: ReturnType<typeof setInterval> | undefined;
+  let timerAggiornamenti: ReturnType<typeof setInterval> | undefined;
+
+  /** Nella finestra principale cerca nuove versioni all'avvio e poi una volta al giorno. */
+  function avviaControlloAggiornamenti() {
+    if (timerAggiornamenti) return;
+    verificaAggiornamenti(true);
+    timerAggiornamenti = setInterval(
+      () => verificaAggiornamenti(true),
+      INTERVALLO_CONTROLLO_AGGIORNAMENTI_MS,
+    );
+  }
 
   /** Nella finestra principale, da sbloccata, controlla le scadenze subito e poi ogni ora. */
   function avviaControlloPromemoria() {
@@ -62,6 +78,7 @@
     if (!finestraDiAccesso) {
       if (statoDatabase === "sbloccato") {
         avviaControlloPromemoria();
+        avviaControlloAggiornamenti();
         await proponiConfigurazioneIniziale();
       } else {
         fermaControlloPromemoria();
@@ -109,6 +126,7 @@
   onDestroy(() => {
     smettiDiAscoltare?.();
     fermaControlloPromemoria();
+    clearInterval(timerAggiornamenti);
   });
 </script>
 
@@ -132,6 +150,7 @@
         <PulsanteSchermoIntero bind:this={pulsanteSchermoIntero} />
       </div>
       <div class="pagina">
+        <BannerAggiornamento />
         <BarraAvvisi />
         {@render children()}
       </div>

@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { leggiImpostazioni, messaggioErrore, salvaImpostazioni } from "$lib/api";
   import { mostraAvviso } from "$lib/avvisi.svelte";
+  import SezioneAggiornamenti from "$lib/components/SezioneAggiornamenti.svelte";
   import FormImpostazioni from "$lib/components/FormImpostazioni.svelte";
   import SezioneAvvioAutomatico from "$lib/components/SezioneAvvioAutomatico.svelte";
   import SezioneBackup from "$lib/components/SezioneBackup.svelte";
@@ -45,6 +46,7 @@
     <SezioneCambioPassword />
     <SezioneAvvioAutomatico />
     <SezioneBackup />
+    <SezioneAggiornamenti />
   </div>
 </div>
 
