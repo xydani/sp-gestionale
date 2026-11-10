@@ -242,7 +242,7 @@
   }
 
   .campo-data {
-    width: 8.5rem;
+    width: 10rem;
   }
 
   select {
