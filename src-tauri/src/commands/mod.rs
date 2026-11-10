@@ -2,3 +2,4 @@
 
 pub mod backup;
 pub mod sblocco;
+pub mod tipologie;

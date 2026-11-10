@@ -5,7 +5,8 @@ use chrono::{Days, NaiveDate};
 use rusqlite::{Connection, params};
 
 use crate::db::ErroreDatabase;
-use crate::domain::date::{Durata, UnitaDurata, calcola_data_scadenza};
+use crate::db::tipologie::elenca_tipologie;
+use crate::domain::date::calcola_data_scadenza;
 
 pub const NUMERO_ISCRITTI_PREDEFINITO: u32 = 250;
 
@@ -92,13 +93,6 @@ const METODI_PAGAMENTO: &[&str] = &["contanti", "carta", "bonifico", "altro"];
 const PERCENTUALE_SENZA_PAGAMENTI: u64 = 8;
 const ANNI_MASSIMI_DI_STORICO: u64 = 3;
 
-struct Tipologia {
-    id: i64,
-    nome: String,
-    durata: Durata,
-    prezzo_cent: i64,
-}
-
 /// Generatore pseudo-casuale xorshift: con lo stesso seme produce sempre gli stessi dati.
 struct GeneratoreCasuale(u64);
 
@@ -133,7 +127,7 @@ pub fn genera_dati_prova(
     seme: u64,
 ) -> Result<(), ErroreDatabase> {
     let mut casuale = GeneratoreCasuale::nuovo(seme);
-    let tipologie = leggi_tipologie_attive(connessione)?;
+    let tipologie = elenca_tipologie(connessione, true)?;
     let transazione = connessione.transaction()?;
 
     for _ in 0..numero_iscritti {
@@ -162,7 +156,7 @@ pub fn genera_dati_prova(
 
         while data_inizio <= ultima_data_coperta {
             let tipologia = casuale.scegli(&tipologie);
-            let data_scadenza = calcola_data_scadenza(data_inizio, tipologia.durata)
+            let data_scadenza = calcola_data_scadenza(data_inizio, tipologia.durata())
                 .expect("le tipologie di prova hanno durate valide");
 
             transazione.execute(
@@ -194,30 +188,4 @@ pub fn genera_dati_prova(
 
     transazione.commit()?;
     Ok(())
-}
-
-fn leggi_tipologie_attive(connessione: &Connection) -> Result<Vec<Tipologia>, ErroreDatabase> {
-    let mut query = connessione.prepare(
-        "SELECT id, nome, durata_valore, durata_unita, prezzo_cent
-         FROM tipologie_abbonamento WHERE attiva = 1 ORDER BY id",
-    )?;
-    let tipologie = query
-        .query_map([], |riga| {
-            let unita: String = riga.get(3)?;
-            Ok(Tipologia {
-                id: riga.get(0)?,
-                nome: riga.get(1)?,
-                durata: Durata {
-                    valore: riga.get(2)?,
-                    unita: if unita == "giorni" {
-                        UnitaDurata::Giorni
-                    } else {
-                        UnitaDurata::Mesi
-                    },
-                },
-                prezzo_cent: riga.get(4)?,
-            })
-        })?
-        .collect::<Result<Vec<_>, _>>()?;
-    Ok(tipologie)
 }

@@ -176,6 +176,16 @@ impl StatoApp {
         Ok(())
     }
 
+    /// Esegue un'operazione sul database; errore se l'archivio è bloccato.
+    pub fn con_connessione<T>(
+        &self,
+        operazione: impl FnOnce(&Connection) -> Result<T, crate::db::ErroreDatabase>,
+    ) -> Result<T, ErroreApp> {
+        let connessione = self.connessione_bloccata();
+        let connessione = connessione.as_ref().ok_or_else(errore_database_bloccato)?;
+        Ok(operazione(connessione)?)
+    }
+
     fn apri_e_aggiorna(&self, password: &str) -> Result<Connection, ErroreApp> {
         let mut connessione = apri_database_criptato(&self.percorso_database, password)?;
         let versione_corrente = versione_schema_corrente(&connessione)?;
@@ -336,6 +346,16 @@ mod test {
         let (cartella, stato) = stato_creato_e_bloccato();
         let errore = stato.esegui_backup_manuale(cartella.path()).unwrap_err();
         assert_eq!(errore.codice, "database_bloccato");
+    }
+
+    #[test]
+    fn le_operazioni_sul_database_richiedono_lo_sblocco() {
+        let (_cartella, stato) = stato_creato_e_bloccato();
+        let errore = stato.con_connessione(|_| Ok(())).unwrap_err();
+        assert_eq!(errore.codice, "database_bloccato");
+
+        stato.sblocca_database(segreto(PASSWORD)).unwrap();
+        assert!(stato.con_connessione(|_| Ok(())).is_ok());
     }
 
     #[test]

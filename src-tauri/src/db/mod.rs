@@ -4,6 +4,7 @@ pub mod backup;
 pub mod crittografia;
 pub mod impostazioni;
 pub mod migrazioni;
+pub mod tipologie;
 
 use thiserror::Error;
 
@@ -25,6 +26,10 @@ pub enum ErroreDatabase {
         versione_database: u32,
         versione_supportata: u32,
     },
+    #[error("{0}")]
+    DatiNonValidi(String),
+    #[error("Elemento non trovato")]
+    NonTrovato,
     #[error("Errore sul file: {0}")]
     File(String),
     #[error("Errore del database: {0}")]

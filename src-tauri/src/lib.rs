@@ -29,6 +29,10 @@ pub fn run() {
             commands::backup::esegui_backup_manuale,
             commands::backup::ripristina_backup,
             commands::backup::cartella_backup_automatici,
+            commands::tipologie::elenca_tipologie,
+            commands::tipologie::crea_tipologia,
+            commands::tipologie::modifica_tipologia,
+            commands::tipologie::imposta_tipologia_attiva,
         ])
         .run(tauri::generate_context!())
         .expect("errore durante l'avvio dell'applicazione");
