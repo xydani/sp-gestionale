@@ -137,6 +137,9 @@ const SELEZIONE_ISCRITTI: &str = "
     JOIN v_ultima_iscrizione_iscritti s ON s.iscritto_id = i.id
     JOIN v_ultima_scadenza_iscritti a ON a.iscritto_id = i.id";
 
+/// Gli iscritti eliminati restano solo come riferimento anonimo dei pagamenti.
+const NON_ELIMINATO: &str = "i.data_eliminazione IS NULL";
+
 const CONTEGGIO_ISCRITTI: &str = "
     SELECT count(*)
     FROM iscritti i
@@ -205,7 +208,7 @@ pub fn trova_iscritto(
 ) -> Result<Iscritto, ErroreDatabase> {
     connessione
         .query_row(
-            &format!("{SELEZIONE_ISCRITTI} WHERE i.id = ?1"),
+            &format!("{SELEZIONE_ISCRITTI} WHERE i.id = ?1 AND {NON_ELIMINATO}"),
             [id],
             |riga| leggi_iscritto(riga, riferimento),
         )
@@ -248,7 +251,7 @@ pub fn modifica_iscritto(
         "UPDATE iscritti
          SET nome = ?1, cognome = ?2, data_nascita = ?3, luogo_nascita = ?4, telefono = ?5,
              email = ?6, note = ?7, data_scadenza_certificato = ?8, modificato_il = datetime('now')
-         WHERE id = ?9",
+         WHERE id = ?9 AND data_eliminazione IS NULL",
         params![
             dati.nome,
             dati.cognome,
@@ -267,7 +270,7 @@ pub fn modifica_iscritto(
     trova_iscritto(connessione, id, riferimento)
 }
 
-/// Gli iscritti non si cancellano: si archiviano, così lo storico dei pagamenti resta.
+/// Di norma gli iscritti si archiviano, così lo storico resta; l'eliminazione è solo su richiesta.
 pub fn imposta_iscritto_archiviato(
     connessione: &Connection,
     id: i64,
@@ -275,7 +278,8 @@ pub fn imposta_iscritto_archiviato(
     riferimento: Riferimento,
 ) -> Result<Iscritto, ErroreDatabase> {
     let righe_modificate = connessione.execute(
-        "UPDATE iscritti SET archiviato = ?1, modificato_il = datetime('now') WHERE id = ?2",
+        "UPDATE iscritti SET archiviato = ?1, modificato_il = datetime('now')
+         WHERE id = ?2 AND data_eliminazione IS NULL",
         params![archiviato, id],
     )?;
     if righe_modificate == 0 {
@@ -336,7 +340,10 @@ fn sembra_un_email(testo: &str) -> bool {
 
 /// Clausola WHERE e parametri del filtro; gli stati sono tradotti in intervalli di date.
 fn condizioni_filtro(filtro: &FiltroIscritti, riferimento: Riferimento) -> (String, Vec<Value>) {
-    let mut condizioni = vec!["(i.archiviato = 0 OR ?1 = 1)".to_string()];
+    let mut condizioni = vec![
+        "(i.archiviato = 0 OR ?1 = 1)".to_string(),
+        NON_ELIMINATO.to_string(),
+    ];
     let mut parametri: Vec<Value> = vec![Value::from(filtro.includi_archiviati)];
 
     // Ogni parola deve comparire nel nome o nel cognome: "ross mar" trova "Mario Rossi"

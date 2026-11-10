@@ -118,6 +118,7 @@ export interface Pagamento {
   dataScadenza: string;
   note: string | null;
   rinnovoDiId: number | null;
+  iscrittoEliminato: boolean;
 }
 
 /** Dati inseriti dall'utente per registrare un pagamento. */

@@ -106,6 +106,11 @@ export function impostaIscrittoArchiviato(id: number, archiviato: boolean): Prom
   return invoke<Iscritto>("imposta_iscritto_archiviato", { id, archiviato });
 }
 
+/** Cancella per sempre l'anagrafica di un iscritto archiviato; i pagamenti restano anonimi. */
+export function eliminaIscrittoDefinitivamente(id: number): Promise<void> {
+  return invoke<void>("elimina_iscritto_definitivamente", { id });
+}
+
 /** Propone quota e periodo dell'anno sportivo (il successivo se l'iscrizione è ancora valida). */
 /** Con `iscrittoId` null (iscritto non ancora creato) propone l'anno sportivo in corso. */
 export function proponiIscrizione(iscrittoId: number | null): Promise<PropostaIscrizione> {

@@ -39,10 +39,14 @@
         <td>{formattaData(pagamento.dataPagamento)}</td>
         {#if mostraIscritto}
           <td>
-            <a href={resolve("/iscritti/[id]", { id: String(pagamento.iscrittoId) })}>
-              {pagamento.iscrittoCognome}
-              {pagamento.iscrittoNome}
-            </a>
+            {#if pagamento.iscrittoEliminato}
+              <span class="eliminato">Iscritto eliminato</span>
+            {:else}
+              <a href={resolve("/iscritti/[id]", { id: String(pagamento.iscrittoId) })}>
+                {pagamento.iscrittoCognome}
+                {pagamento.iscrittoNome}
+              </a>
+            {/if}
           </td>
         {/if}
         <td>
@@ -74,6 +78,11 @@
 </table>
 
 <style>
+  .eliminato {
+    color: var(--colore-testo-secondario);
+    font-style: italic;
+  }
+
   .importo {
     text-align: right;
     white-space: nowrap;

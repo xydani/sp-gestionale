@@ -10,6 +10,7 @@ const MIGRAZIONI: &[&str] = &[
     include_str!("../../migrations/0003_promemoria.sql"),
     include_str!("../../migrations/0004_configurazione_iniziale.sql"),
     include_str!("../../migrations/0005_certificato_medico.sql"),
+    include_str!("../../migrations/0006_eliminazione_iscritti.sql"),
 ];
 
 pub fn versione_schema_supportata() -> u32 {

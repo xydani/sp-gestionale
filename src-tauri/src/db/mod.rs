@@ -3,6 +3,7 @@
 pub mod backup;
 pub mod crittografia;
 pub mod dashboard;
+pub mod eliminazione;
 pub mod impostazioni;
 pub mod iscritti;
 pub mod iscrizioni;

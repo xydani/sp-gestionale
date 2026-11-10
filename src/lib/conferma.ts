@@ -1,6 +1,6 @@
 import { ask } from "@tauri-apps/plugin-dialog";
 import { formattaData, formattaEuro } from "./format";
-import type { Pagamento } from "./types";
+import type { Iscritto, Pagamento } from "./types";
 
 export function testoConfermaEliminazione(pagamento: Pagamento): string {
   return (
@@ -32,6 +32,25 @@ export function confermaEsportazioneCsv(): Promise<boolean> {
     title: "Esporta dati non criptati",
     kind: "warning",
     okLabel: "Esporta",
+    cancelLabel: "Annulla",
+  });
+}
+
+export function testoConfermaEliminazioneIscritto(iscritto: Iscritto): string {
+  return (
+    `Eliminare definitivamente i dati di ${iscritto.nome} ${iscritto.cognome}? ` +
+    "Anagrafica, contatti, certificato e note vengono cancellati e non si possono recuperare. " +
+    "I pagamenti restano, senza nome, perché servono ai totali degli incassi. " +
+    "I backup già fatti contengono ancora i dati finché non vengono sostituiti dai nuovi."
+  );
+}
+
+/** Richiesta GDPR di cancellazione: è irreversibile, quindi si chiede conferma. */
+export function confermaEliminazioneIscritto(iscritto: Iscritto): Promise<boolean> {
+  return ask(testoConfermaEliminazioneIscritto(iscritto), {
+    title: "Elimina definitivamente",
+    kind: "warning",
+    okLabel: "Elimina per sempre",
     cancelLabel: "Annulla",
   });
 }

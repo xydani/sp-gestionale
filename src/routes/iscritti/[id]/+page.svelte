@@ -1,7 +1,9 @@
 <script lang="ts">
+  import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
   import {
+    eliminaIscrittoDefinitivamente,
     impostaIscrittoArchiviato,
     messaggioErrore,
     modificaIscritto,
@@ -11,6 +13,7 @@
   import BadgeStato from "$lib/components/BadgeStato.svelte";
   import FormIscritto from "$lib/components/FormIscritto.svelte";
   import { avvisoCertificato } from "$lib/certificato";
+  import { confermaEliminazioneIscritto } from "$lib/conferma";
   import SezioneAbbonamento from "$lib/components/SezioneAbbonamento.svelte";
   import SezioneIscrizione from "$lib/components/SezioneIscrizione.svelte";
   import { formattaData } from "$lib/format";
@@ -57,6 +60,17 @@
         "successo",
         iscritto.archiviato ? "Iscritto archiviato" : "Iscritto ripristinato",
       );
+    } catch (erroreBackend) {
+      mostraAvviso("errore", messaggioErrore(erroreBackend));
+    }
+  }
+
+  async function eliminaDefinitivamente() {
+    if (!iscritto || !(await confermaEliminazioneIscritto(iscritto))) return;
+    try {
+      await eliminaIscrittoDefinitivamente(iscritto.id);
+      mostraAvviso("successo", "Dati dell'iscritto eliminati definitivamente");
+      await goto(resolve("/iscritti"));
     } catch (erroreBackend) {
       mostraAvviso("errore", messaggioErrore(erroreBackend));
     }
@@ -123,6 +137,11 @@
           <button type="button" class="pulsante secondario" onclick={alternaArchiviazione}>
             {iscritto.archiviato ? "Ripristina iscritto" : "Archivia iscritto"}
           </button>
+          {#if iscritto.archiviato}
+            <button type="button" class="pulsante pericolo" onclick={eliminaDefinitivamente}>
+              Elimina definitivamente
+            </button>
+          {/if}
         </div>
       {/if}
     </section>

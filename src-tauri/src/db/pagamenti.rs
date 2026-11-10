@@ -28,6 +28,8 @@ pub struct Pagamento {
     pub data_scadenza: NaiveDate,
     pub note: Option<String>,
     pub rinnovo_di_id: Option<i64>,
+    /// I dati dell'iscritto sono stati cancellati su richiesta: resta solo il pagamento.
+    pub iscritto_eliminato: bool,
 }
 
 /// Dati inseriti dall'utente per registrare un pagamento.
@@ -78,7 +80,7 @@ pub struct FiltroPagamenti {
 const SELEZIONE_PAGAMENTI: &str = "
     SELECT p.id, p.iscritto_id, i.nome, i.cognome, p.tipologia_id, p.tipologia_nome,
            p.importo_cent, p.data_pagamento, p.metodo, p.data_inizio, p.data_scadenza,
-           p.note, p.rinnovo_di_id
+           p.note, p.rinnovo_di_id, i.data_eliminazione IS NOT NULL
     FROM pagamenti p
     JOIN iscritti i ON i.id = p.iscritto_id";
 
@@ -302,5 +304,6 @@ fn leggi_pagamento(riga: &Row<'_>) -> rusqlite::Result<Pagamento> {
         data_scadenza: riga.get(10)?,
         note: riga.get(11)?,
         rinnovo_di_id: riga.get(12)?,
+        iscritto_eliminato: riga.get(13)?,
     })
 }

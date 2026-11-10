@@ -1,5 +1,6 @@
 use tauri::State;
 
+use crate::db::eliminazione;
 use crate::db::iscritti::{self, DatiIscritto, FiltroIscritti, Iscritto, riferimento_per_oggi};
 use crate::db::nuovo_iscritto::{self, DatiNuovoIscritto};
 use crate::db::paginazione::{Pagina, RichiestaPagina};
@@ -75,5 +76,17 @@ pub fn imposta_iscritto_archiviato(
     stato.con_connessione(|connessione| {
         let riferimento = riferimento_per_oggi(connessione, oggi)?;
         iscritti::imposta_iscritto_archiviato(connessione, id, archiviato, riferimento)
+    })
+}
+
+/// Cancella per sempre l'anagrafica di un iscritto archiviato (richiesta GDPR).
+#[tauri::command]
+pub fn elimina_iscritto_definitivamente(
+    stato: State<'_, StatoApp>,
+    id: i64,
+) -> Result<(), ErroreApp> {
+    let oggi = stato.oggi();
+    stato.con_connessione_modificabile(|connessione| {
+        eliminazione::elimina_dati_iscritto(connessione, id, oggi)
     })
 }

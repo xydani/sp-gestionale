@@ -154,6 +154,16 @@ progress {
   background: var(--colore-sfondo-tenue);
 }
 
+.pulsante.pericolo {
+  border-color: var(--colore-errore);
+  background: var(--colore-superficie);
+  color: var(--colore-errore);
+}
+
+.pulsante.pericolo:hover:not(:disabled) {
+  background: var(--colore-errore-tenue);
+}
+
 .pulsante-testo {
   padding: 0.35rem 0.6rem;
   border: none;
