@@ -9,7 +9,7 @@ use sp_gestionale_lib::db::ErroreDatabase;
 use sp_gestionale_lib::db::iscritti::{DatiIscritto, Riferimento, crea_iscritto};
 use sp_gestionale_lib::db::iscrizioni::{DatiIscrizione, registra_iscrizione};
 use sp_gestionale_lib::db::pagamenti::{DatiPagamento, registra_pagamento};
-use sp_gestionale_lib::db::tipologie::{DatiTipologia, crea_tipologia};
+use sp_gestionale_lib::db::tipologie::{DatiTipologia, crea_tipologia, imposta_tipologia_attiva};
 use sp_gestionale_lib::domain::date::UnitaDurata;
 use sp_gestionale_lib::domain::pagamento::MetodoPagamento;
 
@@ -145,4 +145,19 @@ fn il_listino_rifiuta_durate_e_prezzi_esagerati() {
     assert!(crea_tipologia(&connessione, &tipologia(1096, UnitaDurata::Giorni, 1000)).is_err());
     assert!(crea_tipologia(&connessione, &tipologia(1, UnitaDurata::Mesi, 1_000_001)).is_err());
     assert!(crea_tipologia(&connessione, &tipologia(36, UnitaDurata::Mesi, 1000)).is_ok());
+}
+
+#[test]
+fn un_abbonamento_disattivato_non_si_vende_piu_ma_resta_nello_storico() {
+    let (_database, connessione, id) = con_iscritto();
+    registra_pagamento(&connessione, &pagamento(id), OGGI).unwrap();
+
+    imposta_tipologia_attiva(&connessione, MENSILE, false).unwrap();
+
+    let testo = messaggio(registra_pagamento(&connessione, &pagamento(id), OGGI));
+    assert!(testo.contains("non è più nel listino"), "{testo}");
+    let pagamenti: i64 = connessione
+        .query_row("SELECT count(*) FROM pagamenti", [], |r| r.get(0))
+        .unwrap();
+    assert_eq!(pagamenti, 1);
 }

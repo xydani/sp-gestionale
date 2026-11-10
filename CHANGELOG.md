@@ -2,6 +2,8 @@
 
 ## [Non rilasciato]
 
+- Un abbonamento disattivato nel listino non si può più registrare come nuovo pagamento
+
 ## [0.1.2] - 2026-11-10
 
 - Controlli sui dati inseriti: nomi e luoghi senza numeri, date di nascita e di pagamento non nel futuro, telefono ed email validi, importi e durate plausibili; l'errore compare subito sul campo

@@ -123,6 +123,13 @@ pub fn registra_pagamento(
     valida_dati_pagamento(dati, oggi)?;
     // Il nome della tipologia viene copiato: lo storico non cambia se il listino cambia
     let tipologia = trova_tipologia(connessione, dati.tipologia_id)?;
+    // Lo storico tiene i tipi disattivati, ma i pagamenti nuovi usano solo il listino in vigore
+    if !tipologia.attiva {
+        return Err(ErroreDatabase::DatiNonValidi(format!(
+            "L'abbonamento «{}» non è più nel listino: sceglierne uno attivo",
+            tipologia.nome
+        )));
+    }
     let note = dati
         .note
         .as_deref()
