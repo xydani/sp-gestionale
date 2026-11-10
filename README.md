@@ -50,7 +50,9 @@ npm run lint:rust     # rustfmt + clippy
 1. Aggiornare la versione in `package.json`, `src-tauri/Cargo.toml` e `src-tauri/tauri.conf.json`.
 2. Aggiungere la sezione `## [x.y.z]` al `CHANGELOG.md`: diventa il testo delle novità mostrato nell'app.
 3. `git tag vx.y.z && git push origin vx.y.z`: il workflow `release.yml` compila per Windows, Linux e
-   macOS, firma gli aggiornamenti e pubblica la release con `latest.json`.
+   macOS e firma gli aggiornamenti. La release compare subito come pre-release e ogni installer
+   si può scaricare appena è pronto; quando ci sono tutti diventa l'ultima versione e l'app la
+   propone come aggiornamento.
 
 La chiave privata di firma è nei GitHub Secrets (`TAURI_SIGNING_PRIVATE_KEY` e
 `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`). Senza di essa non si possono pubblicare aggiornamenti
