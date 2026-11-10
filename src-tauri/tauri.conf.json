@@ -13,10 +13,12 @@
     "windows": [
       {
         "title": "SP Gestionale",
-        "width": 420,
-        "height": 380,
+        "width": 400,
+        "height": 520,
         "resizable": false,
         "decorations": false,
+        "transparent": true,
+        "shadow": false,
         "maximized": false,
         "center": true
       }
