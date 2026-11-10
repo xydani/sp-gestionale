@@ -36,6 +36,19 @@ pub fn apri_database_criptato(
     Ok(connessione)
 }
 
+/// Cambia la password del database aperto, dopo aver verificato quella attuale sul file.
+pub fn cambia_password(
+    connessione: &Connection,
+    percorso: &Path,
+    password_attuale: &str,
+    nuova_password: &str,
+) -> Result<(), ErroreDatabase> {
+    valida_nuova_password(nuova_password)?;
+    drop(apri_database_criptato(percorso, password_attuale)?);
+    connessione.pragma_update(None, "rekey", nuova_password)?;
+    Ok(())
+}
+
 pub fn valida_nuova_password(password: &str) -> Result<(), ErroreDatabase> {
     if password.chars().count() < LUNGHEZZA_MINIMA_PASSWORD {
         return Err(ErroreDatabase::PasswordTroppoCorta {

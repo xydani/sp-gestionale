@@ -2,6 +2,7 @@
 
 pub mod backup;
 pub mod dashboard;
+pub mod impostazioni;
 pub mod iscritti;
 pub mod iscrizioni;
 pub mod pagamenti;

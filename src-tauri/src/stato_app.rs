@@ -14,9 +14,10 @@ use crate::db::backup::{
     nome_backup_pre_migrazione, nome_backup_pre_ripristino, sostituisci_database_con_backup,
     verifica_backup,
 };
-use crate::db::crittografia::{apri_database_criptato, crea_database_criptato};
+use crate::db::crittografia::{apri_database_criptato, cambia_password, crea_database_criptato};
 use crate::db::impostazioni::{
     BACKUP_CONSERVATI_PREDEFINITI, CHIAVE_BACKUP_CONSERVATI, leggi_impostazione_numerica,
+    richiedi_configurazione_iniziale,
 };
 use crate::db::migrazioni::{
     applica_migrazioni, serve_backup_pre_migrazione, versione_schema_corrente,
@@ -96,18 +97,36 @@ impl StatoApp {
         conferma_password: Zeroizing<String>,
     ) -> Result<(), ErroreApp> {
         if *password != *conferma_password {
-            return Err(ErroreApp::nuovo(
-                "password_diverse",
-                "Le due password non coincidono",
-            ));
+            return Err(errore_password_diverse());
         }
         if let Some(cartella) = self.percorso_database.parent() {
             crea_cartella(cartella)?;
         }
         let mut connessione = crea_database_criptato(&self.percorso_database, &password)?;
         applica_migrazioni(&mut connessione)?;
+        richiedi_configurazione_iniziale(&connessione)?;
         *self.connessione_bloccata() = Some(connessione);
         Ok(())
+    }
+
+    /// Cambia la password del database sbloccato. I backup già fatti restano con la vecchia.
+    pub fn cambia_password(
+        &self,
+        password_attuale: Zeroizing<String>,
+        nuova_password: Zeroizing<String>,
+        conferma_password: Zeroizing<String>,
+    ) -> Result<(), ErroreApp> {
+        if *nuova_password != *conferma_password {
+            return Err(errore_password_diverse());
+        }
+        self.con_connessione(|connessione| {
+            cambia_password(
+                connessione,
+                &self.percorso_database,
+                &password_attuale,
+                &nuova_password,
+            )
+        })
     }
 
     pub fn sblocca_database(&self, password: Zeroizing<String>) -> Result<EsitoSblocco, ErroreApp> {
@@ -244,6 +263,10 @@ impl StatoApp {
     }
 }
 
+fn errore_password_diverse() -> ErroreApp {
+    ErroreApp::nuovo("password_diverse", "Le due password non coincidono")
+}
+
 fn errore_database_bloccato() -> ErroreApp {
     ErroreApp::nuovo(
         "database_bloccato",
@@ -370,6 +393,66 @@ mod test {
 
         stato.sblocca_database(segreto(PASSWORD)).unwrap();
         assert!(stato.con_connessione(|_| Ok(())).is_ok());
+    }
+
+    #[test]
+    fn un_nuovo_database_richiede_la_configurazione_iniziale() {
+        let (_cartella, stato) = stato_in_cartella_temporanea();
+        stato
+            .crea_database(segreto(PASSWORD), segreto(PASSWORD))
+            .unwrap();
+        let completata = stato
+            .con_connessione(crate::db::impostazioni::configurazione_iniziale_completata)
+            .unwrap();
+        assert!(!completata);
+    }
+
+    #[test]
+    fn dopo_il_cambio_serve_la_nuova_password() {
+        let (_cartella, stato) = stato_creato_e_bloccato();
+        stato.sblocca_database(segreto(PASSWORD)).unwrap();
+        stato
+            .cambia_password(
+                segreto(PASSWORD),
+                segreto("nuova-password"),
+                segreto("nuova-password"),
+            )
+            .unwrap();
+        stato.blocca_database();
+        assert!(stato.sblocca_database(segreto(PASSWORD)).is_err());
+        stato.sblocca_database(segreto("nuova-password")).unwrap();
+    }
+
+    #[test]
+    fn il_cambio_richiede_la_password_attuale_corretta() {
+        let (_cartella, stato) = stato_creato_e_bloccato();
+        stato.sblocca_database(segreto(PASSWORD)).unwrap();
+        let errore = stato
+            .cambia_password(
+                segreto("password-sbagliata"),
+                segreto("nuova-password"),
+                segreto("nuova-password"),
+            )
+            .unwrap_err();
+        assert_eq!(errore.codice, "password_errata");
+        stato.blocca_database();
+        stato.sblocca_database(segreto(PASSWORD)).unwrap();
+    }
+
+    #[test]
+    fn il_cambio_rifiuta_conferma_diversa_e_password_corta() {
+        let (_cartella, stato) = stato_creato_e_bloccato();
+        stato.sblocca_database(segreto(PASSWORD)).unwrap();
+        let cambia = |nuova: &str, conferma: &str| {
+            stato.cambia_password(segreto(PASSWORD), segreto(nuova), segreto(conferma))
+        };
+        assert_eq!(
+            cambia("nuova-password", "altra-password")
+                .unwrap_err()
+                .codice,
+            "password_diverse"
+        );
+        assert!(cambia("corta", "corta").is_err());
     }
 
     #[test]

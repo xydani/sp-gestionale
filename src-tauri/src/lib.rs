@@ -52,6 +52,10 @@ pub fn run() {
             commands::dashboard::riepilogo_dashboard,
             commands::report::riepilogo_incassi,
             commands::report::esporta_incassi_csv,
+            commands::impostazioni::leggi_impostazioni,
+            commands::impostazioni::salva_impostazioni,
+            commands::impostazioni::configurazione_iniziale_completata,
+            commands::impostazioni::cambia_password,
         ])
         // Le due finestre (accesso e principale) vivono insieme: chiuderne una chiude il programma
         .on_window_event(|finestra, evento| {
