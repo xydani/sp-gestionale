@@ -2,10 +2,7 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Permessi delle finestre di accesso e principale",
-  "windows": [
-    "accesso",
-    "principale"
-  ],
+  "windows": ["accesso", "principale"],
   "permissions": [
     "core:default",
     "core:window:allow-show",
