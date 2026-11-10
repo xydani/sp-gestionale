@@ -44,6 +44,11 @@ export function bloccaDatabase(): Promise<void> {
 }
 
 /** Salva un backup criptato nella cartella indicata e ne restituisce il percorso. */
+/** Copia criptata dei dati prima di installare un aggiornamento; restituisce il percorso. */
+export function eseguiBackupPreAggiornamento(): Promise<string> {
+  return invoke<string>("esegui_backup_pre_aggiornamento");
+}
+
 export function eseguiBackupManuale(cartellaDestinazione: string): Promise<string> {
   return invoke<string>("esegui_backup_manuale", { cartellaDestinazione });
 }
