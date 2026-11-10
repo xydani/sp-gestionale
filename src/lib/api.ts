@@ -1,10 +1,12 @@
 import { invoke } from "@tauri-apps/api/core";
 import type {
+  ConteggioInScadenza,
   DatiIscritto,
   DatiIscrizione,
   DatiPagamento,
   DatiTipologia,
   ErroreApp,
+  EsitoPromemoria,
   EsitoSblocco,
   FiltroIscritti,
   FiltroPagamenti,
@@ -128,6 +130,15 @@ export function elencaPagamenti(
 
 export function eliminaPagamento(id: number): Promise<void> {
   return invoke("elimina_pagamento", { id });
+}
+
+/** Segna come notificate le nuove scadenze nel preavviso e restituisce i conteggi. */
+export function controllaPromemoria(): Promise<EsitoPromemoria> {
+  return invoke<EsitoPromemoria>("controlla_promemoria");
+}
+
+export function contaInScadenza(): Promise<ConteggioInScadenza> {
+  return invoke<ConteggioInScadenza>("conta_in_scadenza");
 }
 
 /** Estrae un messaggio leggibile da un errore del backend o imprevisto. */

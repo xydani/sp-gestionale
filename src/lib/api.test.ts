@@ -150,6 +150,16 @@ describe("api iscrizioni", () => {
   });
 });
 
+describe("api promemoria", () => {
+  beforeEach(() => invoke.mockReset());
+
+  it("controlla i promemoria", async () => {
+    invoke.mockResolvedValue({});
+    await api.controllaPromemoria();
+    expect(invoke).toHaveBeenCalledWith("controlla_promemoria");
+  });
+});
+
 describe("messaggioErrore", () => {
   it("usa il messaggio degli errori del backend", () => {
     expect(api.messaggioErrore({ codice: "password_errata", messaggio: "Password errata" })).toBe(

@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   centesimiInTestoEuro,
   descriviDurata,
+  descriviScadenza,
+  giorniTra,
   euroInCentesimi,
   formattaData,
   formattaEuro,
@@ -68,5 +70,23 @@ describe("formattaData", () => {
 describe("oggiIso", () => {
   it("usa la data locale con zeri iniziali", () => {
     expect(oggiIso(new Date(2026, 0, 5, 23, 30))).toBe("2026-01-05");
+  });
+});
+
+describe("giorniTra", () => {
+  it("conta i giorni anche attraverso il cambio dell'ora legale", () => {
+    expect(giorniTra("2026-10-20", "2026-10-30")).toBe(10);
+    expect(giorniTra("2026-03-25", "2026-04-01")).toBe(7);
+    expect(giorniTra("2026-11-10", "2026-11-05")).toBe(-5);
+  });
+});
+
+describe("descriviScadenza", () => {
+  it("descrive la distanza dalla scadenza", () => {
+    expect(descriviScadenza("2026-11-10", "2026-11-10")).toBe("oggi");
+    expect(descriviScadenza("2026-11-11", "2026-11-10")).toBe("domani");
+    expect(descriviScadenza("2026-11-15", "2026-11-10")).toBe("tra 5 giorni");
+    expect(descriviScadenza("2026-11-09", "2026-11-10")).toBe("ieri");
+    expect(descriviScadenza("2026-10-29", "2026-11-10")).toBe("da 12 giorni");
   });
 });

@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { elencaPagamenti, eliminaPagamento, messaggioErrore } from "$lib/api";
   import { mostraAvviso } from "$lib/avvisi.svelte";
+  import { aggiornaConteggioScadenze } from "$lib/promemoria.svelte";
   import { confermaEliminazionePagamento } from "$lib/conferma";
   import { formattaData } from "$lib/format";
   import type { Iscritto, Pagamento, PaginaPagamenti } from "$lib/types";
@@ -33,6 +34,7 @@
     mostraAvviso("successo", "Pagamento registrato");
     await carica();
     onCambiato();
+    aggiornaConteggioScadenze();
   }
 
   async function elimina(pagamento: Pagamento) {
@@ -42,6 +44,7 @@
       mostraAvviso("successo", "Pagamento eliminato");
       await carica(storico.numero);
       onCambiato();
+      aggiornaConteggioScadenze();
     } catch (errore) {
       mostraAvviso("errore", messaggioErrore(errore));
     }

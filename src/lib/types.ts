@@ -57,11 +57,20 @@ export interface DatiIscritto {
   note: string | null;
 }
 
+export type OrdinamentoIscritti =
+  | "alfabetico"
+  | "scadenza_abbonamento_crescente"
+  | "scadenza_abbonamento_decrescente"
+  | "fine_iscrizione_crescente"
+  | "fine_iscrizione_decrescente";
+
 export interface FiltroIscritti {
   testo: string;
   includiArchiviati: boolean;
   statoAbbonamento: StatoValidita | null;
   statoIscrizione: StatoValidita | null;
+  /** Se assente, ordine alfabetico. */
+  ordinamento?: OrdinamentoIscritti;
 }
 
 /** Iscrizione annuale (anno sportivo) con la quota pagata. */
@@ -143,4 +152,16 @@ export interface Pagina<T> {
 export interface PaginaPagamenti extends Pagina<Pagamento> {
   /** Totale incassato di tutti i pagamenti filtrati, non solo della pagina. */
   totaleImportoCent: number;
+}
+
+/** Iscritti (non archiviati) con abbonamento o iscrizione in scadenza. */
+export interface ConteggioInScadenza {
+  abbonamenti: number;
+  iscrizioni: number;
+}
+
+export interface EsitoPromemoria {
+  /** Scadenze notificate ora per la prima volta. */
+  nuovi: ConteggioInScadenza;
+  inScadenza: ConteggioInScadenza;
 }

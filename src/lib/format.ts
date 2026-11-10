@@ -38,3 +38,19 @@ export function oggiIso(adesso: Date = new Date()): string {
   const giorno = String(adesso.getDate()).padStart(2, "0");
   return `${adesso.getFullYear()}-${mese}-${giorno}`;
 }
+
+/** Giorni dalla data `daIso` alla data `aIso` (negativo se `aIso` è prima). */
+export function giorniTra(daIso: string, aIso: string): number {
+  const millisecondiAlGiorno = 24 * 60 * 60 * 1000;
+  return Math.round((Date.parse(aIso) - Date.parse(daIso)) / millisecondiAlGiorno);
+}
+
+/** "oggi", "domani", "tra 5 giorni", "ieri", "da 12 giorni". */
+export function descriviScadenza(scadenzaIso: string, oggi: string = oggiIso()): string {
+  const giorni = giorniTra(oggi, scadenzaIso);
+  if (giorni === 0) return "oggi";
+  if (giorni === 1) return "domani";
+  if (giorni > 1) return `tra ${giorni} giorni`;
+  if (giorni === -1) return "ieri";
+  return `da ${-giorni} giorni`;
+}

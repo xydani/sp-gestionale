@@ -11,6 +11,7 @@
     type CambioStatoDatabase,
   } from "$lib/finestra";
   import { mostraAvviso } from "$lib/avvisi.svelte";
+  import { INTERVALLO_CONTROLLO_MS, eseguiControlloPromemoria } from "$lib/promemoria.svelte";
   import BarraAvvisi from "$lib/components/BarraAvvisi.svelte";
   import CorniceSenzaBordi from "$lib/components/CorniceSenzaBordi.svelte";
   import MenuLaterale from "$lib/components/MenuLaterale.svelte";
@@ -32,9 +33,34 @@
   // Ogni finestra mostra solo le sue schermate: accesso (password) oppure programma
   const finestraDiAccesso = eFinestraDiAccesso();
   let smettiDiAscoltare: (() => void) | undefined;
+  let timerPromemoria: ReturnType<typeof setInterval> | undefined;
+
+  /** Nella finestra principale, da sbloccata, controlla le scadenze subito e poi ogni ora. */
+  function avviaControlloPromemoria() {
+    fermaControlloPromemoria();
+    controllaPromemoriaSenzaInterrompere();
+    timerPromemoria = setInterval(controllaPromemoriaSenzaInterrompere, INTERVALLO_CONTROLLO_MS);
+  }
+
+  function fermaControlloPromemoria() {
+    clearInterval(timerPromemoria);
+    timerPromemoria = undefined;
+  }
+
+  async function controllaPromemoriaSenzaInterrompere() {
+    try {
+      await eseguiControlloPromemoria();
+    } catch {
+      // Un promemoria non riuscito (es. archivio appena bloccato) non deve disturbare il lavoro
+    }
+  }
 
   async function aggiornaStato() {
     statoDatabase = await leggiStatoDatabase();
+    if (!finestraDiAccesso) {
+      if (statoDatabase === "sbloccato") avviaControlloPromemoria();
+      else fermaControlloPromemoria();
+    }
     if (finestraDiAccesso && statoDatabase !== "sbloccato") {
       await adattaFinestraDiAccesso(statoDatabase === "da_creare");
     }
@@ -69,7 +95,10 @@
     await aggiornaStato();
   });
 
-  onDestroy(() => smettiDiAscoltare?.());
+  onDestroy(() => {
+    smettiDiAscoltare?.();
+    fermaControlloPromemoria();
+  });
 </script>
 
 <svelte:window onkeydown={gestisciTasti} />

@@ -3,6 +3,7 @@
   import { onMount } from "svelte";
   import { elencaIscrizioni, eliminaIscrizione, messaggioErrore } from "$lib/api";
   import { mostraAvviso } from "$lib/avvisi.svelte";
+  import { aggiornaConteggioScadenze } from "$lib/promemoria.svelte";
   import { formattaData, formattaEuro } from "$lib/format";
   import { ETICHETTE_METODO } from "$lib/metodi-pagamento";
   import type { Iscritto, Iscrizione } from "$lib/types";
@@ -23,6 +24,7 @@
     mostraAvviso("successo", "Iscrizione registrata");
     await carica();
     onCambiata();
+    aggiornaConteggioScadenze();
   }
 
   async function elimina(iscrizione: Iscrizione) {
@@ -38,6 +40,7 @@
       mostraAvviso("successo", "Iscrizione eliminata");
       await carica();
       onCambiata();
+      aggiornaConteggioScadenze();
     } catch (errore) {
       mostraAvviso("errore", messaggioErrore(errore));
     }

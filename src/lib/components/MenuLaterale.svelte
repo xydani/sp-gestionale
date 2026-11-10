@@ -2,8 +2,11 @@
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
   import { VOCI_MENU, eVoceAttiva } from "$lib/menu";
+  import { scadenzeInArrivo } from "$lib/promemoria.svelte";
 
   let { onBlocca }: { onBlocca: () => void } = $props();
+
+  const totaleInScadenza = $derived(scadenzeInArrivo.abbonamenti + scadenzeInArrivo.iscrizioni);
 </script>
 
 <nav>
@@ -13,6 +16,9 @@
       <li>
         <a href={resolve(voce.percorso)} class:attiva={eVoceAttiva(voce, page.url.pathname)}>
           {voce.etichetta}
+          {#if voce.percorso === "/scadenze" && totaleInScadenza > 0}
+            <span class="badge" title="Scadenze nei prossimi giorni">{totaleInScadenza}</span>
+          {/if}
         </a>
       </li>
     {/each}
@@ -52,6 +58,19 @@
     border-radius: var(--raggio);
     color: inherit;
     text-decoration: none;
+  }
+
+  .badge {
+    float: right;
+    min-width: 1.4rem;
+    padding: 0 0.4rem;
+    border-radius: 999px;
+    background: #e0a100;
+    color: #1d2330;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.4rem;
+    text-align: center;
   }
 
   a:hover,
