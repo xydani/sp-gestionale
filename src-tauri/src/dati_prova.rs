@@ -5,7 +5,7 @@ use chrono::{Days, NaiveDate};
 use rusqlite::{Connection, params};
 
 use crate::db::ErroreDatabase;
-use crate::db::tipologie::elenca_tipologie;
+use crate::db::tipologie::{TipologiaAbbonamento, elenca_tipologie};
 use crate::domain::anno_sportivo::Periodo;
 use crate::domain::anno_sportivo::{
     MESE_INIZIO_ANNO_SPORTIVO_PREDEFINITO, anno_sportivo_contenente,
@@ -185,45 +185,7 @@ pub fn genera_dati_prova(
     for _ in 0..numero_iscritti {
         let giorni_dall_iscrizione = casuale.tra(30, ANNI_MASSIMI_DI_STORICO * 365);
         let data_iscrizione = oggi - Days::new(giorni_dall_iscrizione);
-        let nome = casuale.scegli(NOMI);
-        let cognome = casuale.scegli(COGNOMI);
-        let data_nascita = oggi - Days::new(casuale.tra(16 * 365, 70 * 365));
-        let email = (casuale.tra(1, 100) <= PERCENTUALE_CON_EMAIL).then(|| {
-            format!(
-                "{}.{}@esempio.it",
-                nome.to_lowercase(),
-                cognome.to_lowercase().replace(['\'', ' '], "")
-            )
-        });
-
-        let scadenza_certificato =
-            (casuale.tra(1, 100) <= PERCENTUALE_CON_CERTIFICATO).then(|| {
-                oggi - Days::new(GIORNI_CERTIFICATO_PRIMA_DI_OGGI)
-                    + Days::new(casuale.tra(
-                        0,
-                        GIORNI_CERTIFICATO_PRIMA_DI_OGGI + GIORNI_CERTIFICATO_DOPO_OGGI,
-                    ))
-            });
-
-        transazione.execute(
-            "INSERT INTO iscritti (nome, cognome, data_nascita, luogo_nascita, telefono, email,
-                                   data_scadenza_certificato)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-            params![
-                nome,
-                cognome,
-                data_nascita,
-                casuale.scegli(LUOGHI_NASCITA),
-                format!(
-                    "+39 3{:02} {:07}",
-                    casuale.tra(20, 99),
-                    casuale.tra(0, 9_999_999)
-                ),
-                email,
-                scadenza_certificato,
-            ],
-        )?;
-        let iscritto_id = transazione.last_insert_rowid();
+        let iscritto_id = inserisci_iscritto(&transazione, &mut casuale, oggi)?;
 
         if casuale.tra(1, 100) <= PERCENTUALE_SENZA_PAGAMENTI {
             continue;
@@ -231,59 +193,134 @@ pub fn genera_dati_prova(
 
         // L'ultimo abbonamento copre questa data: da 150 giorni fa a 30 giorni da oggi
         let ultima_data_coperta = oggi - Days::new(150) + Days::new(casuale.tra(0, 180));
-        let mut data_inizio = data_iscrizione;
-        let mut pagamento_precedente_id: Option<i64> = None;
-
-        while data_inizio <= ultima_data_coperta {
-            let tipologia = casuale.scegli(&tipologie);
-            let data_scadenza = calcola_data_scadenza(data_inizio, tipologia.durata())
-                .expect("le tipologie di prova hanno durate valide");
-
-            transazione.execute(
-                "INSERT INTO pagamenti (iscritto_id, tipologia_id, tipologia_nome, importo_cent,
-                     data_pagamento, metodo, data_inizio, data_scadenza, rinnovo_di_id)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
-                params![
-                    iscritto_id,
-                    tipologia.id,
-                    tipologia.nome,
-                    tipologia.prezzo_cent,
-                    data_inizio.to_string(),
-                    casuale.scegli(&MetodoPagamento::TUTTI).come_testo(),
-                    data_inizio.to_string(),
-                    data_scadenza.to_string(),
-                    pagamento_precedente_id,
-                ],
-            )?;
-            pagamento_precedente_id = Some(transazione.last_insert_rowid());
-
-            let giorni_di_pausa = if casuale.tra(1, 100) <= 20 {
-                casuale.tra(1, 30)
-            } else {
-                0
-            };
-            data_inizio = data_scadenza + Days::new(1 + giorni_di_pausa);
-        }
+        let attivita = Periodo {
+            inizio: data_iscrizione,
+            fine: ultima_data_coperta,
+        };
+        inserisci_pagamenti(
+            &transazione,
+            &mut casuale,
+            &tipologie,
+            iscritto_id,
+            attivita,
+        )?;
 
         let caso = CasoIscrizione::scegli(&mut casuale);
+        let fine_iscrizioni = if caso == CasoIscrizione::InScadenza {
+            ultima_data_coperta.max(oggi)
+        } else {
+            ultima_data_coperta
+        };
+        let periodo_iscrizioni = Periodo {
+            inizio: data_iscrizione,
+            fine: fine_iscrizioni,
+        };
         inserisci_iscrizioni(
             &transazione,
             &mut casuale,
             iscritto_id,
-            Periodo {
-                inizio: data_iscrizione,
-                fine: if caso == CasoIscrizione::InScadenza {
-                    ultima_data_coperta.max(oggi)
-                } else {
-                    ultima_data_coperta
-                },
-            },
+            periodo_iscrizioni,
             oggi,
             caso,
         )?;
     }
 
     transazione.commit()?;
+    Ok(())
+}
+
+/// Anagrafica inventata; restituisce l'id del nuovo iscritto.
+fn inserisci_iscritto(
+    transazione: &rusqlite::Transaction<'_>,
+    casuale: &mut GeneratoreCasuale,
+    oggi: NaiveDate,
+) -> Result<i64, ErroreDatabase> {
+    let nome = casuale.scegli(NOMI);
+    let cognome = casuale.scegli(COGNOMI);
+    let data_nascita = oggi - Days::new(casuale.tra(16 * 365, 70 * 365));
+
+    let mut email = None;
+    if casuale.tra(1, 100) <= PERCENTUALE_CON_EMAIL {
+        let cognome_senza_spazi = cognome.to_lowercase().replace(['\'', ' '], "");
+        email = Some(format!(
+            "{}.{cognome_senza_spazi}@esempio.it",
+            nome.to_lowercase()
+        ));
+    }
+
+    let mut scadenza_certificato = None;
+    if casuale.tra(1, 100) <= PERCENTUALE_CON_CERTIFICATO {
+        let giorni_dal_minimo = casuale.tra(
+            0,
+            GIORNI_CERTIFICATO_PRIMA_DI_OGGI + GIORNI_CERTIFICATO_DOPO_OGGI,
+        );
+        let minimo = oggi - Days::new(GIORNI_CERTIFICATO_PRIMA_DI_OGGI);
+        scadenza_certificato = Some(minimo + Days::new(giorni_dal_minimo));
+    }
+
+    let luogo_nascita = casuale.scegli(LUOGHI_NASCITA);
+    let telefono = format!(
+        "+39 3{:02} {:07}",
+        casuale.tra(20, 99),
+        casuale.tra(0, 9_999_999)
+    );
+    transazione.execute(
+        "INSERT INTO iscritti (nome, cognome, data_nascita, luogo_nascita, telefono, email,
+                               data_scadenza_certificato)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        params![
+            nome,
+            cognome,
+            data_nascita,
+            luogo_nascita,
+            telefono,
+            email,
+            scadenza_certificato,
+        ],
+    )?;
+    Ok(transazione.last_insert_rowid())
+}
+
+/// Abbonamenti uno dopo l'altro, a volte con qualche giorno di pausa, fino a coprire l'attività.
+fn inserisci_pagamenti(
+    transazione: &rusqlite::Transaction<'_>,
+    casuale: &mut GeneratoreCasuale,
+    tipologie: &[TipologiaAbbonamento],
+    iscritto_id: i64,
+    attivita: Periodo,
+) -> Result<(), ErroreDatabase> {
+    let mut data_inizio = attivita.inizio;
+    let mut pagamento_precedente_id: Option<i64> = None;
+
+    while data_inizio <= attivita.fine {
+        let tipologia = casuale.scegli(tipologie);
+        let data_scadenza = calcola_data_scadenza(data_inizio, tipologia.durata())
+            .expect("le tipologie di prova hanno durate valide");
+
+        transazione.execute(
+            "INSERT INTO pagamenti (iscritto_id, tipologia_id, tipologia_nome, importo_cent,
+                 data_pagamento, metodo, data_inizio, data_scadenza, rinnovo_di_id)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+            params![
+                iscritto_id,
+                tipologia.id,
+                tipologia.nome,
+                tipologia.prezzo_cent,
+                data_inizio.to_string(),
+                casuale.scegli(&MetodoPagamento::TUTTI).come_testo(),
+                data_inizio.to_string(),
+                data_scadenza.to_string(),
+                pagamento_precedente_id,
+            ],
+        )?;
+        pagamento_precedente_id = Some(transazione.last_insert_rowid());
+
+        let mut giorni_di_pausa = 0;
+        if casuale.tra(1, 100) <= 20 {
+            giorni_di_pausa = casuale.tra(1, 30);
+        }
+        data_inizio = data_scadenza + Days::new(1 + giorni_di_pausa);
+    }
     Ok(())
 }
 
