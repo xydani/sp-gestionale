@@ -16,6 +16,7 @@
     "core:window:allow-set-fullscreen",
     "core:window:allow-is-fullscreen",
     "dialog:default",
-    "notification:default"
+    "notification:default",
+    "autostart:default"
   ]
 }
