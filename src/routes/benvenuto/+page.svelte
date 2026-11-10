@@ -10,6 +10,7 @@
   } from "$lib/api";
   import { mostraAvviso } from "$lib/avvisi.svelte";
   import FormImpostazioni from "$lib/components/FormImpostazioni.svelte";
+  import SezioneLogo from "$lib/components/SezioneLogo.svelte";
   import SezioneTipologie from "$lib/components/SezioneTipologie.svelte";
   import { configurazione, descriviPasso } from "$lib/configurazione-guidata.svelte";
   import { palestra } from "$lib/palestra.svelte";
@@ -57,6 +58,7 @@
   <p class="passo">{descriviPasso(passo)}</p>
 
   {#if passo === 0}
+    <SezioneLogo />
     <section class="scheda">
       <p>
         Prima di iniziare controlla queste opzioni. I valori proposti vanno bene nella maggior parte
@@ -90,6 +92,10 @@
     margin: -0.5rem 0 1rem;
     color: var(--colore-testo-secondario);
     font-weight: 500;
+  }
+
+  :global(.scheda) + .scheda {
+    margin-top: 1.25rem;
   }
 
   .introduzione {

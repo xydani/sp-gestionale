@@ -47,6 +47,7 @@ pub struct EsitoSblocco {
 
 pub struct StatoApp {
     percorso_database: PathBuf,
+    cartella_dati: PathBuf,
     cartella_backup: PathBuf,
     connessione: Mutex<Option<Connection>>,
     tentativi_falliti: Mutex<u32>,
@@ -64,8 +65,12 @@ impl StatoApp {
             || PathBuf::from(NOME_CARTELLA_BACKUP),
             |cartella| cartella.join(NOME_CARTELLA_BACKUP),
         );
+        let cartella_dati = percorso_database
+            .parent()
+            .map_or_else(PathBuf::new, Path::to_path_buf);
         Self {
             percorso_database,
+            cartella_dati,
             cartella_backup,
             connessione: Mutex::new(None),
             tentativi_falliti: Mutex::new(0),
@@ -75,6 +80,19 @@ impl StatoApp {
 
     pub fn oggi(&self) -> chrono::NaiveDate {
         (self.adesso)().date()
+    }
+
+    /// Cartella dell'archivio, dove stanno anche i backup e il logo.
+    pub fn cartella_dati(&self) -> &Path {
+        &self.cartella_dati
+    }
+
+    /// Errore se l'archivio è bloccato: alcune operazioni non toccano il database ma vanno protette.
+    pub fn verifica_sbloccato(&self) -> Result<(), ErroreApp> {
+        match self.stato_database() {
+            StatoDatabase::Sbloccato => Ok(()),
+            _ => Err(errore_database_bloccato()),
+        }
     }
 
     pub fn cartella_backup(&self) -> &Path {
@@ -482,6 +500,18 @@ mod test {
             "password_diverse"
         );
         assert!(cambia("corta", "corta").is_err());
+    }
+
+    #[test]
+    fn le_operazioni_protette_richiedono_lo_sblocco() {
+        let (_cartella, stato) = stato_creato_e_bloccato();
+        assert_eq!(
+            stato.verifica_sbloccato().unwrap_err().codice,
+            "database_bloccato"
+        );
+        stato.sblocca_database(segreto(PASSWORD)).unwrap();
+        assert!(stato.verifica_sbloccato().is_ok());
+        assert!(stato.cartella_backup().starts_with(stato.cartella_dati()));
     }
 
     #[test]

@@ -7,6 +7,7 @@
   import SezioneAvvioAutomatico from "$lib/components/SezioneAvvioAutomatico.svelte";
   import SezioneBackup from "$lib/components/SezioneBackup.svelte";
   import SezioneCambioPassword from "$lib/components/SezioneCambioPassword.svelte";
+  import SezioneLogo from "$lib/components/SezioneLogo.svelte";
   import { palestra } from "$lib/palestra.svelte";
   import { aggiornaConteggioScadenze } from "$lib/promemoria.svelte";
   import type { Impostazioni } from "$lib/types";
@@ -43,6 +44,7 @@
         <FormImpostazioni iniziale={impostazioni} etichettaConferma="Salva" onSalva={salva} />
       </section>
     {/if}
+    <SezioneLogo />
     <SezioneCambioPassword />
     <SezioneAvvioAutomatico />
     <SezioneBackup />

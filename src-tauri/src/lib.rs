@@ -3,6 +3,7 @@ pub mod dati_prova;
 pub mod db;
 pub mod domain;
 pub mod errore;
+pub mod logo_palestra;
 pub mod stato_app;
 pub mod versione;
 
@@ -62,6 +63,9 @@ pub fn run() {
             commands::impostazioni::configurazione_iniziale_completata,
             commands::impostazioni::completa_configurazione_iniziale,
             commands::impostazioni::cambia_password,
+            commands::logo::leggi_logo_palestra,
+            commands::logo::imposta_logo_palestra,
+            commands::logo::rimuovi_logo_palestra,
         ])
         // Le due finestre (accesso e principale) vivono insieme: chiuderne una chiude il programma
         .on_window_event(|finestra, evento| {

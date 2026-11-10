@@ -5,6 +5,7 @@ pub mod dashboard;
 pub mod impostazioni;
 pub mod iscritti;
 pub mod iscrizioni;
+pub mod logo;
 pub mod pagamenti;
 pub mod promemoria;
 pub mod report;

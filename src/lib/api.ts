@@ -193,6 +193,19 @@ export function completaConfigurazioneIniziale(): Promise<void> {
   return invoke<void>("completa_configurazione_iniziale");
 }
 
+/** Il logo come indirizzo `data:`, oppure null se non è stato scelto. */
+export function leggiLogoPalestra(): Promise<string | null> {
+  return invoke<string | null>("leggi_logo_palestra");
+}
+
+export function impostaLogoPalestra(percorso: string): Promise<void> {
+  return invoke<void>("imposta_logo_palestra", { percorso });
+}
+
+export function rimuoviLogoPalestra(): Promise<void> {
+  return invoke<void>("rimuovi_logo_palestra");
+}
+
 export function cambiaPassword(
   passwordAttuale: string,
   nuovaPassword: string,

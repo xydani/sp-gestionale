@@ -25,6 +25,7 @@ zeroize = "1.9.1"
 tauri-plugin-dialog = "2"
 tauri-plugin-notification = "2"
 tauri-plugin-process = "2"
+base64 = "0.23.1"
 
 [profile.release]
 codegen-units = 1
