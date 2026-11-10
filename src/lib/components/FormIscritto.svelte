@@ -1,7 +1,17 @@
 <script lang="ts">
   import CampoData from "./CampoData.svelte";
   import { untrack, type Snippet } from "svelte";
-  import { oggiIso } from "$lib/format";
+  import {
+    LUNGHEZZA_MASSIMA_LUOGO,
+    LUNGHEZZA_MASSIMA_NOME,
+    LUNGHEZZA_MASSIMA_NOTE,
+    validita,
+    erroreEmail,
+    erroreNomeProprio,
+    erroreTelefono,
+    limitiDataNascita,
+    limitiScadenzaCertificato,
+  } from "$lib/validazione";
   import type { DatiIscritto } from "$lib/types";
 
   let {
@@ -33,6 +43,9 @@
   let scadenzaCertificato = $state(valoriIniziali?.dataScadenzaCertificato ?? "");
   let inCorso = $state(false);
 
+  const nascita = limitiDataNascita();
+  const certificato = limitiScadenzaCertificato();
+
   async function conferma(evento: SubmitEvent) {
     evento.preventDefault();
     inCorso = true;
@@ -60,19 +73,35 @@
       <label>
         Nome
         <!-- svelte-ignore a11y_autofocus -->
-        <input bind:value={nome} required autofocus />
+        <input
+          bind:value={nome}
+          required
+          autofocus
+          maxlength={LUNGHEZZA_MASSIMA_NOME}
+          use:validita={erroreNomeProprio("Il nome", nome)}
+        />
       </label>
       <label>
         Cognome
-        <input bind:value={cognome} required />
+        <input
+          bind:value={cognome}
+          required
+          maxlength={LUNGHEZZA_MASSIMA_NOME}
+          use:validita={erroreNomeProprio("Il cognome", cognome)}
+        />
       </label>
       <label>
         Data di nascita
-        <CampoData bind:valore={dataNascita} massimaIso={oggiIso()} obbligatoria />
+        <CampoData bind:valore={dataNascita} {...nascita} obbligatoria />
       </label>
       <label>
         Luogo di nascita
-        <input bind:value={luogoNascita} required />
+        <input
+          bind:value={luogoNascita}
+          required
+          maxlength={LUNGHEZZA_MASSIMA_LUOGO}
+          use:validita={erroreNomeProprio("Il luogo di nascita", luogoNascita)}
+        />
       </label>
     </div>
   </fieldset>
@@ -82,11 +111,23 @@
     <div class="griglia">
       <label>
         Telefono
-        <input type="tel" bind:value={telefono} placeholder="+39 …" />
+        <input
+          type="tel"
+          bind:value={telefono}
+          placeholder="+39 …"
+          maxlength="25"
+          use:validita={erroreTelefono(telefono)}
+        />
       </label>
       <label>
         Email
-        <input type="email" bind:value={email} placeholder="nome@esempio.it" />
+        <input
+          type="email"
+          bind:value={email}
+          placeholder="nome@esempio.it"
+          maxlength="254"
+          use:validita={erroreEmail(email)}
+        />
       </label>
     </div>
   </fieldset>
@@ -101,7 +142,7 @@
       {#if certificatoPresentato}
         <label>
           Scade il
-          <CampoData bind:valore={scadenzaCertificato} obbligatoria />
+          <CampoData bind:valore={scadenzaCertificato} {...certificato} obbligatoria />
         </label>
       {:else}
         <p class="avviso">Da portare: finché manca, l'iscritto compare tra le scadenze.</p>
@@ -111,7 +152,7 @@
 
   <label>
     Note
-    <textarea bind:value={note} rows="3"></textarea>
+    <textarea bind:value={note} rows="3" maxlength={LUNGHEZZA_MASSIMA_NOTE}></textarea>
   </label>
   {@render sezioniAggiuntive?.()}
   <div class="azioni">

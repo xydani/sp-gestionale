@@ -3,6 +3,18 @@
   import { untrack } from "svelte";
   import { centesimiInTestoEuro, euroInCentesimi } from "$lib/format";
   import type { DatiTipologia, UnitaDurata } from "$lib/types";
+  import {
+    DURATA_MASSIMA_ABBONAMENTO_MESI,
+    LUNGHEZZA_MASSIMA_NOME,
+    validita,
+    erroreImportoEuro,
+  } from "$lib/validazione";
+
+  /** Gli stessi limiti del programma: 36 mesi, cioè 1095 giorni. */
+  const DURATA_MASSIMA: Record<UnitaDurata, number> = {
+    mesi: DURATA_MASSIMA_ABBONAMENTO_MESI,
+    giorni: 1095,
+  };
 
   let {
     iniziale,
@@ -44,8 +56,22 @@
 </script>
 
 <form onsubmit={conferma}>
-  <input class="nome" placeholder="Nome (es. Mensile)" bind:value={nome} required />
-  <input class="numero" type="number" min="1" bind:value={durataValore} required />
+  <input
+    class="nome"
+    placeholder="Nome (es. Mensile)"
+    bind:value={nome}
+    required
+    maxlength={LUNGHEZZA_MASSIMA_NOME}
+  />
+  <input
+    class="numero"
+    type="number"
+    min="1"
+    max={DURATA_MASSIMA[durataUnita]}
+    step="1"
+    bind:value={durataValore}
+    required
+  />
   <div class="unita">
     <Tendina
       bind:valore={durataUnita}
@@ -56,7 +82,14 @@
       etichettaAccessibile="Unità della durata"
     />
   </div>
-  <input class="prezzo" placeholder="Prezzo €" bind:value={prezzo} inputmode="decimal" required />
+  <input
+    class="prezzo"
+    placeholder="Prezzo €"
+    bind:value={prezzo}
+    inputmode="decimal"
+    required
+    use:validita={erroreImportoEuro(prezzo)}
+  />
   <button class="pulsante" type="submit">{etichettaConferma}</button>
   {#if onAnnulla}
     <button type="button" class="pulsante secondario" onclick={onAnnulla}>Annulla</button>

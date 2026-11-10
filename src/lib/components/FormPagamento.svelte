@@ -1,6 +1,14 @@
 <script lang="ts">
   import Tendina from "./Tendina.svelte";
   import CampoData from "./CampoData.svelte";
+  import {
+    DURATA_MASSIMA_ABBONAMENTO_MESI,
+    LUNGHEZZA_MASSIMA_NOTE,
+    validita,
+    erroreImportoEuro,
+    limitiDataPagamento,
+    limitiFinePeriodo,
+  } from "$lib/validazione";
   import { onMount, untrack } from "svelte";
   import { elencaTipologie, messaggioErrore, proponiPagamento, registraPagamento } from "$lib/api";
   import { centesimiInTestoEuro, euroInCentesimi, formattaEuro, oggiIso } from "$lib/format";
@@ -137,7 +145,12 @@
     </label>
     <label>
       Importo (€)
-      <input bind:value={importo} inputmode="decimal" required />
+      <input
+        bind:value={importo}
+        inputmode="decimal"
+        required
+        use:validita={erroreImportoEuro(importo)}
+      />
     </label>
     <label>
       Metodo
@@ -145,7 +158,7 @@
     </label>
     <label>
       Data pagamento
-      <CampoData bind:valore={dataPagamento} obbligatoria />
+      <CampoData bind:valore={dataPagamento} {...limitiDataPagamento()} obbligatoria />
     </label>
     <label>
       Inizio abbonamento
@@ -153,13 +166,17 @@
     </label>
     <label>
       Scadenza
-      <CampoData bind:valore={dataScadenza} minimaIso={dataInizio} obbligatoria />
+      <CampoData
+        bind:valore={dataScadenza}
+        {...limitiFinePeriodo(dataInizio, DURATA_MASSIMA_ABBONAMENTO_MESI)}
+        obbligatoria
+      />
     </label>
   </div>
 
   <label>
     Note
-    <input bind:value={note} placeholder="Facoltative" />
+    <input bind:value={note} placeholder="Facoltative" maxlength={LUNGHEZZA_MASSIMA_NOTE} />
   </label>
 
   {#if rinnovoDiId !== null}

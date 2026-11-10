@@ -1,6 +1,14 @@
 <script lang="ts">
   import Tendina from "./Tendina.svelte";
   import CampoData from "./CampoData.svelte";
+  import {
+    DURATA_ISCRIZIONE_MESI,
+    LUNGHEZZA_MASSIMA_NOTE,
+    validita,
+    erroreImportoEuro,
+    limitiDataPagamento,
+    limitiFinePeriodo,
+  } from "$lib/validazione";
   import { onMount } from "svelte";
   import { messaggioErrore, proponiIscrizione, registraIscrizione } from "$lib/api";
   import { centesimiInTestoEuro, euroInCentesimi, oggiIso } from "$lib/format";
@@ -72,11 +80,20 @@
     </label>
     <label>
       Al
-      <CampoData bind:valore={dataFine} minimaIso={dataInizio} obbligatoria />
+      <CampoData
+        bind:valore={dataFine}
+        {...limitiFinePeriodo(dataInizio, DURATA_ISCRIZIONE_MESI)}
+        obbligatoria
+      />
     </label>
     <label>
       Quota (€)
-      <input bind:value={quota} inputmode="decimal" required />
+      <input
+        bind:value={quota}
+        inputmode="decimal"
+        required
+        use:validita={erroreImportoEuro(quota)}
+      />
     </label>
     <label>
       Metodo
@@ -84,12 +101,12 @@
     </label>
     <label>
       Data pagamento
-      <CampoData bind:valore={dataPagamento} obbligatoria />
+      <CampoData bind:valore={dataPagamento} {...limitiDataPagamento()} obbligatoria />
     </label>
   </div>
   <label>
     Note
-    <input bind:value={note} placeholder="Facoltative" />
+    <input bind:value={note} placeholder="Facoltative" maxlength={LUNGHEZZA_MASSIMA_NOTE} />
   </label>
   {#if errore}<p class="errore" role="alert">{errore}</p>{/if}
   <div class="azioni">

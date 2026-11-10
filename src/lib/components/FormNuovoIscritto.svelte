@@ -11,6 +11,14 @@
   import { totaleNuovoIscritto } from "$lib/iscrizione";
   import { OPZIONI_METODO } from "$lib/metodi-pagamento";
   import type { DatiIscritto, Iscritto, MetodoPagamento, TipologiaAbbonamento } from "$lib/types";
+  import {
+    DURATA_ISCRIZIONE_MESI,
+    DURATA_MASSIMA_ABBONAMENTO_MESI,
+    validita,
+    erroreImportoEuro,
+    limitiDataPagamento,
+    limitiFinePeriodo,
+  } from "$lib/validazione";
   import CampoData from "./CampoData.svelte";
   import FormIscritto from "./FormIscritto.svelte";
   import Tendina from "./Tendina.svelte";
@@ -119,7 +127,12 @@
       <div class="griglia">
         <label>
           Quota (€)
-          <input bind:value={quota} inputmode="decimal" required />
+          <input
+            bind:value={quota}
+            inputmode="decimal"
+            required
+            use:validita={erroreImportoEuro(quota)}
+          />
         </label>
         <label>
           Dal
@@ -127,7 +140,11 @@
         </label>
         <label>
           Al
-          <CampoData bind:valore={fineIscrizione} minimaIso={inizioIscrizione} obbligatoria />
+          <CampoData
+            bind:valore={fineIscrizione}
+            {...limitiFinePeriodo(inizioIscrizione, DURATA_ISCRIZIONE_MESI)}
+            obbligatoria
+          />
         </label>
       </div>
     </fieldset>
@@ -150,7 +167,12 @@
         </label>
         <label>
           Importo (€)
-          <input bind:value={importoAbbonamento} inputmode="decimal" required />
+          <input
+            bind:value={importoAbbonamento}
+            inputmode="decimal"
+            required
+            use:validita={erroreImportoEuro(importoAbbonamento)}
+          />
         </label>
         <label>
           Inizio
@@ -162,7 +184,11 @@
         </label>
         <label>
           Scadenza
-          <CampoData bind:valore={scadenzaAbbonamento} minimaIso={inizioAbbonamento} obbligatoria />
+          <CampoData
+            bind:valore={scadenzaAbbonamento}
+            {...limitiFinePeriodo(inizioAbbonamento, DURATA_MASSIMA_ABBONAMENTO_MESI)}
+            obbligatoria
+          />
         </label>
       </div>
     </fieldset>
@@ -176,7 +202,7 @@
         </label>
         <label>
           Data pagamento
-          <CampoData bind:valore={dataPagamento} obbligatoria />
+          <CampoData bind:valore={dataPagamento} {...limitiDataPagamento()} obbligatoria />
         </label>
         <div class="totale">
           <span>Totale da incassare</span>
