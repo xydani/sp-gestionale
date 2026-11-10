@@ -3,6 +3,7 @@ import type {
   ConteggioInScadenza,
   DatiIscritto,
   DatiIscrizione,
+  DatiNuovoIscritto,
   DatiPagamento,
   DatiTipologia,
   ErroreApp,
@@ -92,6 +93,11 @@ export function creaIscritto(dati: DatiIscritto): Promise<Iscritto> {
   return invoke<Iscritto>("crea_iscritto", { dati });
 }
 
+/** Crea l'iscritto con iscrizione annuale e primo abbonamento: tutto o niente. */
+export function iscriviNuovoIscritto(dati: DatiNuovoIscritto): Promise<Iscritto> {
+  return invoke<Iscritto>("iscrivi_nuovo_iscritto", { dati });
+}
+
 export function modificaIscritto(id: number, dati: DatiIscritto): Promise<Iscritto> {
   return invoke<Iscritto>("modifica_iscritto", { id, dati });
 }
@@ -101,7 +107,8 @@ export function impostaIscrittoArchiviato(id: number, archiviato: boolean): Prom
 }
 
 /** Propone quota e periodo dell'anno sportivo (il successivo se l'iscrizione è ancora valida). */
-export function proponiIscrizione(iscrittoId: number): Promise<PropostaIscrizione> {
+/** Con `iscrittoId` null (iscritto non ancora creato) propone l'anno sportivo in corso. */
+export function proponiIscrizione(iscrittoId: number | null): Promise<PropostaIscrizione> {
   return invoke<PropostaIscrizione>("proponi_iscrizione", { iscrittoId });
 }
 
@@ -118,8 +125,9 @@ export function eliminaIscrizione(id: number): Promise<void> {
 }
 
 /** Propone importo e date; con `dataInizio` ricalcola la scadenza da quella data. */
+/** Con `iscrittoId` null (iscritto non ancora creato) l'abbonamento parte da oggi. */
 export function proponiPagamento(
-  iscrittoId: number,
+  iscrittoId: number | null,
   tipologiaId: number,
   dataInizio: string | null = null,
 ): Promise<PropostaPagamento> {

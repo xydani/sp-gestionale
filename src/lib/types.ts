@@ -224,3 +224,10 @@ export interface Impostazioni {
   meseInizioAnnoSportivo: number;
   backupConservati: number;
 }
+
+/** Iscrizione completa di una persona nuova. `iscrittoId` di iscrizione e pagamento è ignorato. */
+export interface DatiNuovoIscritto {
+  anagrafica: DatiIscritto;
+  iscrizione: DatiIscrizione;
+  pagamento: DatiPagamento;
+}
