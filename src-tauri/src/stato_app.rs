@@ -190,6 +190,16 @@ impl StatoApp {
         Ok(operazione(connessione)?)
     }
 
+    /// Come `con_connessione`, per operazioni che richiedono una transazione.
+    pub fn con_connessione_modificabile<T>(
+        &self,
+        operazione: impl FnOnce(&mut Connection) -> Result<T, crate::db::ErroreDatabase>,
+    ) -> Result<T, ErroreApp> {
+        let mut connessione = self.connessione_bloccata();
+        let connessione = connessione.as_mut().ok_or_else(errore_database_bloccato)?;
+        Ok(operazione(connessione)?)
+    }
+
     fn apri_e_aggiorna(&self, password: &str) -> Result<Connection, ErroreApp> {
         let mut connessione = apri_database_criptato(&self.percorso_database, password)?;
         let versione_corrente = versione_schema_corrente(&connessione)?;

@@ -46,6 +46,38 @@ pub struct DatiIscritto {
     pub note: Option<String>,
 }
 
+/// Ordine dell'elenco: alfabetico, oppure per data (le scadenze vicine prima o le più recenti).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum OrdinamentoIscritti {
+    #[default]
+    Alfabetico,
+    ScadenzaAbbonamentoCrescente,
+    ScadenzaAbbonamentoDecrescente,
+    FineIscrizioneCrescente,
+    FineIscrizioneDecrescente,
+}
+
+impl OrdinamentoIscritti {
+    fn come_sql(self) -> &'static str {
+        match self {
+            Self::Alfabetico => "ORDER BY i.cognome COLLATE NOCASE, i.nome COLLATE NOCASE, i.id",
+            Self::ScadenzaAbbonamentoCrescente => {
+                "ORDER BY a.ultima_data_scadenza, i.cognome COLLATE NOCASE, i.id"
+            }
+            Self::ScadenzaAbbonamentoDecrescente => {
+                "ORDER BY a.ultima_data_scadenza DESC, i.cognome COLLATE NOCASE, i.id"
+            }
+            Self::FineIscrizioneCrescente => {
+                "ORDER BY s.ultima_data_fine_iscrizione, i.cognome COLLATE NOCASE, i.id"
+            }
+            Self::FineIscrizioneDecrescente => {
+                "ORDER BY s.ultima_data_fine_iscrizione DESC, i.cognome COLLATE NOCASE, i.id"
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FiltroIscritti {
@@ -54,6 +86,8 @@ pub struct FiltroIscritti {
     pub includi_archiviati: bool,
     pub stato_abbonamento: Option<StatoValidita>,
     pub stato_iscrizione: Option<StatoValidita>,
+    #[serde(default)]
+    pub ordinamento: OrdinamentoIscritti,
 }
 
 /// Data di oggi e preavviso: servono a calcolare gli stati di validità.
@@ -92,8 +126,6 @@ const CONTEGGIO_ISCRITTI: &str = "
     JOIN v_ultima_iscrizione_iscritti s ON s.iscritto_id = i.id
     JOIN v_ultima_scadenza_iscritti a ON a.iscritto_id = i.id";
 
-const ORDINAMENTO_ISCRITTI: &str = "ORDER BY i.cognome COLLATE NOCASE, i.nome COLLATE NOCASE, i.id";
-
 /// Tutti gli iscritti che corrispondono al filtro (senza paginazione).
 pub fn elenca_iscritti(
     connessione: &Connection,
@@ -102,7 +134,8 @@ pub fn elenca_iscritti(
 ) -> Result<Vec<Iscritto>, ErroreDatabase> {
     let (clausola_where, parametri) = condizioni_filtro(filtro, riferimento);
     let mut query = connessione.prepare(&format!(
-        "{SELEZIONE_ISCRITTI} {clausola_where} {ORDINAMENTO_ISCRITTI}"
+        "{SELEZIONE_ISCRITTI} {clausola_where} {}",
+        filtro.ordinamento.come_sql()
     ))?;
     let iscritti = query
         .query_map(params_from_iter(parametri), |riga| {
@@ -131,7 +164,8 @@ pub fn elenca_iscritti_paginati(
     parametri_pagina.push(Value::from(i64::from(ELEMENTI_PER_PAGINA)));
     parametri_pagina.push(Value::from(i64::from(richiesta.scarto())));
     let mut query = connessione.prepare(&format!(
-        "{SELEZIONE_ISCRITTI} {clausola_where} {ORDINAMENTO_ISCRITTI} LIMIT ? OFFSET ?"
+        "{SELEZIONE_ISCRITTI} {clausola_where} {} LIMIT ? OFFSET ?",
+        filtro.ordinamento.come_sql()
     ))?;
     let elementi = query
         .query_map(params_from_iter(parametri_pagina), |riga| {

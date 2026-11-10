@@ -13,7 +13,9 @@ use sp_gestionale_lib::db::iscritti::{
 use sp_gestionale_lib::db::iscrizioni::{
     DatiIscrizione, elenca_iscrizioni, elimina_iscrizione, proponi_iscrizione, registra_iscrizione,
 };
-use sp_gestionale_lib::db::migrazioni::{applica_migrazioni_fino_a, versione_schema_corrente};
+use sp_gestionale_lib::db::migrazioni::{
+    applica_migrazioni_fino_a, versione_schema_corrente, versione_schema_supportata,
+};
 use sp_gestionale_lib::db::paginazione::RichiestaPagina;
 use sp_gestionale_lib::domain::pagamento::MetodoPagamento;
 use sp_gestionale_lib::domain::stato::StatoValidita;
@@ -249,7 +251,10 @@ fn la_migrazione_conserva_gli_iscritti_esistenti_e_fa_un_backup_prima() {
         .unwrap();
 
     let connessione = apri_database_criptato(&percorso, PASSWORD_TEST).unwrap();
-    assert_eq!(versione_schema_corrente(&connessione).unwrap(), 2);
+    assert_eq!(
+        versione_schema_corrente(&connessione).unwrap(),
+        versione_schema_supportata()
+    );
     let (nome, telefono, data_nascita): (String, String, Option<String>) = connessione
         .query_row(
             "SELECT nome, telefono, data_nascita FROM iscritti",

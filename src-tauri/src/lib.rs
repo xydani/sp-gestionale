@@ -15,6 +15,7 @@ const NOME_FILE_DATABASE: &str = "palestra.db";
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let cartella_dati = app.path().app_data_dir()?;
@@ -46,6 +47,8 @@ pub fn run() {
             commands::pagamenti::registra_pagamento,
             commands::pagamenti::elenca_pagamenti,
             commands::pagamenti::elimina_pagamento,
+            commands::promemoria::controlla_promemoria,
+            commands::promemoria::conta_in_scadenza,
         ])
         // Le due finestre (accesso e principale) vivono insieme: chiuderne una chiude il programma
         .on_window_event(|finestra, evento| {
