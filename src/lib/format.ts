@@ -68,3 +68,17 @@ export function variazionePercentuale(attuale: number, precedente: number): stri
   if (percentuale === 0) return "invariato";
   return percentuale > 0 ? `+${percentuale}%` : `−${Math.abs(percentuale)}%`;
 }
+
+/** Chiave di periodo del riepilogo in italiano: "2026", "novembre 2026", "10/11/2026". */
+export function formattaPeriodo(chiave: string): string {
+  const parti = chiave.split("-");
+  if (parti.length === 3) return formattaData(chiave);
+  if (parti.length === 2) return `${nomeMese(`${chiave}-01`)} ${parti[0]}`;
+  return chiave;
+}
+
+/** Quota percentuale arrotondata, "0%" se il totale è zero. */
+export function formattaPercentuale(parte: number, totale: number): string {
+  if (totale === 0) return "0%";
+  return `${Math.round((parte / totale) * 100)}%`;
+}

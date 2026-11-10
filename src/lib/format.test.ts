@@ -9,6 +9,8 @@ import {
   euroInCentesimi,
   formattaData,
   formattaEuro,
+  formattaPercentuale,
+  formattaPeriodo,
   oggiIso,
 } from "./format";
 
@@ -109,5 +111,24 @@ describe("variazionePercentuale", () => {
 
   it("non calcola la variazione da zero", () => {
     expect(variazionePercentuale(5000, 0)).toBeNull();
+  });
+});
+
+describe("formattaPeriodo", () => {
+  it("formatta giorni, mesi e anni", () => {
+    expect(formattaPeriodo("2026-11-10")).toBe("10/11/2026");
+    expect(formattaPeriodo("2026-11")).toBe("novembre 2026");
+    expect(formattaPeriodo("2026")).toBe("2026");
+  });
+});
+
+describe("formattaPercentuale", () => {
+  it("arrotonda la quota", () => {
+    expect(formattaPercentuale(1, 3)).toBe("33%");
+    expect(formattaPercentuale(5, 5)).toBe("100%");
+  });
+
+  it("restituisce 0% con totale zero", () => {
+    expect(formattaPercentuale(0, 0)).toBe("0%");
   });
 });
