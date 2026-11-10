@@ -6,6 +6,7 @@
   import SezioneAvvioAutomatico from "$lib/components/SezioneAvvioAutomatico.svelte";
   import SezioneBackup from "$lib/components/SezioneBackup.svelte";
   import SezioneCambioPassword from "$lib/components/SezioneCambioPassword.svelte";
+  import { palestra } from "$lib/palestra.svelte";
   import { aggiornaConteggioScadenze } from "$lib/promemoria.svelte";
   import type { Impostazioni } from "$lib/types";
 
@@ -22,6 +23,7 @@
   async function salva(nuove: Impostazioni) {
     try {
       impostazioni = await salvaImpostazioni(nuove);
+      palestra.nome = impostazioni.nomePalestra;
       // I giorni di preavviso cambiano cosa è "in scadenza"
       await aggiornaConteggioScadenze();
       mostraAvviso("successo", "Impostazioni salvate");

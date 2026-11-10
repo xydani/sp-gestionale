@@ -2,15 +2,26 @@
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
   import { VOCI_MENU, eVoceAttiva } from "$lib/menu";
+  import { onMount } from "svelte";
+  import { palestra, caricaNomePalestra } from "$lib/palestra.svelte";
   import { scadenzeInArrivo } from "$lib/promemoria.svelte";
+  import LogoPalestra from "./LogoPalestra.svelte";
 
   let { onBlocca }: { onBlocca: () => void } = $props();
+
+  onMount(() => {
+    // Il nome è solo decorativo: se non si legge il menu funziona lo stesso
+    caricaNomePalestra().catch(() => {});
+  });
 
   const totaleInScadenza = $derived(scadenzeInArrivo.abbonamenti + scadenzeInArrivo.iscrizioni);
 </script>
 
 <nav>
-  <div class="titolo">SP Gestionale</div>
+  <div class="intestazione">
+    <div class="logo"><LogoPalestra altezza="44px" /></div>
+    <div class="titolo">{palestra.nome || "SP Gestionale"}</div>
+  </div>
   <ul>
     {#each VOCI_MENU as voce (voce.percorso)}
       <li>
@@ -39,10 +50,24 @@
     padding: 1rem 0.75rem;
   }
 
+  .intestazione {
+    display: grid;
+    gap: 0.6rem;
+    padding: 0.5rem 0.75rem 1.25rem;
+  }
+
+  /* Il logo è blu su bianco: su fondo scuro sta in un riquadro chiaro */
+  .logo:has(:global(img)) {
+    justify-self: start;
+    padding: 0.4rem 0.6rem;
+    border-radius: var(--raggio);
+    background: #ffffff;
+  }
+
   .titolo {
     font-weight: 700;
     font-size: 1.1rem;
-    padding: 0.5rem 0.75rem 1.25rem;
+    overflow-wrap: anywhere;
   }
 
   ul {

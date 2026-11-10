@@ -5,6 +5,7 @@
   import { leggiImpostazioni, messaggioErrore, salvaImpostazioni } from "$lib/api";
   import { mostraAvviso } from "$lib/avvisi.svelte";
   import FormImpostazioni from "$lib/components/FormImpostazioni.svelte";
+  import { palestra } from "$lib/palestra.svelte";
   import type { Impostazioni } from "$lib/types";
 
   let impostazioni = $state<Impostazioni | null>(null);
@@ -19,7 +20,7 @@
 
   async function completa(scelte: Impostazioni) {
     try {
-      await salvaImpostazioni(scelte);
+      palestra.nome = (await salvaImpostazioni(scelte)).nomePalestra;
       mostraAvviso("successo", "Configurazione completata. Puoi cambiarla in Impostazioni.");
       await goto(resolve("/"));
     } catch (errore) {
