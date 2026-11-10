@@ -14,7 +14,7 @@ jobs:
     outputs:
       release-id: ${{ steps.release.outputs.id }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Note di versione dal CHANGELOG
         run: node scripts/note-versione.mjs "${GITHUB_REF_NAME#v}" > note.md
@@ -42,7 +42,7 @@ jobs:
             argomenti: "--target universal-apple-darwin"
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Dipendenze di sistema (Linux)
         if: runner.os == 'Linux'
