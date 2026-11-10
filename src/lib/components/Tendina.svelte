@@ -1,0 +1,304 @@
+<script lang="ts" generics="T">
+  import {
+    indiceEstremo,
+    indicePerLettera,
+    indiceSuccessivo,
+    type OpzioneTendina,
+  } from "$lib/tendina";
+
+  /** Tendina disegnata dall'app: uguale su ogni sistema, usabile con mouse e tastiera. */
+  let {
+    valore = $bindable(),
+    opzioni,
+    segnaposto = "Scegli…",
+    etichettaAccessibile,
+    obbligatoria = false,
+    onCambia,
+  }: {
+    valore: T;
+    opzioni: OpzioneTendina<T>[];
+    segnaposto?: string;
+    etichettaAccessibile?: string;
+    obbligatoria?: boolean;
+    onCambia?: (valore: T) => void;
+  } = $props();
+
+  const idElenco = `tendina-${Math.random().toString(36).slice(2, 9)}`;
+
+  let aperta = $state(false);
+  let indiceEvidenziato = $state(-1);
+  let contenitore = $state<HTMLDivElement>();
+  let pulsante = $state<HTMLButtonElement>();
+  let elenco = $state<HTMLUListElement>();
+
+  const indiceScelto = $derived(opzioni.findIndex((opzione) => opzione.valore === valore));
+  const scelta = $derived(indiceScelto >= 0 ? opzioni[indiceScelto] : null);
+  const mostraSegnaposto = $derived(!scelta || scelta.disabilitata);
+
+  function apri() {
+    aperta = true;
+    indiceEvidenziato = indiceScelto >= 0 ? indiceScelto : indiceEstremo(opzioni, false);
+    queueMicrotask(mostraEvidenziata);
+  }
+
+  function chiudi(restituisciFocus = true) {
+    aperta = false;
+    if (restituisciFocus) pulsante?.focus();
+  }
+
+  function scegli(indice: number) {
+    const opzione = opzioni[indice];
+    if (!opzione || opzione.disabilitata) return;
+    const cambiata = opzione.valore !== valore;
+    valore = opzione.valore;
+    chiudi();
+    if (cambiata) onCambia?.(opzione.valore);
+  }
+
+  function evidenzia(indice: number) {
+    indiceEvidenziato = indice;
+    mostraEvidenziata();
+  }
+
+  function mostraEvidenziata() {
+    elenco?.children[indiceEvidenziato]?.scrollIntoView({ block: "nearest" });
+  }
+
+  function gestisciTasti(evento: KeyboardEvent) {
+    const tasto = evento.key;
+    if (!aperta) {
+      if (["ArrowDown", "ArrowUp", "Enter", " "].includes(tasto)) {
+        evento.preventDefault();
+        apri();
+      }
+      return;
+    }
+    const azioni: Record<string, () => void> = {
+      ArrowDown: () => evidenzia(indiceSuccessivo(opzioni, indiceEvidenziato, 1)),
+      ArrowUp: () => evidenzia(indiceSuccessivo(opzioni, indiceEvidenziato, -1)),
+      Home: () => evidenzia(indiceEstremo(opzioni, false)),
+      End: () => evidenzia(indiceEstremo(opzioni, true)),
+      Enter: () => scegli(indiceEvidenziato),
+      " ": () => scegli(indiceEvidenziato),
+      Escape: () => chiudi(),
+    };
+    if (tasto === "Tab") {
+      chiudi(false);
+    } else if (azioni[tasto]) {
+      evento.preventDefault();
+      evento.stopPropagation();
+      azioni[tasto]();
+    } else if (tasto.length === 1) {
+      evidenzia(indicePerLettera(opzioni, tasto, indiceEvidenziato));
+    }
+  }
+
+  function chiudiSeFuori(evento: PointerEvent) {
+    if (aperta && !contenitore?.contains(evento.target as Node)) chiudi(false);
+  }
+</script>
+
+<svelte:window onpointerdown={chiudiSeFuori} />
+
+<div class="tendina" bind:this={contenitore}>
+  <button
+    bind:this={pulsante}
+    type="button"
+    class="campo"
+    class:aperta
+    role="combobox"
+    aria-label={etichettaAccessibile}
+    aria-expanded={aperta}
+    aria-controls={idElenco}
+    aria-haspopup="listbox"
+    aria-activedescendant={aperta && indiceEvidenziato >= 0
+      ? `${idElenco}-${indiceEvidenziato}`
+      : undefined}
+    onclick={() => (aperta ? chiudi() : apri())}
+    onkeydown={gestisciTasti}
+  >
+    <span class="testo" class:segnaposto={mostraSegnaposto}>
+      {mostraSegnaposto ? segnaposto : scelta?.etichetta}
+    </span>
+    <svg class="freccia" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5l5 5 5-5" /></svg>
+  </button>
+
+  {#if obbligatoria}
+    <!-- Campo nascosto solo per la validazione del modulo: senza scelta l'invio è bloccato -->
+    <input
+      class="validazione"
+      tabindex="-1"
+      aria-hidden="true"
+      value={mostraSegnaposto ? "" : "scelta"}
+      required
+      oninvalid={(evento) =>
+        (evento.currentTarget as HTMLInputElement).setCustomValidity("Scegli un'opzione")}
+      onfocus={() => pulsante?.focus()}
+    />
+  {/if}
+
+  {#if aperta}
+    <ul class="elenco" id={idElenco} role="listbox" bind:this={elenco}>
+      {#each opzioni as opzione, indice (indice)}
+        <!-- La tastiera è gestita dal pulsante della tendina, che indica l'opzione evidenziata -->
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <li
+          id="{idElenco}-{indice}"
+          role="option"
+          aria-selected={indice === indiceScelto}
+          aria-disabled={opzione.disabilitata}
+          class:evidenziata={indice === indiceEvidenziato}
+          class:scelta={indice === indiceScelto}
+          class:disabilitata={opzione.disabilitata}
+          onpointerenter={() => !opzione.disabilitata && (indiceEvidenziato = indice)}
+          onpointerdown={(evento) => evento.preventDefault()}
+          onclick={() => scegli(indice)}
+        >
+          <svg class="spunta" viewBox="0 0 16 16" aria-hidden="true"
+            ><path d="M3 8.5l3.2 3L13 4.5" /></svg
+          >
+          <span class="etichetta">{opzione.etichetta}</span>
+          {#if opzione.dettaglio}<span class="dettaglio">{opzione.dettaglio}</span>{/if}
+        </li>
+      {/each}
+    </ul>
+  {/if}
+</div>
+
+<style>
+  .tendina {
+    position: relative;
+    min-width: 0;
+  }
+
+  .campo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    min-height: 2.5rem;
+    padding: 0.45rem 0.75rem;
+    border: 1px solid var(--colore-bordo);
+    border-radius: var(--raggio);
+    background: var(--colore-superficie);
+    color: var(--colore-testo);
+    box-shadow: var(--ombra-campo);
+    text-align: left;
+  }
+
+  :global(:root) .campo:hover {
+    border-color: var(--colore-bordo-hover);
+    filter: none;
+  }
+
+  :global(:root) .campo:focus-visible,
+  .campo.aperta {
+    outline: none;
+    border-color: var(--colore-primario);
+    box-shadow: 0 0 0 3px var(--colore-focus);
+  }
+
+  .testo {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .segnaposto {
+    color: var(--colore-testo-secondario);
+  }
+
+  .freccia {
+    width: 0.75rem;
+    flex-shrink: 0;
+    fill: none;
+    stroke: var(--colore-testo-secondario);
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform 0.15s;
+  }
+
+  .aperta .freccia {
+    transform: rotate(180deg);
+  }
+
+  .validazione {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .elenco {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 30;
+    min-width: 100%;
+    max-height: 18rem;
+    overflow-y: auto;
+    margin: 0;
+    padding: 0.3rem;
+    list-style: none;
+    background: var(--colore-superficie);
+    border: 1px solid var(--colore-bordo);
+    border-radius: var(--raggio-grande);
+    box-shadow: var(--ombra-sospesa);
+  }
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.6rem;
+    border-radius: 6px;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  li.evidenziata {
+    background: var(--colore-sfondo-tenue);
+  }
+
+  li.scelta {
+    color: var(--colore-primario);
+    font-weight: 500;
+  }
+
+  li.disabilitata {
+    color: var(--colore-testo-secondario);
+    cursor: default;
+  }
+
+  .spunta {
+    width: 1rem;
+    flex-shrink: 0;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    visibility: hidden;
+  }
+
+  li.scelta .spunta {
+    visibility: visible;
+  }
+
+  .etichetta {
+    flex: 1;
+  }
+
+  .dettaglio {
+    margin-left: 1rem;
+    color: var(--colore-testo-secondario);
+    font-variant-numeric: tabular-nums;
+    font-weight: 400;
+  }
+</style>
