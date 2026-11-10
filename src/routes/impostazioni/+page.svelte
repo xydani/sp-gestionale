@@ -8,6 +8,7 @@
   import SezioneBackup from "$lib/components/SezioneBackup.svelte";
   import SezioneCambioPassword from "$lib/components/SezioneCambioPassword.svelte";
   import SezioneLogo from "$lib/components/SezioneLogo.svelte";
+  import { bloccoAutomatico } from "$lib/blocco-automatico.svelte";
   import { palestra } from "$lib/palestra.svelte";
   import { aggiornaConteggioScadenze } from "$lib/promemoria.svelte";
   import type { Impostazioni } from "$lib/types";
@@ -26,6 +27,7 @@
     try {
       impostazioni = await salvaImpostazioni(nuove);
       palestra.nome = impostazioni.nomePalestra;
+      bloccoAutomatico.minuti = impostazioni.minutiBloccoAutomatico;
       // I giorni di preavviso cambiano cosa è "in scadenza"
       await aggiornaConteggioScadenze();
       mostraAvviso("successo", "Impostazioni salvate");

@@ -11,6 +11,10 @@ pub const CHIAVE_GIORNI_PREAVVISO: &str = "giorni_preavviso";
 pub const CHIAVE_MESE_INIZIO_ANNO_SPORTIVO: &str = "mese_inizio_anno_sportivo";
 pub const CHIAVE_QUOTA_ISCRIZIONE_CENT: &str = "quota_iscrizione_cent";
 pub const QUOTA_ISCRIZIONE_PREDEFINITA_CENT: usize = 3000;
+pub const CHIAVE_MINUTI_BLOCCO_AUTOMATICO: &str = "minuti_blocco_automatico";
+/// Dopo questi minuti senza usare il programma l'archivio si blocca; 0 = mai.
+pub const MINUTI_BLOCCO_AUTOMATICO_PREDEFINITI: u32 = 15;
+pub const MINUTI_BLOCCO_AUTOMATICO_MASSIMI: u32 = 240;
 
 /// Legge un'impostazione numerica; se manca o non è un numero usa il valore predefinito.
 pub fn leggi_impostazione_numerica(
@@ -40,6 +44,7 @@ pub struct Impostazioni {
     pub quota_iscrizione_cent: u32,
     pub mese_inizio_anno_sportivo: u32,
     pub backup_conservati: u32,
+    pub minuti_blocco_automatico: u32,
 }
 
 pub fn leggi_impostazioni(connessione: &Connection) -> Result<Impostazioni, ErroreDatabase> {
@@ -60,6 +65,10 @@ pub fn leggi_impostazioni(connessione: &Connection) -> Result<Impostazioni, Erro
         backup_conservati: numero(
             CHIAVE_BACKUP_CONSERVATI,
             BACKUP_CONSERVATI_PREDEFINITI as u32,
+        )?,
+        minuti_blocco_automatico: numero(
+            CHIAVE_MINUTI_BLOCCO_AUTOMATICO,
+            MINUTI_BLOCCO_AUTOMATICO_PREDEFINITI,
         )?,
     })
 }
@@ -88,6 +97,10 @@ pub fn salva_impostazioni(
         (
             CHIAVE_BACKUP_CONSERVATI,
             impostazioni.backup_conservati.to_string(),
+        ),
+        (
+            CHIAVE_MINUTI_BLOCCO_AUTOMATICO,
+            impostazioni.minuti_blocco_automatico.to_string(),
         ),
     ] {
         scrivi(&transazione, chiave, &valore)?;
@@ -137,6 +150,11 @@ fn valida_impostazioni(impostazioni: &Impostazioni) -> Result<Impostazioni, Erro
     if !(1..=BACKUP_CONSERVATI_MASSIMI).contains(&impostazioni.backup_conservati) {
         return non_valido(format!(
             "I backup conservati devono essere tra 1 e {BACKUP_CONSERVATI_MASSIMI}"
+        ));
+    }
+    if impostazioni.minuti_blocco_automatico > MINUTI_BLOCCO_AUTOMATICO_MASSIMI {
+        return non_valido(format!(
+            "Il blocco automatico può scattare al massimo dopo {MINUTI_BLOCCO_AUTOMATICO_MASSIMI} minuti"
         ));
     }
     Ok(Impostazioni {

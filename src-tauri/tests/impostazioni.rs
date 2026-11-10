@@ -15,6 +15,7 @@ fn impostazioni_valide() -> Impostazioni {
         quota_iscrizione_cent: 4000,
         mese_inizio_anno_sportivo: 10,
         backup_conservati: 15,
+        minuti_blocco_automatico: 0,
     }
 }
 
@@ -30,6 +31,7 @@ fn un_database_nuovo_ha_le_impostazioni_predefinite() {
             quota_iscrizione_cent: 3000,
             mese_inizio_anno_sportivo: 9,
             backup_conservati: 30,
+            minuti_blocco_automatico: 15,
         }
     );
 }
@@ -47,7 +49,7 @@ fn le_impostazioni_salvate_si_rileggono_con_il_nome_ripulito() {
 fn i_valori_fuori_intervallo_sono_rifiutati() {
     let database = DatabaseTemporaneo::nuovo();
     let mut connessione = database.crea_con_schema();
-    let varianti: [fn(&mut Impostazioni); 7] = [
+    let varianti: [fn(&mut Impostazioni); 8] = [
         |i| i.giorni_preavviso = 0,
         |i| i.giorni_preavviso = 61,
         |i| i.mese_inizio_anno_sportivo = 0,
@@ -55,6 +57,7 @@ fn i_valori_fuori_intervallo_sono_rifiutati() {
         |i| i.backup_conservati = 0,
         |i| i.quota_iscrizione_cent = 1_000_001,
         |i| i.nome_palestra = "x".repeat(81),
+        |i| i.minuti_blocco_automatico = 241,
     ];
     for modifica in varianti {
         let mut impostazioni = impostazioni_valide();

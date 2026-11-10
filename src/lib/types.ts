@@ -234,6 +234,8 @@ export interface Impostazioni {
   quotaIscrizioneCent: number;
   meseInizioAnnoSportivo: number;
   backupConservati: number;
+  /** 0 = il programma non si blocca da solo. */
+  minutiBloccoAutomatico: number;
 }
 
 /** Iscrizione completa di una persona nuova. `iscrittoId` di iscrizione e pagamento è ignorato. */

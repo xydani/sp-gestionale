@@ -1,6 +1,7 @@
 <script lang="ts">
   import Tendina from "./Tendina.svelte";
   import { untrack } from "svelte";
+  import { SCELTE_MINUTI_BLOCCO, etichettaMinutiBlocco } from "$lib/blocco-automatico.svelte";
   import { centesimiInTestoEuro, euroInCentesimi, nomeMeseDaNumero } from "$lib/format";
   import type { Impostazioni } from "$lib/types";
 
@@ -23,6 +24,11 @@
   let meseInizioAnnoSportivo = $state(valoriIniziali.meseInizioAnnoSportivo);
   let giorniPreavviso = $state(valoriIniziali.giorniPreavviso);
   let backupConservati = $state(valoriIniziali.backupConservati);
+  let minutiBloccoAutomatico = $state(valoriIniziali.minutiBloccoAutomatico);
+  // Un valore non tra le scelte (es. impostato a mano) resta selezionabile
+  const sceltePossibili = [
+    ...new Set([...SCELTE_MINUTI_BLOCCO, valoriIniziali.minutiBloccoAutomatico]),
+  ].sort((a, b) => a - b);
   let errore = $state<string | null>(null);
   let inCorso = $state(false);
 
@@ -42,6 +48,7 @@
         meseInizioAnnoSportivo,
         giorniPreavviso,
         backupConservati,
+        minutiBloccoAutomatico,
       });
     } finally {
       inCorso = false;
@@ -74,6 +81,16 @@
   <label>
     Backup automatici da conservare
     <input type="number" min="1" max="365" bind:value={backupConservati} required />
+  </label>
+  <label>
+    Blocca il programma se non lo si usa
+    <Tendina
+      bind:valore={minutiBloccoAutomatico}
+      opzioni={sceltePossibili.map((minuti) => ({
+        valore: minuti,
+        etichetta: etichettaMinutiBlocco(minuti),
+      }))}
+    />
   </label>
 
   {#if errore}<p class="errore largo" role="alert">{errore}</p>{/if}

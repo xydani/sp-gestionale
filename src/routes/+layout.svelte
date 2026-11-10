@@ -4,7 +4,12 @@
   import { resolve } from "$app/paths";
   import { onDestroy, onMount, type Snippet } from "svelte";
   import { page } from "$app/state";
-  import { bloccaDatabase, leggiStatoDatabase } from "$lib/api";
+  import { bloccaDatabase, leggiImpostazioni, leggiStatoDatabase } from "$lib/api";
+  import {
+    EVENTI_ATTIVITA,
+    avviaTimerInattivita,
+    bloccoAutomatico,
+  } from "$lib/blocco-automatico.svelte";
   import {
     configurazione,
     percorsoObbligato,
@@ -85,6 +90,7 @@
       if (statoDatabase === "sbloccato") {
         avviaControlloPromemoria();
         avviaControlloAggiornamenti();
+        await leggiMinutiBloccoAutomatico();
         await proponiConfigurazioneIniziale();
       } else {
         fermaControlloPromemoria();
@@ -94,6 +100,27 @@
       await adattaFinestraDiAccesso(statoDatabase === "da_creare");
     }
   }
+
+  async function leggiMinutiBloccoAutomatico() {
+    try {
+      bloccoAutomatico.minuti = (await leggiImpostazioni()).minutiBloccoAutomatico;
+    } catch {
+      // Senza impostazioni leggibili resta il valore precedente: non si blocca il lavoro
+    }
+  }
+
+  // Ad archivio aperto, dopo i minuti scelti senza attività si torna alla password
+  $effect(() => {
+    if (finestraDiAccesso || statoDatabase !== "sbloccato") return;
+    const timer = avviaTimerInattivita(bloccoAutomatico.minuti, blocca);
+    const registra = () => timer.registraAttivita();
+    for (const evento of EVENTI_ATTIVITA)
+      window.addEventListener(evento, registra, { passive: true });
+    return () => {
+      timer.ferma();
+      for (const evento of EVENTI_ATTIVITA) window.removeEventListener(evento, registra);
+    };
+  });
 
   /** A ogni sblocco si controlla se la configurazione guidata è stata completata. */
   async function proponiConfigurazioneIniziale() {

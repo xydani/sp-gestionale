@@ -192,6 +192,7 @@ describe("impostazioni", () => {
       quotaIscrizioneCent: 3000,
       meseInizioAnnoSportivo: 9,
       backupConservati: 30,
+      minutiBloccoAutomatico: 15,
     };
     await api.salvaImpostazioni(impostazioni);
     expect(invoke).toHaveBeenCalledWith("salva_impostazioni", { impostazioni });

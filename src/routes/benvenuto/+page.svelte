@@ -13,6 +13,7 @@
   import SezioneLogo from "$lib/components/SezioneLogo.svelte";
   import SezioneTipologie from "$lib/components/SezioneTipologie.svelte";
   import { configurazione, descriviPasso } from "$lib/configurazione-guidata.svelte";
+  import { bloccoAutomatico } from "$lib/blocco-automatico.svelte";
   import { palestra } from "$lib/palestra.svelte";
   import type { Impostazioni } from "$lib/types";
 
@@ -31,6 +32,7 @@
     try {
       impostazioni = await salvaImpostazioni(scelte);
       palestra.nome = impostazioni.nomePalestra;
+      bloccoAutomatico.minuti = impostazioni.minutiBloccoAutomatico;
       passo = 1;
     } catch (errore) {
       mostraAvviso("errore", messaggioErrore(errore));
