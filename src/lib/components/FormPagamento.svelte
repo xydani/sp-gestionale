@@ -1,4 +1,5 @@
 <script lang="ts">
+  import CampoData from "./CampoData.svelte";
   import { onMount, untrack } from "svelte";
   import { elencaTipologie, messaggioErrore, proponiPagamento, registraPagamento } from "$lib/api";
   import { centesimiInTestoEuro, euroInCentesimi, oggiIso } from "$lib/format";
@@ -57,8 +58,8 @@
     applicaProposta();
   }
 
-  function cambiaDataInizio() {
-    if (dataInizio) applicaProposta(dataInizio);
+  function cambiaDataInizio(nuovaDataInizio: string) {
+    applicaProposta(nuovaDataInizio);
   }
 
   async function conferma(evento: SubmitEvent) {
@@ -143,15 +144,15 @@
     </label>
     <label>
       Data pagamento
-      <input type="date" bind:value={dataPagamento} required />
+      <CampoData bind:valore={dataPagamento} obbligatoria />
     </label>
     <label>
       Inizio abbonamento
-      <input type="date" bind:value={dataInizio} onchange={cambiaDataInizio} required />
+      <CampoData bind:valore={dataInizio} onCambia={cambiaDataInizio} obbligatoria />
     </label>
     <label>
       Scadenza
-      <input type="date" bind:value={dataScadenza} min={dataInizio} required />
+      <CampoData bind:valore={dataScadenza} minimaIso={dataInizio} obbligatoria />
     </label>
   </div>
 

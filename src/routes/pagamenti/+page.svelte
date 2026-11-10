@@ -1,4 +1,5 @@
 <script lang="ts">
+  import CampoData from "$lib/components/CampoData.svelte";
   import { onMount } from "svelte";
   import { elencaPagamenti, eliminaPagamento, messaggioErrore } from "$lib/api";
   import { mostraAvviso } from "$lib/avvisi.svelte";
@@ -85,8 +86,15 @@
 {/if}
 
 <div class="filtri">
-  <label>Dal <input type="date" bind:value={dal} onchange={() => carica()} /></label>
-  <label>Al <input type="date" bind:value={al} min={dal} onchange={() => carica()} /></label>
+  <label
+    >Dal <span class="campo-data"><CampoData bind:valore={dal} onCambia={() => carica()} /></span
+    ></label
+  >
+  <label
+    >Al <span class="campo-data"
+      ><CampoData bind:valore={al} minimaIso={dal} onCambia={() => carica()} /></span
+    ></label
+  >
   <select bind:value={metodo} onchange={() => carica()}>
     <option value="">Tutti i metodi</option>
     {#each METODI_PAGAMENTO as valore (valore)}
@@ -143,13 +151,16 @@
     align-items: center;
   }
 
-  input,
   select {
     padding: 0.5rem 0.7rem;
     border: 1px solid var(--colore-bordo);
     border-radius: var(--raggio);
     font: inherit;
     background: var(--colore-superficie);
+  }
+
+  .campo-data {
+    width: 8.5rem;
   }
 
   .collegamento {

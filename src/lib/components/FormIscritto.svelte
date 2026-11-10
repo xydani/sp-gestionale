@@ -1,4 +1,5 @@
 <script lang="ts">
+  import CampoData from "./CampoData.svelte";
   import { untrack } from "svelte";
   import { oggiIso } from "$lib/format";
   import type { DatiIscritto } from "$lib/types";
@@ -61,7 +62,7 @@
       </label>
       <label>
         Data di nascita
-        <input type="date" bind:value={dataNascita} max={oggiIso()} required />
+        <CampoData bind:valore={dataNascita} massimaIso={oggiIso()} obbligatoria />
       </label>
       <label>
         Luogo di nascita

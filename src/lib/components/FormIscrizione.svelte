@@ -1,4 +1,5 @@
 <script lang="ts">
+  import CampoData from "./CampoData.svelte";
   import { onMount } from "svelte";
   import { messaggioErrore, proponiIscrizione, registraIscrizione } from "$lib/api";
   import { centesimiInTestoEuro, euroInCentesimi, oggiIso } from "$lib/format";
@@ -66,11 +67,11 @@
   <div class="griglia">
     <label>
       Valida dal
-      <input type="date" bind:value={dataInizio} required />
+      <CampoData bind:valore={dataInizio} obbligatoria />
     </label>
     <label>
       Al
-      <input type="date" bind:value={dataFine} min={dataInizio} required />
+      <CampoData bind:valore={dataFine} minimaIso={dataInizio} obbligatoria />
     </label>
     <label>
       Quota (€)
@@ -86,7 +87,7 @@
     </label>
     <label>
       Data pagamento
-      <input type="date" bind:value={dataPagamento} required />
+      <CampoData bind:valore={dataPagamento} obbligatoria />
     </label>
   </div>
   <label>
