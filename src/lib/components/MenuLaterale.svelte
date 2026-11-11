@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { getVersion } from "@tauri-apps/api/app";
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
   import { VOCI_MENU, eVoceAttiva } from "$lib/menu";
@@ -9,9 +10,14 @@
 
   let { onBlocca }: { onBlocca: () => void } = $props();
 
+  let versione = $state("");
+
   onMount(() => {
     // Il nome è solo decorativo: se non si legge il menu funziona lo stesso
     caricaNomePalestra().catch(() => {});
+    getVersion()
+      .then((letta) => (versione = letta))
+      .catch(() => {});
   });
 
   const totaleScadenze = $derived(totaleInScadenza(scadenzeInArrivo));
@@ -36,6 +42,7 @@
   </ul>
   <div class="azioni">
     <button type="button" class="blocca" onclick={onBlocca}>Blocca</button>
+    {#if versione}<span class="versione">Versione {versione}</span>{/if}
   </div>
 </nav>
 
@@ -128,6 +135,13 @@
 
   .azioni {
     display: grid;
+    gap: 0.5rem;
+  }
+
+  .versione {
+    padding-left: 0.25rem;
+    font-size: 0.75rem;
+    opacity: 0.7;
   }
 
   .blocca {
