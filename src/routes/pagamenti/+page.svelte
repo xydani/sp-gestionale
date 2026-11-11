@@ -126,7 +126,7 @@
   pagamenti={pagina.elementi}
   totaleElementi={pagina.totaleElementi}
   totaleImportoCent={pagina.totaleImportoCent}
-  messaggioVuoto={messaggioVuoto}
+  {messaggioVuoto}
   onElimina={elimina}
 />
 {#if pagina.totaleElementi > pagina.elementiPerPagina}
