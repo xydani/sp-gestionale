@@ -19,6 +19,8 @@ pub const DURATA_MASSIMA_ABBONAMENTO_MESI: u32 = 36;
 pub const MESI_MASSIMI_INIZIO_PRIMA_DEL_PAGAMENTO: u32 = 12;
 /// Pagamenti più vecchi di così sono sicuramente un errore di battitura dell'anno.
 pub const ANNI_MASSIMI_PAGAMENTO_PASSATO: u32 = 10;
+/// Un abbonamento già in corso scaduto da più di così non è più "in corso": va rinnovato.
+pub const MESI_MASSIMI_SCADENZA_PREGRESSA_PASSATA: u32 = 12;
 
 pub type EsitoControllo = Result<(), String>;
 
@@ -177,6 +179,28 @@ pub fn controlla_periodo(
     Ok(())
 }
 
+/// Abbonamento iniziato prima del programma: deve essere già iniziato e non scaduto da troppo.
+pub fn controlla_abbonamento_pregresso(
+    data_inizio: NaiveDate,
+    data_scadenza: NaiveDate,
+    oggi: NaiveDate,
+) -> EsitoControllo {
+    if data_inizio > oggi {
+        return Err(
+            "La scadenza è più lontana della durata dell'abbonamento scelto: \
+             controllare la data o la tipologia"
+                .into(),
+        );
+    }
+    if data_scadenza < oggi - Months::new(MESI_MASSIMI_SCADENZA_PREGRESSA_PASSATA) {
+        return Err(format!(
+            "L'abbonamento è scaduto da più di {MESI_MASSIMI_SCADENZA_PREGRESSA_PASSATA} mesi: \
+             registrare un pagamento nuovo dalla scheda dell'iscritto"
+        ));
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -299,5 +323,24 @@ mod test {
         // Rinnovo anticipato di un biennale: inizia tra più di un anno
         let biennale = controlla_periodo(data("2028-06-01"), data("2030-05-31"), pagamento, 36);
         assert!(biennale.is_ok());
+    }
+    #[test]
+    fn l_abbonamento_pregresso_deve_essere_gia_iniziato() {
+        let oggi = data(OGGI);
+        assert!(controlla_abbonamento_pregresso(oggi, data("2026-12-09"), oggi).is_ok());
+        assert!(
+            controlla_abbonamento_pregresso(data("2026-11-11"), data("2026-12-10"), oggi).is_err()
+        );
+    }
+
+    #[test]
+    fn l_abbonamento_pregresso_non_e_scaduto_da_oltre_un_anno() {
+        let oggi = data(OGGI);
+        assert!(
+            controlla_abbonamento_pregresso(data("2025-10-10"), data("2025-11-10"), oggi).is_ok()
+        );
+        assert!(
+            controlla_abbonamento_pregresso(data("2025-10-09"), data("2025-11-09"), oggi).is_err()
+        );
     }
 }
