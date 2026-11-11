@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { VOCI_MENU, eVoceAttiva } from "./menu";
+import { VOCI_MENU, eTastoBlocca, eVoceAttiva } from "./menu";
 
 const dashboard = VOCI_MENU[0];
 const iscritti = VOCI_MENU[1];
@@ -25,5 +25,20 @@ describe("VOCI_MENU", () => {
     const percorsi = VOCI_MENU.map((voce) => voce.percorso);
     expect(percorsi).toContain("/listino");
     expect(percorsi.at(-1)).toBe("/impostazioni");
+  });
+});
+
+describe("eTastoBlocca", () => {
+  const tasto = (key: string, ctrlKey = false, metaKey = false) => ({ key, ctrlKey, metaKey });
+
+  it("riconosce Ctrl+L e ⌘L, anche con le maiuscole attive", () => {
+    expect(eTastoBlocca(tasto("l", true))).toBe(true);
+    expect(eTastoBlocca(tasto("L", true))).toBe(true);
+    expect(eTastoBlocca(tasto("l", false, true))).toBe(true);
+  });
+
+  it("ignora la L scritta senza modificatore e le altre combinazioni", () => {
+    expect(eTastoBlocca(tasto("l"))).toBe(false);
+    expect(eTastoBlocca(tasto("k", true))).toBe(false);
   });
 });
