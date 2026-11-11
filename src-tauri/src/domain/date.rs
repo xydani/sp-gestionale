@@ -51,6 +51,27 @@ pub fn calcola_data_scadenza(
     }
 }
 
+/// Primo giorno di un abbonamento che scade il giorno `data_scadenza`: il contrario
+/// di `calcola_data_scadenza`, per ricostruire abbonamenti iniziati prima del programma.
+pub fn calcola_data_inizio_da_scadenza(
+    data_scadenza: NaiveDate,
+    durata: Durata,
+) -> Result<NaiveDate, ErroreDominio> {
+    if durata.valore == 0 {
+        return Err(ErroreDominio::DurataNulla);
+    }
+
+    match durata.unita {
+        UnitaDurata::Giorni => data_scadenza
+            .checked_sub_days(Days::new(u64::from(durata.valore) - 1))
+            .ok_or(ErroreDominio::DataFuoriIntervallo),
+        UnitaDurata::Mesi => data_scadenza
+            .succ_opt()
+            .and_then(|giorno_dopo| giorno_dopo.checked_sub_months(Months::new(durata.valore)))
+            .ok_or(ErroreDominio::DataFuoriIntervallo),
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -166,6 +187,39 @@ mod test {
         assert_eq!(
             calcola_data_scadenza(NaiveDate::MAX, giorni(2)),
             Err(ErroreDominio::DataFuoriIntervallo)
+        );
+    }
+    #[test]
+    fn inizio_da_scadenza_mensile_e_il_giorno_dopo_un_mese_prima() {
+        assert_eq!(
+            calcola_data_inizio_da_scadenza(data(2026, 2, 9), mesi(1)),
+            Ok(data(2026, 1, 10))
+        );
+    }
+
+    #[test]
+    fn inizio_da_scadenza_annuale_attraversa_il_cambio_anno() {
+        assert_eq!(
+            calcola_data_inizio_da_scadenza(data(2027, 8, 31), mesi(12)),
+            Ok(data(2026, 9, 1))
+        );
+    }
+
+    #[test]
+    fn inizio_da_scadenza_in_giorni_include_il_giorno_di_scadenza() {
+        assert_eq!(
+            calcola_data_inizio_da_scadenza(data(2026, 11, 10), giorni(10)),
+            Ok(data(2026, 11, 1))
+        );
+    }
+
+    #[test]
+    fn inizio_da_scadenza_e_scadenza_si_corrispondono() {
+        let inizio = data(2026, 3, 15);
+        let scadenza = calcola_data_scadenza(inizio, mesi(3)).unwrap();
+        assert_eq!(
+            calcola_data_inizio_da_scadenza(scadenza, mesi(3)),
+            Ok(inizio)
         );
     }
 }
