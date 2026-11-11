@@ -1,5 +1,12 @@
 export type PercorsoMenu =
-  "/" | "/iscritti" | "/pagamenti" | "/scadenze" | "/report" | "/listino" | "/impostazioni";
+  | "/"
+  | "/iscritti"
+  | "/pagamenti"
+  | "/scadenze"
+  | "/report"
+  | "/statistiche"
+  | "/listino"
+  | "/impostazioni";
 
 export interface VoceMenu {
   etichetta: string;
@@ -12,6 +19,7 @@ export const VOCI_MENU: VoceMenu[] = [
   { etichetta: "Pagamenti", percorso: "/pagamenti" },
   { etichetta: "Scadenze", percorso: "/scadenze" },
   { etichetta: "Incassi", percorso: "/report" },
+  { etichetta: "Statistiche", percorso: "/statistiche" },
   { etichetta: "Listino", percorso: "/listino" },
   { etichetta: "Impostazioni", percorso: "/impostazioni" },
 ];
