@@ -31,7 +31,7 @@
 
   const cima = $derived(massimo ?? Math.max(1, ...voci.map((voce) => voce.valore)));
   const dettaglio = $derived(
-    evidenziata === null ? voci.at(-1)?.descrizione : voci[evidenziata]?.descrizione,
+    evidenziata === null ? voci[voci.length - 1]?.descrizione : voci[evidenziata]?.descrizione,
   );
 
   function altezza(valore: number): string {
@@ -127,13 +127,12 @@
     padding-right: 2.75rem;
   }
 
+  /* La barra è posizionata dentro la colonna: più affidabile di flex dentro un pulsante */
   .colonna {
+    position: relative;
     padding: 0;
     border: none;
     background: transparent;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
     height: 100%;
     border-radius: 4px 4px 0 0;
     cursor: default;
@@ -145,6 +144,10 @@
   }
 
   .barra {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
     width: min(70%, 2.25rem);
     min-height: 1px;
     border-radius: 4px 4px 0 0;
