@@ -2,6 +2,7 @@
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
+  import { tick } from "svelte";
   import {
     eliminaIscrittoDefinitivamente,
     impostaIscrittoArchiviato,
@@ -12,10 +13,11 @@
   import { mostraAvviso } from "$lib/avvisi.svelte";
   import BadgeStato from "$lib/components/BadgeStato.svelte";
   import FormIscritto from "$lib/components/FormIscritto.svelte";
-  import { avvisoCertificato } from "$lib/certificato";
   import { confermaEliminazioneIscritto } from "$lib/conferma";
   import SezioneAbbonamento from "$lib/components/SezioneAbbonamento.svelte";
   import SezioneIscrizione from "$lib/components/SezioneIscrizione.svelte";
+  import StrisciaCosaManca from "$lib/components/StrisciaCosaManca.svelte";
+  import type { AzioneMancanza } from "$lib/cosa-manca";
   import { formattaData } from "$lib/format";
   import type { DatiIscritto, Iscritto } from "$lib/types";
 
@@ -24,6 +26,24 @@
   let iscritto = $state<Iscritto | null>(null);
   let inModifica = $state(false);
   let errore = $state<string | null>(null);
+  let rinnovoIscrizioneAperto = $state(false);
+  let rinnovoAbbonamentoAperto = $state(false);
+
+  const SEZIONI_AZIONE: Record<AzioneMancanza, string> = {
+    anagrafica: "sezione-anagrafica",
+    iscrizione: "sezione-iscrizione",
+    abbonamento: "sezione-abbonamento",
+  };
+
+  /** Dalla striscia «Da sistemare»: apre il modulo giusto e ci porta la vista. */
+  async function sistema(azione: AzioneMancanza) {
+    if (azione === "anagrafica") inModifica = true;
+    if (azione === "iscrizione") rinnovoIscrizioneAperto = true;
+    if (azione === "abbonamento") rinnovoAbbonamentoAperto = true;
+    await tick();
+    const sezione = document.getElementById(SEZIONI_AZIONE[azione]);
+    sezione?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   $effect(() => {
     carica(idIscritto);
@@ -88,7 +108,9 @@
       {#if iscritto.archiviato}<span class="archiviato">Archiviato</span>{/if}
     </div>
 
-    <section class="scheda">
+    <StrisciaCosaManca {iscritto} onAzione={sistema} />
+
+    <section class="scheda" id="sezione-anagrafica">
       <h2>Anagrafica</h2>
       {#if inModifica}
         <FormIscritto
@@ -124,12 +146,6 @@
           <dt>Note</dt>
           <dd class="note">{iscritto.note ?? "—"}</dd>
         </dl>
-        {#if avvisoCertificato(iscritto)}
-          <p class="avviso">{avvisoCertificato(iscritto)}</p>
-        {/if}
-        {#if iscritto.daCompletare}
-          <p class="avviso">Mancano data o luogo di nascita: completali con "Modifica dati".</p>
-        {/if}
         <div class="azioni">
           <button class="pulsante" type="button" onclick={() => (inModifica = true)}
             >Modifica dati</button
@@ -147,8 +163,16 @@
     </section>
 
     {#key iscritto.id}
-      <SezioneIscrizione {iscritto} onCambiata={() => carica(idIscritto)} />
-      <SezioneAbbonamento {iscritto} onCambiato={() => carica(idIscritto)} />
+      <SezioneIscrizione
+        {iscritto}
+        bind:formAperto={rinnovoIscrizioneAperto}
+        onCambiata={() => carica(idIscritto)}
+      />
+      <SezioneAbbonamento
+        {iscritto}
+        bind:formAperto={rinnovoAbbonamentoAperto}
+        onCambiato={() => carica(idIscritto)}
+      />
     {/key}
   {/if}
 </div>
@@ -211,11 +235,6 @@
 
   .note {
     white-space: pre-wrap;
-  }
-
-  .avviso {
-    margin: 0;
-    color: var(--colore-avviso);
   }
 
   .azioni {

@@ -10,10 +10,18 @@
   import BadgeStato from "./BadgeStato.svelte";
   import FormIscrizione from "./FormIscrizione.svelte";
 
-  let { iscritto, onCambiata }: { iscritto: Iscritto; onCambiata: () => void } = $props();
+  let {
+    iscritto,
+    onCambiata,
+    formAperto = $bindable(false),
+  }: {
+    iscritto: Iscritto;
+    onCambiata: () => void;
+    /** Aperto anche dalla striscia «Da sistemare» della scheda. */
+    formAperto?: boolean;
+  } = $props();
 
   let iscrizioni = $state<Iscrizione[]>([]);
-  let formAperto = $state(false);
 
   async function carica() {
     iscrizioni = await elencaIscrizioni(iscritto.id);
@@ -43,7 +51,7 @@
   onMount(carica);
 </script>
 
-<section class="scheda">
+<section class="scheda" id="sezione-iscrizione">
   <div class="intestazione-sezione">
     <h2>Iscrizione annuale</h2>
     <BadgeStato stato={iscritto.statoIscrizione} />

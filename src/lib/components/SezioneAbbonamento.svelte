@@ -11,7 +11,16 @@
   import Paginazione from "./Paginazione.svelte";
   import TabellaPagamenti from "./TabellaPagamenti.svelte";
 
-  let { iscritto, onCambiato }: { iscritto: Iscritto; onCambiato: () => void } = $props();
+  let {
+    iscritto,
+    onCambiato,
+    formAperto = $bindable(false),
+  }: {
+    iscritto: Iscritto;
+    onCambiato: () => void;
+    /** Aperto anche dalla striscia «Da sistemare» della scheda. */
+    formAperto?: boolean;
+  } = $props();
 
   let storico = $state<PaginaPagamenti>({
     elementi: [],
@@ -20,7 +29,6 @@
     totaleElementi: 0,
     totaleImportoCent: 0,
   });
-  let formAperto = $state(false);
 
   async function carica(numeroPagina = 1) {
     storico = await elencaPagamenti(
@@ -53,7 +61,7 @@
   onMount(() => carica());
 </script>
 
-<section class="scheda">
+<section class="scheda" id="sezione-abbonamento">
   <div class="intestazione-sezione">
     <h2>Abbonamento</h2>
     <BadgeStato stato={iscritto.statoAbbonamento} />
