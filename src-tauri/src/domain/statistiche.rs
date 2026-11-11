@@ -11,6 +11,8 @@ use super::rinnovo::calcola_data_inizio_rinnovo;
 
 /// Dopo la scadenza si aspetta questo tempo prima di considerare perso chi non ha rinnovato.
 pub const GIORNI_TOLLERANZA_RIENTRO_PREDEFINITI: u32 = 30;
+/// Un mese con meno scadenze decise di così è troppo piccolo per dire quale sia il peggiore.
+pub const SCADENZE_MINIME_PER_MESE: u32 = 5;
 /// Finestre della previsione degli incassi, in giorni da oggi.
 pub const FINESTRE_PREVISIONE_GIORNI: [u32; 3] = [30, 60, 90];
 
@@ -48,9 +50,14 @@ impl ConteggioRinnovi {
         }
     }
 
+    /// Scadenze di cui si sa già se sono state rinnovate o no.
+    pub fn decise(&self) -> u32 {
+        self.rinnovati + self.persi
+    }
+
     /// Quota di rinnovi tra le scadenze già decise (0–1); assente se non ce ne sono.
     pub fn tasso_rinnovo(&self) -> Option<f64> {
-        let decise = self.rinnovati + self.persi;
+        let decise = self.decise();
         if decise == 0 {
             return None;
         }
@@ -77,10 +84,11 @@ pub struct RiepilogoRinnovi {
 }
 
 impl RiepilogoRinnovi {
-    /// Il tasso del mese peggiore tra quelli con scadenze già decise.
+    /// Il tasso del mese peggiore tra quelli con abbastanza scadenze già decise.
     pub fn tasso_peggiore(&self) -> Option<f64> {
         self.per_mese
             .iter()
+            .filter(|mese| mese.conteggio.decise() >= SCADENZE_MINIME_PER_MESE)
             .filter_map(|mese| mese.conteggio.tasso_rinnovo())
             .min_by(f64::total_cmp)
     }
@@ -142,7 +150,7 @@ pub fn riepiloga_rinnovi(
         }
     }
 
-    scadenze_perse.sort_by(|a, b| b.fine.cmp(&a.fine));
+    scadenze_perse.sort_by_key(|periodo| std::cmp::Reverse(periodo.fine));
     RiepilogoRinnovi {
         totale,
         per_mese,
@@ -544,7 +552,26 @@ mod test {
         assert_eq!(riepilogo.per_mese[0].conteggio.rinnovati, 1);
         assert_eq!(riepilogo.per_mese[0].conteggio.persi, 1);
         assert_eq!(riepilogo.scadenze_perse[0].iscritto_id, 1);
-        assert_eq!(riepilogo.tasso_peggiore(), Some(0.0));
+        // Mesi con troppe poche scadenze: nessun mese peggiore affidabile
+        assert_eq!(riepilogo.tasso_peggiore(), None);
+    }
+
+    #[test]
+    fn il_mese_peggiore_si_cerca_tra_quelli_con_abbastanza_scadenze() {
+        let mese = |rinnovati, persi| RinnoviMese {
+            mese: String::new(),
+            conteggio: ConteggioRinnovi {
+                rinnovati,
+                persi,
+                in_attesa: 0,
+            },
+        };
+        let riepilogo = RiepilogoRinnovi {
+            totale: ConteggioRinnovi::default(),
+            per_mese: vec![mese(0, 1), mese(3, 2), mese(9, 1)],
+            scadenze_perse: Vec::new(),
+        };
+        assert_eq!(riepilogo.tasso_peggiore(), Some(0.6));
     }
 
     #[test]
