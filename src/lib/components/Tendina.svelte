@@ -1,4 +1,5 @@
 <script lang="ts" generics="T">
+  import Icona from "./Icona.svelte";
   import {
     indiceEstremo,
     indicePerLettera,
@@ -145,7 +146,7 @@
     <span class="testo" class:segnaposto={mostraSegnaposto}>
       {mostraSegnaposto ? segnaposto : scelta?.etichetta}
     </span>
-    <svg class="freccia" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5l5 5 5-5" /></svg>
+    <span class="freccia"><Icona nome="freccia-giu" dimensione={14} spessore={1.8} /></span>
   </button>
 
   {#if obbligatoria}
@@ -178,9 +179,7 @@
           onpointerdown={(evento) => evento.preventDefault()}
           onclick={() => scegli(indice)}
         >
-          <svg class="spunta" viewBox="0 0 16 16" aria-hidden="true"
-            ><path d="M3 8.5l3.2 3L13 4.5" /></svg
-          >
+          <span class="spunta"><Icona nome="spunta" dimensione={16} spessore={2} /></span>
           <span class="etichetta">{opzione.etichetta}</span>
           {#if opzione.dettaglio}<span class="dettaglio">{opzione.dettaglio}</span>{/if}
         </li>
@@ -235,13 +234,9 @@
   }
 
   .freccia {
-    width: 0.75rem;
+    display: flex;
     flex-shrink: 0;
-    fill: none;
-    stroke: var(--colore-testo-secondario);
-    stroke-width: 1.6;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+    color: var(--colore-testo-secondario);
     transition: transform 0.15s;
   }
 
@@ -301,13 +296,8 @@
   }
 
   .spunta {
-    width: 1rem;
+    display: flex;
     flex-shrink: 0;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.8;
-    stroke-linecap: round;
-    stroke-linejoin: round;
     visibility: hidden;
   }
 

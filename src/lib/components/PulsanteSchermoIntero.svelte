@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icona from "./Icona.svelte";
   import { onMount } from "svelte";
   import { alternaSchermoIntero, leggiSchermoIntero } from "$lib/schermo-intero";
 
@@ -23,13 +24,7 @@
 </script>
 
 <button type="button" onclick={alterna} title={etichetta} aria-label={etichetta}>
-  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-    {#if schermoIntero}
-      <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" />
-    {:else}
-      <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
-    {/if}
-  </svg>
+  <Icona nome={schermoIntero ? "esci-schermo-intero" : "schermo-intero"} dimensione={20} />
 </button>
 
 <style>
@@ -48,13 +43,5 @@
   button:hover {
     color: var(--colore-testo);
     border-color: var(--colore-testo-secondario);
-  }
-
-  path {
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
   }
 </style>

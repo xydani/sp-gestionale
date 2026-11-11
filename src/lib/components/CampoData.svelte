@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icona from "./Icona.svelte";
   import {
     erroreData,
     formattaMentreSiScrive,
@@ -105,10 +106,7 @@
     aria-expanded={calendarioAperto}
     onclick={() => (calendarioAperto = !calendarioAperto)}
   >
-    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-      <rect x="3.5" y="5" width="17" height="15.5" rx="2.5" />
-      <path d="M3.5 10h17M8 3v4M16 3v4" />
-    </svg>
+    <Icona nome="calendario" spessore={1.8} />
   </button>
   {#if calendarioAperto}
     <div class="riquadro-calendario">
@@ -147,13 +145,6 @@
   .apri-calendario[aria-expanded="true"] {
     background: var(--colore-primario-tenue);
     color: var(--colore-primario);
-  }
-
-  .apri-calendario svg {
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.8;
-    stroke-linecap: round;
   }
 
   .riquadro-calendario {

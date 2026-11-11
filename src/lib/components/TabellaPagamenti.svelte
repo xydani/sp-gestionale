@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icona from "./Icona.svelte";
   import { resolve } from "$app/paths";
   import { formattaData, formattaEuro } from "$lib/format";
   import { ETICHETTE_METODO } from "$lib/metodi-pagamento";
@@ -60,7 +61,9 @@
         {/if}
         <td>
           {pagamento.tipologiaNome}
-          {#if pagamento.note}<span class="nota" title={pagamento.note}>📝</span>{/if}
+          {#if pagamento.note}<span class="nota" title={pagamento.note}
+              ><Icona nome="nota" dimensione={15} /></span
+            >{/if}
         </td>
         <td>{formattaData(pagamento.dataInizio)} – {formattaData(pagamento.dataScadenza)}</td>
         {#if pagamento.pregresso}
@@ -122,6 +125,10 @@
   }
 
   .nota {
+    display: inline-flex;
+    vertical-align: -0.15em;
+    margin-left: 0.3rem;
+    color: var(--colore-testo-secondario);
     cursor: help;
   }
 

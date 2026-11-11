@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icona from "./Icona.svelte";
   import type { Snippet } from "svelte";
   import { chiudiApp } from "$lib/finestra";
   import LogoPalestra from "./LogoPalestra.svelte";
@@ -10,9 +11,7 @@
 <div class="cornice">
   <div class="barra-trascinamento" data-tauri-drag-region>
     <button type="button" class="chiudi" onclick={chiudiApp} aria-label="Chiudi" title="Chiudi">
-      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-        <path d="M6 6l12 12M18 6L6 18" />
-      </svg>
+      <Icona nome="chiudi" dimensione={16} />
     </button>
   </div>
 
@@ -62,13 +61,6 @@
   .chiudi:hover {
     background: #e5484d;
     color: #fff;
-  }
-
-  .chiudi path {
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linecap: round;
   }
 
   .contenuto {
