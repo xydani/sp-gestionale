@@ -223,3 +223,22 @@ describe("messaggioErrore", () => {
     expect(api.messaggioErrore(42)).toBe("Si è verificato un errore imprevisto");
   });
 });
+
+describe("api iscritti già attivi", () => {
+  beforeEach(() => invoke.mockReset());
+
+  it("inserisce chi era già iscritto con i dati minimi", async () => {
+    const dati = {
+      nome: "Luca",
+      cognome: "Ferri",
+      telefono: null,
+      dataScadenzaCertificato: null,
+      tipologiaId: 1,
+      dataScadenzaAbbonamento: "2026-11-25",
+      quotaPagata: true,
+    };
+    invoke.mockResolvedValue({ id: 7 });
+    await expect(api.registraIscrittoGiaAttivo(dati)).resolves.toEqual({ id: 7 });
+    expect(invoke).toHaveBeenCalledWith("registra_iscritto_gia_attivo", { dati });
+  });
+});

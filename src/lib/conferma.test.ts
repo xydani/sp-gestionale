@@ -52,6 +52,7 @@ describe("testoConfermaEliminazione", () => {
       note: null,
       rinnovoDiId: null,
       iscrittoEliminato: false,
+      pregresso: false,
     });
     expect(testo).toContain("50,00");
     expect(testo).toContain("10/11/2026");

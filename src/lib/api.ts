@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type {
   ConteggioInScadenza,
   DatiIscritto,
+  DatiIscrittoGiaAttivo,
   DatiIscrizione,
   DatiNuovoIscritto,
   DatiPagamento,
@@ -96,6 +97,11 @@ export function creaIscritto(dati: DatiIscritto): Promise<Iscritto> {
 /** Crea l'iscritto con iscrizione annuale e primo abbonamento: tutto o niente. */
 export function iscriviNuovoIscritto(dati: DatiNuovoIscritto): Promise<Iscritto> {
   return invoke<Iscritto>("iscrivi_nuovo_iscritto", { dati });
+}
+
+/** Inserisce chi era già iscritto: abbonamento e quota pregressi, senza incassi. */
+export function registraIscrittoGiaAttivo(dati: DatiIscrittoGiaAttivo): Promise<Iscritto> {
+  return invoke<Iscritto>("registra_iscritto_gia_attivo", { dati });
 }
 
 export function modificaIscritto(id: number, dati: DatiIscritto): Promise<Iscritto> {

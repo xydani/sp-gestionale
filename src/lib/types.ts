@@ -33,7 +33,7 @@ export interface Iscritto {
   id: number;
   nome: string;
   cognome: string;
-  /** Date ISO YYYY-MM-DD. Assenti solo per iscritti inseriti prima che fossero obbligatorie. */
+  /** Date ISO YYYY-MM-DD. Assenti per i già iscritti inseriti di corsa: vanno completate. */
   dataNascita: string | null;
   luogoNascita: string | null;
   telefono: string | null;
@@ -47,6 +47,8 @@ export interface Iscritto {
   /** Assente se il certificato medico non è stato presentato. */
   dataScadenzaCertificato: string | null;
   statoCertificato: StatoValidita;
+  /** Mancano dati anagrafici obbligatori (data o luogo di nascita). */
+  daCompletare: boolean;
 }
 
 /** Dati inseriti dall'utente per creare o modificare un iscritto. */
@@ -79,6 +81,19 @@ export interface FiltroIscritti {
   statoCertificato?: StatoValidita | null;
   /** Se assente, ordine alfabetico. */
   ordinamento?: OrdinamentoIscritti;
+  soloDaCompletare?: boolean;
+}
+
+/** Inserimento rapido di chi era già iscritto prima di usare il programma. */
+export interface DatiIscrittoGiaAttivo {
+  nome: string;
+  cognome: string;
+  telefono: string | null;
+  dataScadenzaCertificato: string | null;
+  tipologiaId: number;
+  dataScadenzaAbbonamento: string;
+  /** La quota dell'anno sportivo in corso è già stata pagata. */
+  quotaPagata: boolean;
 }
 
 /** Iscrizione annuale (anno sportivo) con la quota pagata. */
@@ -91,9 +106,11 @@ export interface Iscrizione {
   dataInizio: string;
   dataFine: string;
   note: string | null;
+  /** Quota pagata prima di usare il programma: nessun incasso registrato. */
+  pregresso: boolean;
 }
 
-export type DatiIscrizione = Omit<Iscrizione, "id">;
+export type DatiIscrizione = Omit<Iscrizione, "id" | "pregresso">;
 
 /** Quota e periodo proposti per una nuova iscrizione, tutti modificabili. */
 export interface PropostaIscrizione {
@@ -119,6 +136,8 @@ export interface Pagamento {
   note: string | null;
   rinnovoDiId: number | null;
   iscrittoEliminato: boolean;
+  /** Abbonamento in corso quando si è iniziato a usare il programma: nessun incasso registrato. */
+  pregresso: boolean;
 }
 
 /** Dati inseriti dall'utente per registrare un pagamento. */
