@@ -4,6 +4,7 @@
   import { resolve } from "$app/paths";
   import { onDestroy, onMount, type Snippet } from "svelte";
   import { page } from "$app/state";
+  import { completaEliminazioniInSospeso } from "$lib/eliminazione-differita";
   import { applicaDimensioneTesto, leggiDimensioneTesto } from "$lib/dimensione-testo";
   import { bloccaDatabase, leggiImpostazioni, leggiStatoDatabase } from "$lib/api";
   import {
@@ -144,6 +145,8 @@
   }
 
   async function blocca() {
+    // Dopo il blocco l'archivio è chiuso: ciò che è stato eliminato va cancellato adesso
+    await completaEliminazioniInSospeso();
     await bloccaDatabase();
     await passaAllaFinestraDiAccesso();
   }
