@@ -106,8 +106,8 @@
     padding: 0.5rem 0.75rem 1.25rem;
   }
 
-  /* Il logo è blu: sul fondo scuro sta in un riquadro bianco */
-  .logo:has(:global(img)) {
+  /* Il logo è blu: sul fondo scuro sta in un riquadro bianco (senza :has, non ovunque supportato) */
+  .logo {
     justify-self: start;
     padding: 0.4rem 0.6rem;
     border-radius: var(--raggio);
