@@ -167,7 +167,7 @@ pub fn incassi_tra(
         Ok(connessione.query_row(
             &format!(
                 "SELECT coalesce(sum(importo_cent), 0) FROM {tabella}
-                 WHERE data_pagamento BETWEEN ?1 AND ?2"
+                 WHERE data_pagamento BETWEEN ?1 AND ?2 AND pregresso = 0"
             ),
             params![dal, al],
             |riga| riga.get(0),

@@ -10,16 +10,17 @@ use crate::domain::csv::{componi_csv, importo_per_csv};
 use crate::domain::pagamento::MetodoPagamento;
 
 /// Tutti gli incassi in un'unica sequenza: pagamenti degli abbonamenti e quote di iscrizione.
+/// Le voci pregresse sono escluse: il denaro è stato incassato prima del programma.
 const MOVIMENTI: &str = "
     SELECT p.data_pagamento AS data, 'abbonamento' AS tipo, i.cognome, i.nome,
            p.tipologia_nome AS descrizione, p.metodo, p.importo_cent
     FROM pagamenti p JOIN iscritti i ON i.id = p.iscritto_id
-    WHERE p.data_pagamento BETWEEN ?1 AND ?2
+    WHERE p.data_pagamento BETWEEN ?1 AND ?2 AND p.pregresso = 0
     UNION ALL
     SELECT s.data_pagamento, 'iscrizione', i.cognome, i.nome,
            'Iscrizione annuale', s.metodo, s.importo_cent
     FROM iscrizioni s JOIN iscritti i ON i.id = s.iscritto_id
-    WHERE s.data_pagamento BETWEEN ?1 AND ?2";
+    WHERE s.data_pagamento BETWEEN ?1 AND ?2 AND s.pregresso = 0";
 
 const SOMME_PER_TIPO: &str = "
     coalesce(sum(CASE WHEN tipo = 'abbonamento' THEN importo_cent END), 0),

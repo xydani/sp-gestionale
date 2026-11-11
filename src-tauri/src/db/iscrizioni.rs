@@ -32,6 +32,8 @@ pub struct Iscrizione {
     pub data_inizio: NaiveDate,
     pub data_fine: NaiveDate,
     pub note: Option<String>,
+    /// Quota pagata prima di usare il programma: nessun incasso registrato.
+    pub pregresso: bool,
 }
 
 /// Dati inseriti dall'utente per registrare un'iscrizione.
@@ -57,7 +59,8 @@ pub struct PropostaIscrizione {
 }
 
 const SELEZIONE_ISCRIZIONI: &str = "
-    SELECT id, iscritto_id, importo_cent, data_pagamento, metodo, data_inizio, data_fine, note
+    SELECT id, iscritto_id, importo_cent, data_pagamento, metodo, data_inizio, data_fine, note,
+           pregresso
     FROM iscrizioni";
 
 /// Propone la quota dalle impostazioni e il periodo dell'anno sportivo:
@@ -185,5 +188,6 @@ fn leggi_iscrizione(riga: &Row<'_>) -> rusqlite::Result<Iscrizione> {
         data_inizio: riga.get(5)?,
         data_fine: riga.get(6)?,
         note: riga.get(7)?,
+        pregresso: riga.get(8)?,
     })
 }

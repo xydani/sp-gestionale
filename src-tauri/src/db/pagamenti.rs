@@ -35,6 +35,8 @@ pub struct Pagamento {
     pub rinnovo_di_id: Option<i64>,
     /// I dati dell'iscritto sono stati cancellati su richiesta: resta solo il pagamento.
     pub iscritto_eliminato: bool,
+    /// Abbonamento in corso quando si è iniziato a usare il programma: nessun incasso registrato.
+    pub pregresso: bool,
 }
 
 /// Dati inseriti dall'utente per registrare un pagamento.
@@ -85,7 +87,7 @@ pub struct FiltroPagamenti {
 const SELEZIONE_PAGAMENTI: &str = "
     SELECT p.id, p.iscritto_id, i.nome, i.cognome, p.tipologia_id, p.tipologia_nome,
            p.importo_cent, p.data_pagamento, p.metodo, p.data_inizio, p.data_scadenza,
-           p.note, p.rinnovo_di_id, i.data_eliminazione IS NOT NULL
+           p.note, p.rinnovo_di_id, i.data_eliminazione IS NOT NULL, p.pregresso
     FROM pagamenti p
     JOIN iscritti i ON i.id = p.iscritto_id";
 
@@ -231,6 +233,9 @@ fn condizioni_filtro(filtro: &FiltroPagamenti) -> (String, Vec<Value>) {
     if let Some(iscritto_id) = filtro.iscritto_id {
         condizioni.push("p.iscritto_id = ?");
         parametri.push(Value::from(iscritto_id));
+    } else {
+        // Senza importo non sono incassi: compaiono solo nello storico dell'iscritto
+        condizioni.push("p.pregresso = 0");
     }
     let clausola_where = if condizioni.is_empty() {
         String::new()
@@ -269,7 +274,7 @@ fn controlla_pagamento(dati: &DatiPagamento, oggi: NaiveDate) -> EsitoControllo 
 }
 
 /// Lo storico tiene i tipi disattivati, ma i pagamenti nuovi usano solo il listino in vigore.
-fn trova_tipologia_in_vendita(
+pub(crate) fn trova_tipologia_in_vendita(
     connessione: &Connection,
     tipologia_id: i64,
 ) -> Result<TipologiaAbbonamento, ErroreDatabase> {
@@ -322,5 +327,6 @@ fn leggi_pagamento(riga: &Row<'_>) -> rusqlite::Result<Pagamento> {
         note: riga.get(11)?,
         rinnovo_di_id: riga.get(12)?,
         iscritto_eliminato: riga.get(13)?,
+        pregresso: riga.get(14)?,
     })
 }
