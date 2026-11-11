@@ -2,15 +2,24 @@
   import { getVersion } from "@tauri-apps/api/app";
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
-  import { SCORCIATOIA_BLOCCA, VOCI_MENU, eTastoBlocca, eVoceAttiva } from "$lib/menu";
+  import {
+    SCORCIATOIA_BLOCCA,
+    SCORCIATOIA_RICERCA,
+    VOCI_MENU,
+    eTastoBlocca,
+    eTastoRicerca,
+    eVoceAttiva,
+  } from "$lib/menu";
   import { onMount } from "svelte";
   import { palestra, caricaNomePalestra } from "$lib/palestra.svelte";
   import { scadenzeInArrivo, totaleInScadenza } from "$lib/promemoria.svelte";
   import LogoPalestra from "./LogoPalestra.svelte";
+  import RicercaRapida from "./RicercaRapida.svelte";
 
   let { onBlocca }: { onBlocca: () => void } = $props();
 
   let versione = $state("");
+  let ricercaAperta = $state(false);
 
   onMount(() => {
     // Il nome è solo decorativo: se non si legge il menu funziona lo stesso
@@ -21,9 +30,13 @@
   });
 
   function gestisciTasti(evento: KeyboardEvent) {
-    if (!eTastoBlocca(evento)) return;
-    evento.preventDefault();
-    onBlocca();
+    if (eTastoBlocca(evento)) {
+      evento.preventDefault();
+      onBlocca();
+    } else if (eTastoRicerca(evento)) {
+      evento.preventDefault();
+      ricercaAperta = true;
+    }
   }
 
   const totaleScadenze = $derived(totaleInScadenza(scadenzeInArrivo));
@@ -36,6 +49,14 @@
     <div class="logo"><LogoPalestra altezza="44px" /></div>
     <div class="titolo">{palestra.nome || "SP Gestionale"}</div>
   </div>
+  <button type="button" class="cerca" onclick={() => (ricercaAperta = true)}>
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </svg>
+    <span>Cerca iscritto</span>
+    <kbd>{SCORCIATOIA_RICERCA}</kbd>
+  </button>
   <ul>
     {#each VOCI_MENU as voce (voce.percorso)}
       <li>
@@ -65,6 +86,10 @@
     {#if versione}<span class="versione">Versione {versione}</span>{/if}
   </div>
 </nav>
+
+{#if ricercaAperta}
+  <RicercaRapida onChiusa={() => (ricercaAperta = false)} />
+{/if}
 
 <style>
   nav {
@@ -160,6 +185,31 @@
     border-top: 1px solid var(--colore-menu-bordo);
   }
 
+  .cerca {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--colore-menu-bordo);
+    border-radius: var(--raggio);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .cerca:hover {
+    background: var(--colore-menu-hover);
+    color: #ffffff;
+  }
+
+  .cerca span {
+    flex: 1;
+  }
+
+  .cerca svg,
   .blocca {
     display: flex;
     align-items: center;
@@ -185,17 +235,6 @@
 
   .blocca:focus-visible {
     outline-color: #ffffff;
-  }
-
-  .blocca svg {
-    width: 1.1rem;
-    height: 1.1rem;
-    flex-shrink: 0;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
   }
 
   .blocca span {
