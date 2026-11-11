@@ -268,6 +268,8 @@ export interface Impostazioni {
   backupConservati: number;
   /** 0 = il programma non si blocca da solo. */
   minutiBloccoAutomatico: number;
+  /** Chi riprende entro questi giorni dalla scadenza conta come rinnovo, non come abbandono. */
+  giorniTolleranzaRientro: number;
 }
 
 /** Iscrizione completa di una persona nuova. `iscrittoId` di iscrizione e pagamento è ignorato. */
@@ -279,3 +281,86 @@ export interface DatiNuovoIscritto {
 
 /** Cosa scade: abbonamento, iscrizione annuale o certificato medico. */
 export type TipoScadenza = "abbonamento" | "iscrizione" | "certificato";
+
+/** Esiti delle scadenze: «in attesa» sono scadute da meno della tolleranza di rientro. */
+export interface ConteggioRinnovi {
+  rinnovati: number;
+  persi: number;
+  inAttesa: number;
+}
+
+export interface RinnoviMese {
+  /** "AAAA-MM": il mese della scadenza. */
+  mese: string;
+  conteggio: ConteggioRinnovi;
+}
+
+export interface Rinnovi {
+  totale: ConteggioRinnovi;
+  /** Tra 0 e 1; null se nessuna scadenza è ancora decisa. */
+  tassoRinnovo: number | null;
+  perMese: RinnoviMese[];
+}
+
+export interface IscrittoPerso {
+  iscrittoId: number;
+  nome: string;
+  cognome: string;
+  telefono: string | null;
+  tipologiaNome: string;
+  dataScadenza: string;
+  archiviato: boolean;
+}
+
+export interface AttiviMese {
+  mese: string;
+  attivi: number;
+}
+
+export interface ValoreMese {
+  mese: string;
+  incassiCent: number;
+  attivi: number;
+  spesaMediaCent: number | null;
+}
+
+export interface ValoreMedio {
+  incassiCent: number;
+  iscrittiPaganti: number;
+  valoreMedioCent: number | null;
+  spesaMediaMensileCent: number | null;
+  perMese: ValoreMese[];
+}
+
+export interface PrevisioneFinestra {
+  giorni: number;
+  stimaCent: number | null;
+  minimoCent: number | null;
+  massimoCent: number;
+}
+
+export interface VenditeTipologiaMese {
+  mese: string;
+  tipologiaNome: string;
+  numero: number;
+  importoCent: number;
+}
+
+export interface TotaleTipologia {
+  tipologiaNome: string;
+  numero: number;
+  importoCent: number;
+  numeroAnnoPrecedente: number;
+  importoAnnoPrecedenteCent: number;
+}
+
+export interface Statistiche {
+  giorniTolleranzaRientro: number;
+  rinnoviAbbonamenti: Rinnovi;
+  rinnoviIscrizioni: Rinnovi;
+  persi: IscrittoPerso[];
+  attiviPerMese: AttiviMese[];
+  valoreMedio: ValoreMedio;
+  previsione: PrevisioneFinestra[];
+  venditePerTipologia: { perMese: VenditeTipologiaMese[]; totali: TotaleTipologia[] };
+}

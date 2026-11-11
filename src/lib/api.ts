@@ -24,6 +24,7 @@ import type {
   Raggruppamento,
   RiepilogoDashboard,
   RiepilogoIncassi,
+  Statistiche,
   StatoDatabase,
   TipologiaAbbonamento,
 } from "./types";
@@ -185,6 +186,11 @@ export function leggiRiepilogoIncassi(
 /** Incassi del periodo uno per uno, nell'ordine in cui sono stati registrati. */
 export function elencaMovimenti(dal: string, al: string): Promise<Movimento[]> {
   return invoke<Movimento[]>("elenca_movimenti", { dal, al });
+}
+
+/** Rinnovi, abbandoni, valore medio, previsione e vendite del periodo. */
+export function leggiStatistiche(dal: string, al: string): Promise<Statistiche> {
+  return invoke<Statistiche>("leggi_statistiche", { dal, al });
 }
 
 /** Scrive nel file indicato i movimenti del periodo in formato CSV. */

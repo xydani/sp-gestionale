@@ -193,6 +193,7 @@ describe("impostazioni", () => {
       meseInizioAnnoSportivo: 9,
       backupConservati: 30,
       minutiBloccoAutomatico: 15,
+      giorniTolleranzaRientro: 30,
     };
     await api.salvaImpostazioni(impostazioni);
     expect(invoke).toHaveBeenCalledWith("salva_impostazioni", { impostazioni });
