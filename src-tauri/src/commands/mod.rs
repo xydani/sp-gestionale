@@ -10,4 +10,5 @@ pub mod pagamenti;
 pub mod promemoria;
 pub mod report;
 pub mod sblocco;
+pub mod statistiche;
 pub mod tipologie;

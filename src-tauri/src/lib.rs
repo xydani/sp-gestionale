@@ -61,6 +61,7 @@ pub fn run() {
             commands::report::riepilogo_incassi,
             commands::report::elenca_movimenti,
             commands::report::esporta_incassi_csv,
+            commands::statistiche::leggi_statistiche,
             commands::impostazioni::leggi_impostazioni,
             commands::impostazioni::salva_impostazioni,
             commands::impostazioni::configurazione_iniziale_completata,

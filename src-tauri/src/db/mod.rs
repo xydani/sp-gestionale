@@ -14,6 +14,7 @@ pub mod pagamenti;
 pub mod paginazione;
 pub mod promemoria;
 pub mod report;
+pub mod statistiche;
 pub mod tipologie;
 
 use thiserror::Error;
