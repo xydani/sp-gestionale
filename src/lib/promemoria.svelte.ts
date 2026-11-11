@@ -31,7 +31,7 @@ function descriviQuantita(numero: number, singolare: string, plurale: string): s
 
 function unisciElenco(parti: string[]): string {
   if (parti.length <= 1) return parti.join("");
-  return `${parti.slice(0, -1).join(", ")} e ${parti.at(-1)}`;
+  return `${parti.slice(0, -1).join(", ")} e ${parti[parti.length - 1]}`;
 }
 
 /** Testo della notifica, oppure null se non c'è nulla di nuovo. */
