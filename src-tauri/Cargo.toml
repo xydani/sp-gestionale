@@ -1,6 +1,6 @@
 [package]
 name = "sp-gestionale"
-version = "0.1.4"
+version = "0.1.5"
 description = "Gestione abbonamenti palestra"
 authors = ["xydani"]
 license = "MIT"

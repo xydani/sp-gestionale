@@ -2,6 +2,8 @@
 
 ## [Non rilasciato]
 
+## [0.1.5] - 2026-11-11
+
 - Nuova pagina Statistiche: rinnovi e abbandoni con l'elenco di chi non ha rinnovato, iscritti attivi mese per mese, valore medio per iscritto, previsione di incasso a 30/60/90 giorni e vendite per tipologia con il confronto sull'anno prima
 - Tolleranza di rientro impostabile: chi rinnova entro questi giorni dalla scadenza non conta come abbandono (30 di partenza)
 - Corretto: nel menu le icone di ricerca e blocco non si vedevano o erano piene, e schiacciavano il testo dei pulsanti
