@@ -10,6 +10,11 @@
     <div class="avviso {avviso.tipo}" role={avviso.tipo === "errore" ? "alert" : "status"}>
       <span class="simbolo" aria-hidden="true">{SIMBOLI[avviso.tipo]}</span>
       <span class="testo">{avviso.testo}</span>
+      {#if avviso.azione}
+        <button type="button" class="azione" onclick={avviso.azione.esegui}>
+          {avviso.azione.etichetta}
+        </button>
+      {/if}
       <button type="button" onclick={() => chiudiAvviso(avviso.id)} aria-label="Chiudi">×</button>
     </div>
   {/each}
@@ -77,6 +82,14 @@
     color: inherit;
     font-size: 1.25rem;
     line-height: 1;
+  }
+
+  .azione {
+    padding: 0.25rem 0.6rem;
+    border: 1px solid currentColor;
+    border-radius: var(--raggio);
+    font-size: 0.9rem;
+    font-weight: 600;
   }
 
   @keyframes entra {
