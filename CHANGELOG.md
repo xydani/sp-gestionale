@@ -3,6 +3,7 @@
 ## [Non rilasciato]
 
 - Corretto: nel menu le icone di ricerca e blocco non si vedevano o erano piene, e schiacciavano il testo dei pulsanti
+- Schermata della password più chiara: pulsante per mostrarla, avviso di maiuscole attive, password non cancellata dopo un errore, motivo del blocco per inattività, aiuto per la password dimenticata e versione installata
 
 ## [0.1.4] - 2026-11-11
 
