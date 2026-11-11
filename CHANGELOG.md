@@ -2,6 +2,8 @@
 
 ## [Non rilasciato]
 
+- L'avviso che la password non si recupera compare quando la si crea o la si cambia, con una conferma obbligatoria; tolto il pulsante «Password dimenticata?»
+
 ## [0.1.5] - 2026-11-11
 
 - Nuova pagina Statistiche: rinnovi e abbandoni con l'elenco di chi non ha rinnovato, iscritti attivi mese per mese, valore medio per iscritto, previsione di incasso a 30/60/90 giorni e vendite per tipologia con il confronto sull'anno prima
