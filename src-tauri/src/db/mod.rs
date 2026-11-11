@@ -6,6 +6,7 @@ pub mod dashboard;
 pub mod eliminazione;
 pub mod impostazioni;
 pub mod iscritti;
+pub mod iscritto_gia_attivo;
 pub mod iscrizioni;
 pub mod migrazioni;
 pub mod nuovo_iscritto;

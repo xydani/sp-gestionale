@@ -2,6 +2,7 @@ use tauri::State;
 
 use crate::db::eliminazione;
 use crate::db::iscritti::{self, DatiIscritto, FiltroIscritti, Iscritto, riferimento_per_oggi};
+use crate::db::iscritto_gia_attivo::{self, DatiIscrittoGiaAttivo};
 use crate::db::nuovo_iscritto::{self, DatiNuovoIscritto};
 use crate::db::paginazione::{Pagina, RichiestaPagina};
 use crate::errore::ErroreApp;
@@ -50,6 +51,19 @@ pub fn iscrivi_nuovo_iscritto(
     stato.con_connessione_modificabile(|connessione| {
         let riferimento = riferimento_per_oggi(connessione, oggi)?;
         nuovo_iscritto::iscrivi_nuovo_iscritto(connessione, &dati, riferimento)
+    })
+}
+
+/// Inserimento rapido di chi era già iscritto prima di usare il programma.
+#[tauri::command]
+pub fn registra_iscritto_gia_attivo(
+    stato: State<'_, StatoApp>,
+    dati: DatiIscrittoGiaAttivo,
+) -> Result<Iscritto, ErroreApp> {
+    let oggi = stato.oggi();
+    stato.con_connessione_modificabile(|connessione| {
+        let riferimento = riferimento_per_oggi(connessione, oggi)?;
+        iscritto_gia_attivo::registra_iscritto_gia_attivo(connessione, &dati, riferimento)
     })
 }
 
