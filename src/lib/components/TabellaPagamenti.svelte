@@ -9,6 +9,7 @@
     totaleElementi,
     totaleImportoCent,
     mostraIscritto = true,
+    messaggioVuoto = "Nessun pagamento",
     onElimina,
   }: {
     /** Pagamenti della pagina corrente. */
@@ -17,6 +18,8 @@
     totaleElementi: number;
     totaleImportoCent: number;
     mostraIscritto?: boolean;
+    /** Cosa dire, e cosa fare, quando non ci sono pagamenti. */
+    messaggioVuoto?: string;
     onElimina: (pagamento: Pagamento) => void;
   } = $props();
 </script>
@@ -74,7 +77,7 @@
         </td>
       </tr>
     {:else}
-      <tr><td colspan={mostraIscritto ? 7 : 6} class="vuoto">Nessun pagamento</td></tr>
+      <tr><td colspan={mostraIscritto ? 7 : 6} class="vuoto">{messaggioVuoto}</td></tr>
     {/each}
   </tbody>
   {#if pagamenti.length > 0}

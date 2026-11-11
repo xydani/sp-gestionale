@@ -64,6 +64,25 @@
 
 <h1>Dashboard</h1>
 
+{#if riepilogo && riepilogo.iscritti === 0}
+  <section class="per-iniziare">
+    <h2>Per iniziare</h2>
+    <ol>
+      <li>
+        Controlla prezzi e durate nel <a href={resolve("/listino")}>Listino</a>.
+      </li>
+      <li>
+        Inserisci chi è già iscritto da <a href={resolve("/iscritti")}>Iscritti</a> › «Aggiungi già iscritto»:
+        bastano nome, cognome e scadenza dell'abbonamento.
+      </li>
+      <li>Per chi si iscrive da oggi usa «Nuovo iscritto»: registra anche quota e pagamento.</li>
+      <li>
+        Fai un backup su una chiavetta da <a href={resolve("/impostazioni")}>Impostazioni</a>.
+      </li>
+    </ol>
+  </section>
+{/if}
+
 {#if riepilogo}
   <div class="riquadri">
     <RiquadroNumero
@@ -162,6 +181,27 @@
 {/if}
 
 <style>
+  .per-iniziare {
+    margin-bottom: 2rem;
+    padding: 1.25rem 1.5rem;
+    border: 1px solid var(--colore-bordo);
+    border-left: 4px solid var(--colore-primario);
+    border-radius: var(--raggio-grande);
+    background: var(--colore-primario-tenue);
+  }
+
+  .per-iniziare ol {
+    margin: 0.75rem 0 0;
+    padding-left: 1.25rem;
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .per-iniziare a {
+    color: var(--colore-primario);
+    font-weight: 500;
+  }
+
   .riquadri {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));

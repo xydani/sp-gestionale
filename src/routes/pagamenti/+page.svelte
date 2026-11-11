@@ -21,6 +21,15 @@
   });
   let nuovoPagamentoAperto = $state(false);
 
+  const filtriAttivi = $derived(
+    Boolean(filtriPagamenti.dal || filtriPagamenti.al || filtriPagamenti.metodo),
+  );
+  const messaggioVuoto = $derived(
+    filtriAttivi
+      ? "Nessun pagamento con questi filtri: prova «Tutto lo storico»"
+      : "Nessun pagamento ancora: registra il primo con «+ Registra pagamento»",
+  );
+
   /** Carica una pagina; cambiando i filtri si riparte dalla prima. */
   async function carica(numeroPagina = 1) {
     try {
@@ -117,6 +126,7 @@
   pagamenti={pagina.elementi}
   totaleElementi={pagina.totaleElementi}
   totaleImportoCent={pagina.totaleImportoCent}
+  messaggioVuoto={messaggioVuoto}
   onElimina={elimina}
 />
 {#if pagina.totaleElementi > pagina.elementiPerPagina}

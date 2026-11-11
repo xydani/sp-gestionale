@@ -10,7 +10,7 @@
   import FormNuovoIscritto from "$lib/components/FormNuovoIscritto.svelte";
   import Paginazione from "$lib/components/Paginazione.svelte";
   import { formattaData } from "$lib/format";
-  import { filtriIscritti } from "$lib/filtri.svelte";
+  import { filtriIscritti, senzaFiltriIscritti } from "$lib/filtri.svelte";
   import { ritarda } from "$lib/ritarda";
   import { opzioniStato } from "$lib/stato-validita";
   import type { Iscritto, Pagina } from "$lib/types";
@@ -194,7 +194,17 @@
       </tr>
     {:else}
       {#if !caricamento}
-        <tr><td colspan="5" class="vuoto">Nessun iscritto trovato</td></tr>
+        <tr>
+          <td colspan="5" class="vuoto">
+            {#if !senzaFiltriIscritti(filtriIscritti)}
+              Nessun iscritto con questa ricerca o questi filtri.
+            {:else}
+              <strong>Nessun iscritto ancora.</strong><br />
+              Se la palestra è già avviata, inizia da «Aggiungi già iscritto»: bastano nome e scadenza
+              dell'abbonamento. Per una persona che si iscrive adesso usa «Nuovo iscritto».
+            {/if}
+          </td>
+        </tr>
       {/if}
     {/each}
   </tbody>
