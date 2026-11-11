@@ -25,7 +25,7 @@ pub struct Iscritto {
     pub id: i64,
     pub nome: String,
     pub cognome: String,
-    /// Facoltative solo per gli iscritti inseriti prima che diventassero obbligatorie.
+    /// Mancano per gli iscritti inseriti di corsa (già iscritti) o prima che fossero obbligatorie.
     pub data_nascita: Option<NaiveDate>,
     pub luogo_nascita: Option<String>,
     pub telefono: Option<String>,
@@ -39,6 +39,8 @@ pub struct Iscritto {
     /// Assente se il certificato medico non è stato presentato.
     pub data_scadenza_certificato: Option<NaiveDate>,
     pub stato_certificato: StatoValidita,
+    /// Mancano dati anagrafici obbligatori: vanno completati dalla scheda.
+    pub da_completare: bool,
 }
 
 /// Dati inseriti dall'utente per creare o modificare un iscritto.
@@ -109,6 +111,8 @@ pub struct FiltroIscritti {
     pub stato_certificato: Option<StatoValidita>,
     #[serde(default)]
     pub ordinamento: OrdinamentoIscritti,
+    #[serde(default)]
+    pub solo_da_completare: bool,
 }
 
 /// Data di oggi e preavviso: servono a calcolare gli stati di validità.
@@ -144,6 +148,8 @@ const SELEZIONE_ISCRITTI: &str = "
 
 /// Gli iscritti eliminati restano solo come riferimento anonimo dei pagamenti.
 const NON_ELIMINATO: &str = "i.data_eliminazione IS NULL";
+
+const DA_COMPLETARE: &str = "(i.data_nascita IS NULL OR i.luogo_nascita IS NULL)";
 
 const CONTEGGIO_ISCRITTI: &str = "
     SELECT count(*)
@@ -348,6 +354,9 @@ fn condizioni_filtro(filtro: &FiltroIscritti, riferimento: Riferimento) -> (Stri
         NON_ELIMINATO.to_string(),
     ];
     let mut parametri: Vec<Value> = vec![Value::from(filtro.includi_archiviati)];
+    if filtro.solo_da_completare {
+        condizioni.push(DA_COMPLETARE.to_string());
+    }
 
     // Ogni parola deve comparire nel nome o nel cognome: "ross mar" trova "Mario Rossi"
     for parola in parole_di_ricerca(&filtro.testo) {
@@ -412,12 +421,15 @@ fn leggi_iscritto(riga: &Row<'_>, riferimento: Riferimento) -> rusqlite::Result<
     let ultima_data_fine_iscrizione: Option<NaiveDate> = riga.get(9)?;
     let ultima_data_scadenza_abbonamento: Option<NaiveDate> = riga.get(10)?;
     let data_scadenza_certificato: Option<NaiveDate> = riga.get(11)?;
+    let data_nascita: Option<NaiveDate> = riga.get(3)?;
+    let luogo_nascita: Option<String> = riga.get(4)?;
+    let da_completare = data_nascita.is_none() || luogo_nascita.is_none();
     Ok(Iscritto {
         id: riga.get(0)?,
         nome: riga.get(1)?,
         cognome: riga.get(2)?,
-        data_nascita: riga.get(3)?,
-        luogo_nascita: riga.get(4)?,
+        data_nascita,
+        luogo_nascita,
         telefono: riga.get(5)?,
         email: riga.get(6)?,
         note: riga.get(7)?,
@@ -428,6 +440,7 @@ fn leggi_iscritto(riga: &Row<'_>, riferimento: Riferimento) -> rusqlite::Result<
         stato_abbonamento: stato_di(ultima_data_scadenza_abbonamento),
         data_scadenza_certificato,
         stato_certificato: stato_di(data_scadenza_certificato),
+        da_completare,
     })
 }
 
