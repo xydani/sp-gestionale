@@ -5,6 +5,14 @@
 - Inserimento rapido di chi era già iscritto prima del programma: nome, cognome e scadenza dell'abbonamento in corso; abbonamento e quota pregressi contano per le scadenze ma non come incassi
 - Gli iscritti con anagrafica incompleta risultano «da completare» e si possono filtrare
 - Pulsante Blocca ridisegnato nel piè di menu con la versione installata; si blocca anche con Ctrl+L
+- «Rinnova» direttamente da Scadenze e dashboard; il rinnovo propone tipologia e metodo dell'ultimo pagamento
+- Ricerca rapida degli iscritti da qualsiasi pagina con Ctrl+K
+- Cassa di oggi in dashboard: totale, divisione per metodo e movimenti del giorno
+- Nella scheda dell'iscritto una striscia riassume cosa sistemare e porta al punto giusto
+- Eliminare un pagamento o un'iscrizione non chiede più conferma: per 10 secondi si può premere «Annulla»
+- I filtri di Iscritti e Pagamenti restano quando si cambia pagina
+- Dimensione del testo regolabile da Impostazioni
+- Le pagine ancora vuote spiegano da dove iniziare
 
 ## [0.1.3] - 2026-11-10
 
