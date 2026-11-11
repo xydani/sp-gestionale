@@ -2,6 +2,8 @@
 
 ## [Non rilasciato]
 
+- Corretto: nel menu le icone di ricerca e blocco non si vedevano o erano piene, e schiacciavano il testo dei pulsanti
+
 ## [0.1.4] - 2026-11-11
 
 - Inserimento rapido di chi era già iscritto prima del programma: nome, cognome e scadenza dell'abbonamento in corso; abbonamento e quota pregressi contano per le scadenze ma non come incassi
