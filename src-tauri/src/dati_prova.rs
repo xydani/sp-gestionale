@@ -5,6 +5,8 @@ use chrono::{Days, NaiveDate};
 use rusqlite::{Connection, params};
 
 use crate::db::ErroreDatabase;
+use crate::db::iscritti::Riferimento;
+use crate::db::iscritto_gia_attivo::{DatiIscrittoGiaAttivo, registra_iscritto_gia_attivo};
 use crate::db::tipologie::{TipologiaAbbonamento, elenca_tipologie};
 use crate::domain::anno_sportivo::Periodo;
 use crate::domain::anno_sportivo::{
@@ -15,6 +17,11 @@ use crate::domain::pagamento::MetodoPagamento;
 use crate::domain::stato::GIORNI_PREAVVISO_PREDEFINITI;
 
 pub const NUMERO_ISCRITTI_PREDEFINITO: u32 = 250;
+
+/// Uno su venti è inserito come già iscritto prima del programma, con anagrafica da completare.
+const ISCRITTI_PER_OGNI_GIA_ATTIVO: u32 = 20;
+/// Gli abbonamenti dei già iscritti scadono entro questi giorni (anche il mensile è già iniziato).
+const GIORNI_MASSIMI_SCADENZA_GIA_ATTIVI: u64 = 25;
 
 const NOMI: &[&str] = &[
     "Marco",
@@ -180,9 +187,10 @@ pub fn genera_dati_prova(
 ) -> Result<(), ErroreDatabase> {
     let mut casuale = GeneratoreCasuale::nuovo(seme);
     let tipologie = elenca_tipologie(connessione, true)?;
+    let numero_gia_attivi = numero_iscritti / ISCRITTI_PER_OGNI_GIA_ATTIVO;
     let transazione = connessione.transaction()?;
 
-    for _ in 0..numero_iscritti {
+    for _ in 0..numero_iscritti - numero_gia_attivi {
         let giorni_dall_iscrizione = casuale.tra(30, ANNI_MASSIMI_DI_STORICO * 365);
         let data_iscrizione = oggi - Days::new(giorni_dall_iscrizione);
         let iscritto_id = inserisci_iscritto(&transazione, &mut casuale, oggi)?;
@@ -226,6 +234,35 @@ pub fn genera_dati_prova(
     }
 
     transazione.commit()?;
+
+    for _ in 0..numero_gia_attivi {
+        inserisci_iscritto_gia_attivo(connessione, &mut casuale, &tipologie, oggi)?;
+    }
+    Ok(())
+}
+
+/// Solo nome, cognome e abbonamento in corso, come dall'inserimento rapido.
+fn inserisci_iscritto_gia_attivo(
+    connessione: &mut Connection,
+    casuale: &mut GeneratoreCasuale,
+    tipologie: &[TipologiaAbbonamento],
+    oggi: NaiveDate,
+) -> Result<(), ErroreDatabase> {
+    let dati = DatiIscrittoGiaAttivo {
+        nome: casuale.scegli(NOMI).to_string(),
+        cognome: casuale.scegli(COGNOMI).to_string(),
+        telefono: None,
+        data_scadenza_certificato: None,
+        tipologia_id: casuale.scegli(tipologie).id,
+        data_scadenza_abbonamento: oggi
+            + Days::new(casuale.tra(0, GIORNI_MASSIMI_SCADENZA_GIA_ATTIVI)),
+        quota_pagata: true,
+    };
+    let riferimento = Riferimento {
+        oggi,
+        giorni_preavviso: GIORNI_PREAVVISO_PREDEFINITI,
+    };
+    registra_iscritto_gia_attivo(connessione, &dati, riferimento)?;
     Ok(())
 }
 

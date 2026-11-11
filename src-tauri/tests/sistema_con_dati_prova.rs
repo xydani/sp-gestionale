@@ -207,6 +207,25 @@ fn lo_stato_di_tutti_gli_iscritti_si_calcola_velocemente() {
     assert!(durata < TEMPO_MASSIMO_QUERY, "calcolo stati in {durata:?}");
 }
 
+#[test]
+fn alcuni_iscritti_sono_gia_attivi_e_da_completare() {
+    use sp_gestionale_lib::db::iscritti::{FiltroIscritti, Riferimento, elenca_iscritti};
+    let (_database, connessione) = database_con_dati_prova();
+    let riferimento = Riferimento {
+        oggi: OGGI,
+        giorni_preavviso: GIORNI_PREAVVISO_PREDEFINITI,
+    };
+    let filtro = FiltroIscritti {
+        solo_da_completare: true,
+        ..Default::default()
+    };
+    let da_completare = elenca_iscritti(&connessione, &filtro, riferimento).unwrap();
+    assert!(!da_completare.is_empty());
+    for iscritto in da_completare {
+        assert_ne!(iscritto.stato_abbonamento, StatoValidita::Scaduto);
+    }
+}
+
 /// I dati inventati devono superare gli stessi controlli dei dati inseriti a mano,
 /// altrimenti "Modifica dati" su un iscritto di prova verrebbe rifiutato.
 #[test]
@@ -223,7 +242,11 @@ fn gli_iscritti_inventati_superano_i_controlli_dell_anagrafica() {
         includi_archiviati: true,
         ..Default::default()
     };
-    for iscritto in elenca_iscritti(&connessione, &filtro, riferimento).unwrap() {
+    let iscritti = elenca_iscritti(&connessione, &filtro, riferimento).unwrap();
+    let completi = iscritti
+        .into_iter()
+        .filter(|iscritto| !iscritto.da_completare);
+    for iscritto in completi {
         let dati = DatiIscritto {
             nome: iscritto.nome,
             cognome: iscritto.cognome,
