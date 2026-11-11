@@ -4,6 +4,7 @@
 
 - Inserimento rapido di chi era già iscritto prima del programma: nome, cognome e scadenza dell'abbonamento in corso; abbonamento e quota pregressi contano per le scadenze ma non come incassi
 - Gli iscritti con anagrafica incompleta risultano «da completare» e si possono filtrare
+- Pulsante Blocca ridisegnato nel piè di menu con la versione installata; si blocca anche con Ctrl+L
 
 ## [0.1.3] - 2026-11-10
 
