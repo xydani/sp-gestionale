@@ -3,7 +3,7 @@
   import { elencaPagamenti, eliminaPagamento, messaggioErrore } from "$lib/api";
   import { mostraAvviso } from "$lib/avvisi.svelte";
   import { aggiornaConteggioScadenze } from "$lib/promemoria.svelte";
-  import { confermaEliminazionePagamento } from "$lib/conferma";
+  import { eliminaConAnnulla } from "$lib/eliminazione-differita";
   import { formattaData } from "$lib/format";
   import type { Iscritto, Pagamento, PaginaPagamenti } from "$lib/types";
   import BadgeStato from "./BadgeStato.svelte";
@@ -45,17 +45,22 @@
     aggiornaConteggioScadenze();
   }
 
-  async function elimina(pagamento: Pagamento) {
-    if (!(await confermaEliminazionePagamento(pagamento))) return;
-    try {
-      await eliminaPagamento(pagamento.id);
-      mostraAvviso("successo", "Pagamento eliminato");
-      await carica(storico.numero);
-      onCambiato();
-      aggiornaConteggioScadenze();
-    } catch (errore) {
-      mostraAvviso("errore", messaggioErrore(errore));
-    }
+  /** Sparisce subito; si cancella davvero dopo qualche secondo, se non si preme «Annulla». */
+  function elimina(pagamento: Pagamento) {
+    storico.elementi = storico.elementi.filter((elemento) => elemento.id !== pagamento.id);
+    eliminaConAnnulla({
+      testo: "Pagamento eliminato",
+      elimina: () => eliminaPagamento(pagamento.id),
+      onEliminato: aggiornaDopoEliminazione,
+      onRipristinato: () => carica(storico.numero),
+      messaggioErrore,
+    });
+  }
+
+  async function aggiornaDopoEliminazione() {
+    await carica(storico.numero);
+    onCambiato();
+    aggiornaConteggioScadenze();
   }
 
   onMount(() => carica());

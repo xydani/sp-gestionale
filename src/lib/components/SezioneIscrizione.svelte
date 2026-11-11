@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { confermaEliminazioneIscrizione } from "$lib/conferma";
+  import { eliminaConAnnulla } from "$lib/eliminazione-differita";
   import { onMount } from "svelte";
   import { elencaIscrizioni, eliminaIscrizione, messaggioErrore } from "$lib/api";
   import { mostraAvviso } from "$lib/avvisi.svelte";
@@ -35,17 +35,22 @@
     aggiornaConteggioScadenze();
   }
 
-  async function elimina(iscrizione: Iscrizione) {
-    if (!(await confermaEliminazioneIscrizione(iscrizione))) return;
-    try {
-      await eliminaIscrizione(iscrizione.id);
-      mostraAvviso("successo", "Iscrizione eliminata");
-      await carica();
-      onCambiata();
-      aggiornaConteggioScadenze();
-    } catch (errore) {
-      mostraAvviso("errore", messaggioErrore(errore));
-    }
+  /** Sparisce subito; si cancella davvero dopo qualche secondo, se non si preme «Annulla». */
+  function elimina(iscrizione: Iscrizione) {
+    iscrizioni = iscrizioni.filter((elemento) => elemento.id !== iscrizione.id);
+    eliminaConAnnulla({
+      testo: "Iscrizione eliminata",
+      elimina: () => eliminaIscrizione(iscrizione.id),
+      onEliminato: aggiornaDopoEliminazione,
+      onRipristinato: carica,
+      messaggioErrore,
+    });
+  }
+
+  async function aggiornaDopoEliminazione() {
+    await carica();
+    onCambiata();
+    aggiornaConteggioScadenze();
   }
 
   onMount(carica);

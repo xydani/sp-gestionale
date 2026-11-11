@@ -7,7 +7,7 @@
   import FormPagamento from "$lib/components/FormPagamento.svelte";
   import Paginazione from "$lib/components/Paginazione.svelte";
   import TabellaPagamenti from "$lib/components/TabellaPagamenti.svelte";
-  import { confermaEliminazionePagamento } from "$lib/conferma";
+  import { eliminaConAnnulla } from "$lib/eliminazione-differita";
   import { OPZIONI_METODO } from "$lib/metodi-pagamento";
   import { filtriPagamenti } from "$lib/filtri.svelte";
   import type { Pagamento, PaginaPagamenti } from "$lib/types";
@@ -56,15 +56,16 @@
     await carica();
   }
 
-  async function elimina(pagamento: Pagamento) {
-    if (!(await confermaEliminazionePagamento(pagamento))) return;
-    try {
-      await eliminaPagamento(pagamento.id);
-      mostraAvviso("successo", "Pagamento eliminato");
-      await carica(pagina.numero);
-    } catch (errore) {
-      mostraAvviso("errore", messaggioErrore(errore));
-    }
+  /** Sparisce subito; si cancella davvero dopo qualche secondo, se non si preme «Annulla». */
+  function elimina(pagamento: Pagamento) {
+    pagina.elementi = pagina.elementi.filter((elemento) => elemento.id !== pagamento.id);
+    eliminaConAnnulla({
+      testo: "Pagamento eliminato",
+      elimina: () => eliminaPagamento(pagamento.id),
+      onEliminato: () => carica(pagina.numero),
+      onRipristinato: () => carica(pagina.numero),
+      messaggioErrore,
+    });
   }
 
   function tuttoLoStorico() {
