@@ -2,7 +2,7 @@
   import { getVersion } from "@tauri-apps/api/app";
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
-  import { VOCI_MENU, eVoceAttiva } from "$lib/menu";
+  import { SCORCIATOIA_BLOCCA, VOCI_MENU, eTastoBlocca, eVoceAttiva } from "$lib/menu";
   import { onMount } from "svelte";
   import { palestra, caricaNomePalestra } from "$lib/palestra.svelte";
   import { scadenzeInArrivo, totaleInScadenza } from "$lib/promemoria.svelte";
@@ -20,8 +20,16 @@
       .catch(() => {});
   });
 
+  function gestisciTasti(evento: KeyboardEvent) {
+    if (!eTastoBlocca(evento)) return;
+    evento.preventDefault();
+    onBlocca();
+  }
+
   const totaleScadenze = $derived(totaleInScadenza(scadenzeInArrivo));
 </script>
+
+<svelte:window onkeydown={gestisciTasti} />
 
 <nav>
   <div class="intestazione">
@@ -41,7 +49,19 @@
     {/each}
   </ul>
   <div class="azioni">
-    <button type="button" class="blocca" onclick={onBlocca}>Blocca</button>
+    <button
+      type="button"
+      class="blocca"
+      onclick={onBlocca}
+      title="Blocca il programma: serve la password per riaprirlo"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="5" y="11" width="14" height="10" rx="2" />
+        <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+      </svg>
+      <span>Blocca</span>
+      <kbd>{SCORCIATOIA_BLOCCA}</kbd>
+    </button>
     {#if versione}<span class="versione">Versione {versione}</span>{/if}
   </div>
 </nav>
@@ -135,26 +155,62 @@
 
   .azioni {
     display: grid;
-    gap: 0.5rem;
-  }
-
-  .versione {
-    padding-left: 0.25rem;
-    font-size: 0.75rem;
-    opacity: 0.7;
+    gap: 0.35rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--colore-menu-bordo);
   }
 
   .blocca {
-    padding: 0.5rem;
-    border: 1px solid var(--colore-menu-bordo);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.55rem 0.75rem;
+    border: none;
     border-radius: var(--raggio);
     background: transparent;
-    color: var(--colore-menu-testo);
+    color: inherit;
+    font: inherit;
     font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    transition:
+      background-color 0.15s,
+      color 0.15s;
   }
 
   .blocca:hover {
     background: var(--colore-menu-hover);
     color: #ffffff;
+  }
+
+  .blocca:focus-visible {
+    outline-color: #ffffff;
+  }
+
+  .blocca svg {
+    width: 1.1rem;
+    height: 1.1rem;
+    flex-shrink: 0;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .blocca span {
+    flex: 1;
+  }
+
+  kbd {
+    font: inherit;
+    font-size: 0.75rem;
+    opacity: 0.6;
+  }
+
+  .versione {
+    padding-left: 0.75rem;
+    font-size: 0.75rem;
+    opacity: 0.6;
   }
 </style>
