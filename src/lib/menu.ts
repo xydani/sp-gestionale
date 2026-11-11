@@ -32,3 +32,18 @@ export function eTastoBlocca(evento: Pick<KeyboardEvent, "key" | "ctrlKey" | "me
   const conModificatore = evento.ctrlKey || evento.metaKey;
   return conModificatore && evento.key.toLowerCase() === "l";
 }
+
+/** Scorciatoia della ricerca rapida degli iscritti, da qualsiasi pagina. */
+export const SCORCIATOIA_RICERCA = "Ctrl+K";
+
+/** Vero se il tasto premuto è Ctrl+K (⌘K su macOS). */
+export function eTastoRicerca(evento: Pick<KeyboardEvent, "key" | "ctrlKey" | "metaKey">): boolean {
+  const conModificatore = evento.ctrlKey || evento.metaKey;
+  return conModificatore && evento.key.toLowerCase() === "k";
+}
+
+/** Nuova posizione evidenziata in un elenco con le frecce: dalla fine si torna all'inizio. */
+export function spostaSelezione(attuale: number, passo: number, totale: number): number {
+  if (totale === 0) return 0;
+  return (attuale + passo + totale) % totale;
+}

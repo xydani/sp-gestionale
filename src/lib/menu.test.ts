@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { VOCI_MENU, eTastoBlocca, eVoceAttiva } from "./menu";
+import { VOCI_MENU, eTastoBlocca, eTastoRicerca, eVoceAttiva, spostaSelezione } from "./menu";
 
 const dashboard = VOCI_MENU[0];
 const iscritti = VOCI_MENU[1];
@@ -40,5 +40,25 @@ describe("eTastoBlocca", () => {
   it("ignora la L scritta senza modificatore e le altre combinazioni", () => {
     expect(eTastoBlocca(tasto("l"))).toBe(false);
     expect(eTastoBlocca(tasto("k", true))).toBe(false);
+  });
+});
+
+describe("eTastoRicerca", () => {
+  it("riconosce Ctrl+K e ⌘K ma non la K da sola", () => {
+    expect(eTastoRicerca({ key: "k", ctrlKey: true, metaKey: false })).toBe(true);
+    expect(eTastoRicerca({ key: "K", ctrlKey: false, metaKey: true })).toBe(true);
+    expect(eTastoRicerca({ key: "k", ctrlKey: false, metaKey: false })).toBe(false);
+  });
+});
+
+describe("spostaSelezione", () => {
+  it("scende e sale nell'elenco ricominciando dai bordi", () => {
+    expect(spostaSelezione(0, 1, 3)).toBe(1);
+    expect(spostaSelezione(2, 1, 3)).toBe(0);
+    expect(spostaSelezione(0, -1, 3)).toBe(2);
+  });
+
+  it("con l'elenco vuoto resta all'inizio", () => {
+    expect(spostaSelezione(0, 1, 0)).toBe(0);
   });
 });
