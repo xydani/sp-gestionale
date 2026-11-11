@@ -49,9 +49,25 @@
     evento.preventDefault();
     onChiusa(false);
   }
+
+  /**
+   * Esc chiude sempre: alcuni campi (come quello di ricerca) usano Esc per svuotarsi
+   * e il browser integrato allora non avvisa la finestra.
+   */
+  function chiudiConEsc(evento: KeyboardEvent) {
+    if (evento.key !== "Escape") return;
+    evento.preventDefault();
+    evento.stopPropagation();
+    onChiusa(false);
+  }
 </script>
 
-<dialog bind:this={finestra} oncancel={annullaConEsc} aria-label={TITOLI[tipo]}>
+<dialog
+  bind:this={finestra}
+  oncancel={annullaConEsc}
+  onkeydown={chiudiConEsc}
+  aria-label={TITOLI[tipo]}
+>
   <h2>
     {TITOLI[tipo]}
     {#if iscritto}<span class="nome">· {iscritto.cognome} {iscritto.nome}</span>{/if}

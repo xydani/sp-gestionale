@@ -70,6 +70,17 @@
     onChiusa();
   }
 
+  /**
+   * Esc chiude sempre: alcuni campi (come quello di ricerca) usano Esc per svuotarsi
+   * e il browser integrato allora non avvisa la finestra.
+   */
+  function chiudiConEsc(evento: KeyboardEvent) {
+    if (evento.key !== "Escape") return;
+    evento.preventDefault();
+    evento.stopPropagation();
+    onChiusa();
+  }
+
   /** Un clic sullo sfondo scuro chiude la ricerca. */
   function chiudiSeSfondo(evento: MouseEvent) {
     if (evento.target === finestra) onChiusa();
@@ -79,6 +90,7 @@
 <dialog
   bind:this={finestra}
   oncancel={annullaConEsc}
+  onkeydown={chiudiConEsc}
   onclick={chiudiSeSfondo}
   aria-label="Cerca un iscritto"
 >
