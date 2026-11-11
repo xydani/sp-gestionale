@@ -19,7 +19,6 @@
   let maiuscole = $state(false);
   let errore = $state<string | null>(null);
   let inCorso = $state(false);
-  let aiutoAperto = $state(false);
   let versione = $state("");
   let campoPassword = $state<HTMLInputElement>();
 
@@ -56,73 +55,47 @@
   function controllaMaiuscole(evento: KeyboardEvent) {
     maiuscole = maiuscoleAttive(evento);
   }
-
-  async function tornaAllaPassword() {
-    aiutoAperto = false;
-    await tick();
-    campoPassword?.focus();
-  }
 </script>
 
-{#if aiutoAperto}
-  <div class="riquadro">
-    <h1>Password dimenticata</h1>
-    <p class="testo-aiuto">
-      La password non si può recuperare né reimpostare: l'archivio è criptato proprio perché nessuno
-      possa leggerlo senza.
-    </p>
-    <p class="testo-aiuto">
-      Se hai un backup, puoi ripristinarlo dopo lo sblocco da Impostazioni › Backup, ma serve
-      comunque la password che l'archivio aveva quando il backup è stato fatto.
-    </p>
-    <p class="testo-aiuto">Prova anche le varianti con maiuscole e minuscole invertite.</p>
-    <!-- Fuori da un modulo non invia nulla: "submit" serve solo per avere lo stile del pulsante principale -->
-    <button type="submit" onclick={tornaAllaPassword}>Torna alla password</button>
-  </div>
-{:else}
-  <form class="riquadro" onsubmit={sblocca}>
-    <h1>Bentornato</h1>
-    {#if motivoBlocco}
-      <p class="motivo" role="status">{motivoBlocco}</p>
-    {:else}
-      <p>Inserisci la password per aprire l'archivio.</p>
-    {/if}
+<form class="riquadro" onsubmit={sblocca}>
+  <h1>Bentornato</h1>
+  {#if motivoBlocco}
+    <p class="motivo" role="status">{motivoBlocco}</p>
+  {:else}
+    <p>Inserisci la password per aprire l'archivio.</p>
+  {/if}
 
-    <label>
-      Password
-      <span class="campo-password">
-        <!-- svelte-ignore a11y_autofocus -->
-        <input
-          bind:this={campoPassword}
-          type={passwordVisibile ? "text" : "password"}
-          bind:value={password}
-          autocomplete="current-password"
-          autofocus
-          required
-          onkeydown={controllaMaiuscole}
-          onkeyup={controllaMaiuscole}
-        />
-        <button
-          type="button"
-          class="occhio"
-          onclick={() => (passwordVisibile = !passwordVisibile)}
-          aria-label={passwordVisibile ? "Nascondi la password" : "Mostra la password"}
-          title={passwordVisibile ? "Nascondi la password" : "Mostra la password"}
-        >
-          <Icona nome={passwordVisibile ? "occhio-barrato" : "occhio"} />
-        </button>
-      </span>
-    </label>
+  <label>
+    Password
+    <span class="campo-password">
+      <!-- svelte-ignore a11y_autofocus -->
+      <input
+        bind:this={campoPassword}
+        type={passwordVisibile ? "text" : "password"}
+        bind:value={password}
+        autocomplete="current-password"
+        autofocus
+        required
+        onkeydown={controllaMaiuscole}
+        onkeyup={controllaMaiuscole}
+      />
+      <button
+        type="button"
+        class="occhio"
+        onclick={() => (passwordVisibile = !passwordVisibile)}
+        aria-label={passwordVisibile ? "Nascondi la password" : "Mostra la password"}
+        title={passwordVisibile ? "Nascondi la password" : "Mostra la password"}
+      >
+        <Icona nome={passwordVisibile ? "occhio-barrato" : "occhio"} />
+      </button>
+    </span>
+  </label>
 
-    {#if maiuscole}<p class="maiuscole" role="status">Maiuscole attive</p>{/if}
-    {#if errore}<p class="errore" role="alert">{errore}</p>{/if}
+  {#if maiuscole}<p class="maiuscole" role="status">Maiuscole attive</p>{/if}
+  {#if errore}<p class="errore" role="alert">{errore}</p>{/if}
 
-    <button type="submit" disabled={inCorso}>{inCorso ? "Verifica…" : "Sblocca"}</button>
-    <button type="button" class="link" onclick={() => (aiutoAperto = true)}>
-      Password dimenticata?
-    </button>
-  </form>
-{/if}
+  <button type="submit" disabled={inCorso}>{inCorso ? "Verifica…" : "Sblocca"}</button>
+</form>
 
 {#if versione}<span class="versione">Versione {versione}</span>{/if}
 
@@ -171,24 +144,6 @@
     padding: 0.35rem 0.75rem;
     font-size: 0.85rem;
     font-weight: 500;
-  }
-
-  .link {
-    justify-self: center;
-    padding: 0.25rem 0.5rem;
-    border: none;
-    background: transparent;
-    color: var(--colore-primario);
-    font-size: 0.9rem;
-    cursor: pointer;
-  }
-
-  .link:hover {
-    text-decoration: underline;
-  }
-
-  .testo-aiuto {
-    text-align: left;
   }
 
   .versione {
