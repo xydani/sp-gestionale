@@ -50,7 +50,15 @@
     <div class="titolo">{palestra.nome || "SP Gestionale"}</div>
   </div>
   <button type="button" class="cerca" onclick={() => (ricercaAperta = true)}>
-    <svg viewBox="0 0 24 24" aria-hidden="true">
+    <svg
+      class="icona"
+      viewBox="0 0 24 24"
+      width="18"
+      height="18"
+      fill="none"
+      stroke="currentColor"
+      aria-hidden="true"
+    >
       <circle cx="11" cy="11" r="7" />
       <path d="m20 20-3.5-3.5" />
     </svg>
@@ -76,7 +84,15 @@
       onclick={onBlocca}
       title="Blocca il programma: serve la password per riaprirlo"
     >
-      <svg viewBox="0 0 24 24" aria-hidden="true">
+      <svg
+        class="icona"
+        viewBox="0 0 24 24"
+        width="18"
+        height="18"
+        fill="none"
+        stroke="currentColor"
+        aria-hidden="true"
+      >
         <rect x="5" y="11" width="14" height="10" rx="2" />
         <path d="M8 11V7a4 4 0 0 1 8 0v4" />
       </svg>
@@ -209,7 +225,18 @@
     flex: 1;
   }
 
-  .cerca svg,
+  /* Icone a tratto nel colore del testo; dimensioni anche negli attributi dell'SVG */
+  .icona {
+    width: 1.1rem;
+    height: 1.1rem;
+    flex-shrink: 0;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
   .blocca {
     display: flex;
     align-items: center;
