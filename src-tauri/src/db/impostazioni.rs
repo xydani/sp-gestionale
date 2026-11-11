@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use super::ErroreDatabase;
 use crate::domain::anno_sportivo::MESE_INIZIO_ANNO_SPORTIVO_PREDEFINITO;
+use crate::domain::statistiche::GIORNI_TOLLERANZA_RIENTRO_PREDEFINITI;
 use crate::domain::stato::GIORNI_PREAVVISO_PREDEFINITI;
 
 pub const CHIAVE_BACKUP_CONSERVATI: &str = "backup_conservati";
@@ -15,6 +16,8 @@ pub const CHIAVE_MINUTI_BLOCCO_AUTOMATICO: &str = "minuti_blocco_automatico";
 /// Dopo questi minuti senza usare il programma l'archivio si blocca; 0 = mai.
 pub const MINUTI_BLOCCO_AUTOMATICO_PREDEFINITI: u32 = 15;
 pub const MINUTI_BLOCCO_AUTOMATICO_MASSIMI: u32 = 240;
+pub const CHIAVE_GIORNI_TOLLERANZA_RIENTRO: &str = "giorni_tolleranza_rientro";
+pub const GIORNI_TOLLERANZA_RIENTRO_MASSIMI: u32 = 180;
 
 /// Legge un'impostazione numerica; se manca o non è un numero usa il valore predefinito.
 pub fn leggi_impostazione_numerica(
@@ -45,6 +48,13 @@ pub struct Impostazioni {
     pub mese_inizio_anno_sportivo: u32,
     pub backup_conservati: u32,
     pub minuti_blocco_automatico: u32,
+    /// Giorni dopo la scadenza entro cui chi riprende conta come rinnovo e non come abbandono.
+    #[serde(default = "giorni_tolleranza_rientro_predefiniti")]
+    pub giorni_tolleranza_rientro: u32,
+}
+
+fn giorni_tolleranza_rientro_predefiniti() -> u32 {
+    GIORNI_TOLLERANZA_RIENTRO_PREDEFINITI
 }
 
 pub fn leggi_impostazioni(connessione: &Connection) -> Result<Impostazioni, ErroreDatabase> {
@@ -69,6 +79,10 @@ pub fn leggi_impostazioni(connessione: &Connection) -> Result<Impostazioni, Erro
         minuti_blocco_automatico: numero(
             CHIAVE_MINUTI_BLOCCO_AUTOMATICO,
             MINUTI_BLOCCO_AUTOMATICO_PREDEFINITI,
+        )?,
+        giorni_tolleranza_rientro: numero(
+            CHIAVE_GIORNI_TOLLERANZA_RIENTRO,
+            GIORNI_TOLLERANZA_RIENTRO_PREDEFINITI,
         )?,
     })
 }
@@ -101,6 +115,10 @@ pub fn salva_impostazioni(
         (
             CHIAVE_MINUTI_BLOCCO_AUTOMATICO,
             impostazioni.minuti_blocco_automatico.to_string(),
+        ),
+        (
+            CHIAVE_GIORNI_TOLLERANZA_RIENTRO,
+            impostazioni.giorni_tolleranza_rientro.to_string(),
         ),
     ] {
         scrivi(&transazione, chiave, &valore)?;
@@ -155,6 +173,11 @@ fn valida_impostazioni(impostazioni: &Impostazioni) -> Result<Impostazioni, Erro
     if impostazioni.minuti_blocco_automatico > MINUTI_BLOCCO_AUTOMATICO_MASSIMI {
         return non_valido(format!(
             "Il blocco automatico può scattare al massimo dopo {MINUTI_BLOCCO_AUTOMATICO_MASSIMI} minuti"
+        ));
+    }
+    if !(1..=GIORNI_TOLLERANZA_RIENTRO_MASSIMI).contains(&impostazioni.giorni_tolleranza_rientro) {
+        return non_valido(format!(
+            "La tolleranza di rientro deve essere tra 1 e {GIORNI_TOLLERANZA_RIENTRO_MASSIMI} giorni"
         ));
     }
     Ok(Impostazioni {
