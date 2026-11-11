@@ -10,10 +10,17 @@
     limitiFinePeriodo,
   } from "$lib/validazione";
   import { onMount, untrack } from "svelte";
-  import { elencaTipologie, messaggioErrore, proponiPagamento, registraPagamento } from "$lib/api";
+  import {
+    elencaPagamenti,
+    elencaTipologie,
+    messaggioErrore,
+    proponiPagamento,
+    registraPagamento,
+  } from "$lib/api";
   import { centesimiInTestoEuro, euroInCentesimi, formattaEuro, oggiIso } from "$lib/format";
   import { iscrizioneNonValida } from "$lib/iscrizione";
   import { OPZIONI_METODO } from "$lib/metodi-pagamento";
+  import { sceltePrecedenti } from "$lib/rinnovo";
   import type { Iscritto, MetodoPagamento, Pagamento, TipologiaAbbonamento } from "$lib/types";
   import RicercaIscritto from "./RicercaIscritto.svelte";
 
@@ -43,7 +50,26 @@
 
   onMount(async () => {
     tipologie = await elencaTipologie(true);
+    if (iscritto) await preimpostaDaStorico(iscritto);
   });
+
+  /** Un rinnovo di solito è uguale al precedente: stessa tipologia e stesso metodo. */
+  async function preimpostaDaStorico(scelto: Iscritto) {
+    try {
+      const storico = await elencaPagamenti({
+        dal: null,
+        al: null,
+        metodo: null,
+        iscrittoId: scelto.id,
+      });
+      const scelte = sceltePrecedenti(storico.elementi, tipologie);
+      tipologiaId = scelte.tipologiaId;
+      metodo = scelte.metodo;
+    } catch {
+      // Solo un aiuto: senza storico si sceglie a mano
+    }
+    await applicaProposta();
+  }
 
   /** Importo, date e collegamento al rinnovo proposti dal programma. */
   async function applicaProposta(dataInizioScelta: string | null = null) {
@@ -64,7 +90,7 @@
 
   function scegliIscritto(scelto: Iscritto) {
     iscritto = scelto;
-    applicaProposta();
+    preimpostaDaStorico(scelto);
   }
 
   function cambiaDataInizio(nuovaDataInizio: string) {
