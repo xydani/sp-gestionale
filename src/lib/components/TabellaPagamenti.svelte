@@ -36,7 +36,13 @@
   <tbody>
     {#each pagamenti as pagamento (pagamento.id)}
       <tr>
-        <td>{formattaData(pagamento.dataPagamento)}</td>
+        <td>
+          {#if pagamento.pregresso}
+            <span class="pregresso">Situazione iniziale</span>
+          {:else}
+            {formattaData(pagamento.dataPagamento)}
+          {/if}
+        </td>
         {#if mostraIscritto}
           <td>
             {#if pagamento.iscrittoEliminato}
@@ -54,8 +60,13 @@
           {#if pagamento.note}<span class="nota" title={pagamento.note}>📝</span>{/if}
         </td>
         <td>{formattaData(pagamento.dataInizio)} – {formattaData(pagamento.dataScadenza)}</td>
-        <td>{ETICHETTE_METODO[pagamento.metodo]}</td>
-        <td class="importo">{formattaEuro(pagamento.importoCent)}</td>
+        {#if pagamento.pregresso}
+          <td class="pregresso">—</td>
+          <td class="importo pregresso" title="Pagato prima di usare il programma">—</td>
+        {:else}
+          <td>{ETICHETTE_METODO[pagamento.metodo]}</td>
+          <td class="importo">{formattaEuro(pagamento.importoCent)}</td>
+        {/if}
         <td class="azioni">
           <button type="button" onclick={() => onElimina(pagamento)} title="Elimina pagamento">
             Elimina
@@ -78,6 +89,10 @@
 </table>
 
 <style>
+  .pregresso {
+    color: var(--colore-testo-secondario);
+  }
+
   .eliminato {
     color: var(--colore-testo-secondario);
     font-style: italic;

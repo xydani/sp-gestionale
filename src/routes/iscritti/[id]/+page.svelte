@@ -127,7 +127,7 @@
         {#if avvisoCertificato(iscritto)}
           <p class="avviso">{avvisoCertificato(iscritto)}</p>
         {/if}
-        {#if !iscritto.dataNascita || !iscritto.luogoNascita}
+        {#if iscritto.daCompletare}
           <p class="avviso">Mancano data o luogo di nascita: completali con "Modifica dati".</p>
         {/if}
         <div class="azioni">

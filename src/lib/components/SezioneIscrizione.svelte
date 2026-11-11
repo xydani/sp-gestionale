@@ -83,9 +83,13 @@
         {#each iscrizioni as iscrizione (iscrizione.id)}
           <tr>
             <td>{formattaData(iscrizione.dataInizio)} – {formattaData(iscrizione.dataFine)}</td>
-            <td>{formattaData(iscrizione.dataPagamento)}</td>
-            <td>{ETICHETTE_METODO[iscrizione.metodo]}</td>
-            <td class="importo">{formattaEuro(iscrizione.importoCent)}</td>
+            {#if iscrizione.pregresso}
+              <td colspan="3" class="pregresso">Situazione iniziale: pagata prima del programma</td>
+            {:else}
+              <td>{formattaData(iscrizione.dataPagamento)}</td>
+              <td>{ETICHETTE_METODO[iscrizione.metodo]}</td>
+              <td class="importo">{formattaEuro(iscrizione.importoCent)}</td>
+            {/if}
             <td class="azioni">
               <button type="button" class="elimina" onclick={() => elimina(iscrizione)}>
                 Elimina
@@ -99,6 +103,10 @@
 </section>
 
 <style>
+  .pregresso {
+    color: var(--colore-testo-secondario);
+  }
+
   .scheda {
     display: grid;
     gap: 1rem;
