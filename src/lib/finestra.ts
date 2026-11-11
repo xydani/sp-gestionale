@@ -10,7 +10,7 @@ import { LogicalSize, Window, getCurrentWindow } from "@tauri-apps/api/window";
 export const ETICHETTA_FINESTRA_ACCESSO = "accesso";
 export const ETICHETTA_FINESTRA_PRINCIPALE = "principale";
 
-export const DIMENSIONE_SBLOCCO = { larghezza: 400, altezza: 520 };
+export const DIMENSIONE_SBLOCCO = { larghezza: 400, altezza: 560 };
 export const DIMENSIONE_PRIMO_AVVIO = { larghezza: 440, altezza: 740 };
 
 /** Evento inviato a tutte le finestre quando il database viene sbloccato o bloccato. */
@@ -20,9 +20,11 @@ export function eFinestraDiAccesso(): boolean {
   return getCurrentWindow().label === ETICHETTA_FINESTRA_ACCESSO;
 }
 
-/** Dati dell'evento: un eventuale avviso da mostrare nella finestra principale. */
+/** Dati dell'evento: un avviso per la finestra principale o il motivo di un blocco. */
 export interface CambioStatoDatabase {
   avviso: string | null;
+  /** Perché il programma si è bloccato (es. inattività), mostrato sopra la password. */
+  motivoBlocco?: string | null;
 }
 
 /** Dopo lo sblocco: mostra la finestra principale e nasconde quella di accesso. */
@@ -36,8 +38,10 @@ export async function passaAllaFinestraPrincipale(avviso: string | null = null):
 }
 
 /** Dopo il blocco: torna alla finestra di accesso e nasconde quella principale. */
-export async function passaAllaFinestraDiAccesso(): Promise<void> {
-  await emit<CambioStatoDatabase>(EVENTO_STATO_DATABASE_CAMBIATO, { avviso: null });
+export async function passaAllaFinestraDiAccesso(
+  motivoBlocco: string | null = null,
+): Promise<void> {
+  await emit<CambioStatoDatabase>(EVENTO_STATO_DATABASE_CAMBIATO, { avviso: null, motivoBlocco });
   const principale = await trovaFinestra(ETICHETTA_FINESTRA_PRINCIPALE);
   await principale.setFullscreen(false);
   const accesso = await trovaFinestra(ETICHETTA_FINESTRA_ACCESSO);

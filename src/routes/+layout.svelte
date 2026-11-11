@@ -4,6 +4,7 @@
   import { resolve } from "$app/paths";
   import { onDestroy, onMount, type Snippet } from "svelte";
   import { page } from "$app/state";
+  import { motivoBloccoInattivita } from "$lib/sblocco";
   import { completaEliminazioniInSospeso } from "$lib/eliminazione-differita";
   import { applicaDimensioneTesto, leggiDimensioneTesto } from "$lib/dimensione-testo";
   import { bloccaDatabase, leggiImpostazioni, leggiStatoDatabase } from "$lib/api";
@@ -49,6 +50,8 @@
 
   let statoDatabase = $state<StatoDatabase | null>(null);
   let pulsanteSchermoIntero = $state<PulsanteSchermoIntero>();
+  /** Nella finestra di accesso: perché il programma si è bloccato, se non è stato a mano. */
+  let motivoBlocco = $state<string | null>(null);
 
   // Ogni finestra mostra solo le sue schermate: accesso (password) oppure programma
   const finestraDiAccesso = eFinestraDiAccesso();
@@ -114,7 +117,8 @@
   // Ad archivio aperto, dopo i minuti scelti senza attività si torna alla password
   $effect(() => {
     if (finestraDiAccesso || statoDatabase !== "sbloccato") return;
-    const timer = avviaTimerInattivita(bloccoAutomatico.minuti, blocca);
+    const minuti = bloccoAutomatico.minuti;
+    const timer = avviaTimerInattivita(minuti, () => blocca(motivoBloccoInattivita(minuti)));
     const registra = () => timer.registraAttivita();
     for (const evento of EVENTI_ATTIVITA)
       window.addEventListener(evento, registra, { passive: true });
@@ -141,14 +145,15 @@
 
   async function gestisciCambioStato(cambio: CambioStatoDatabase) {
     if (cambio.avviso && !finestraDiAccesso) mostraAvviso("avviso", cambio.avviso);
+    if (finestraDiAccesso) motivoBlocco = cambio.motivoBlocco ?? null;
     await aggiornaStato();
   }
 
-  async function blocca() {
+  async function blocca(motivo: string | null = null) {
     // Dopo il blocco l'archivio è chiuso: ciò che è stato eliminato va cancellato adesso
     await completaEliminazioniInSospeso();
     await bloccaDatabase();
-    await passaAllaFinestraDiAccesso();
+    await passaAllaFinestraDiAccesso(motivo);
   }
 
   async function gestisciTasti(evento: KeyboardEvent) {
@@ -184,7 +189,10 @@
 {#if finestraDiAccesso}
   {#if statoDatabase === "bloccato"}
     <CorniceSenzaBordi>
-      <SchermataSblocco onSbloccato={(avviso) => passaAllaFinestraPrincipale(avviso)} />
+      <SchermataSblocco
+        {motivoBlocco}
+        onSbloccato={(avviso) => passaAllaFinestraPrincipale(avviso)}
+      />
     </CorniceSenzaBordi>
   {:else if statoDatabase === "da_creare"}
     <CorniceSenzaBordi
@@ -193,7 +201,7 @@
   {/if}
 {:else if statoDatabase === "sbloccato"}
   <div class="app">
-    {#if configurazione.completata}<MenuLaterale onBlocca={blocca} />{/if}
+    {#if configurazione.completata}<MenuLaterale onBlocca={() => blocca()} />{/if}
     <main>
       <div class="barra-superiore">
         <PulsanteSchermoIntero bind:this={pulsanteSchermoIntero} />

@@ -68,8 +68,12 @@ describe("finestre di accesso e principale", () => {
 
   it("al blocco esce dallo schermo intero e torna alla finestra di accesso", async () => {
     finestraCorrente = principale;
-    await finestra.passaAllaFinestraDiAccesso();
+    await finestra.passaAllaFinestraDiAccesso("Bloccato dopo 15 minuti senza attività");
 
+    expect(emit).toHaveBeenCalledWith("stato-database-cambiato", {
+      avviso: null,
+      motivoBlocco: "Bloccato dopo 15 minuti senza attività",
+    });
     expect(principale.setFullscreen).toHaveBeenCalledWith(false);
     expect(accesso.show).toHaveBeenCalled();
     expect(principale.hide).toHaveBeenCalled();
