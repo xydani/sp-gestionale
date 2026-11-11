@@ -10,9 +10,10 @@
   import FormNuovoIscritto from "$lib/components/FormNuovoIscritto.svelte";
   import Paginazione from "$lib/components/Paginazione.svelte";
   import { formattaData } from "$lib/format";
+  import { filtriIscritti } from "$lib/filtri.svelte";
   import { ritarda } from "$lib/ritarda";
   import { opzioniStato } from "$lib/stato-validita";
-  import type { Iscritto, Pagina, StatoValidita } from "$lib/types";
+  import type { Iscritto, Pagina } from "$lib/types";
 
   const PAUSA_RICERCA_MS = 200;
 
@@ -22,12 +23,6 @@
     elementiPerPagina: 50,
     totaleElementi: 0,
   });
-  let testoRicerca = $state("");
-  let filtroAbbonamento = $state<StatoValidita | "">("");
-  let filtroIscrizione = $state<StatoValidita | "">("");
-  let filtroCertificato = $state<StatoValidita | "">("");
-  let includiArchiviati = $state(false);
-  let soloDaCompletare = $state(false);
   /** Un solo modulo di inserimento aperto alla volta. */
   let moduloAperto = $state<"nuovo" | "gia-iscritto" | null>(null);
   let caricamento = $state(true);
@@ -41,12 +36,12 @@
     try {
       const risultato = await elencaIscritti(
         {
-          testo: testoRicerca,
-          includiArchiviati,
-          statoAbbonamento: filtroAbbonamento || null,
-          statoIscrizione: filtroIscrizione || null,
-          statoCertificato: filtroCertificato || null,
-          soloDaCompletare,
+          testo: filtriIscritti.testo,
+          includiArchiviati: filtriIscritti.includiArchiviati,
+          statoAbbonamento: filtriIscritti.statoAbbonamento || null,
+          statoIscrizione: filtriIscritti.statoIscrizione || null,
+          statoCertificato: filtriIscritti.statoCertificato || null,
+          soloDaCompletare: filtriIscritti.soloDaCompletare,
         },
         numeroPagina,
       );
@@ -116,12 +111,12 @@
     class="ricerca"
     type="search"
     placeholder="Cerca per nome o cognome…"
-    bind:value={testoRicerca}
+    bind:value={filtriIscritti.testo}
     oninput={caricaDopoPausa}
   />
   <div class="filtro-stato">
     <Tendina
-      bind:valore={filtroIscrizione}
+      bind:valore={filtriIscritti.statoIscrizione}
       opzioni={opzioniStato("Iscrizione", "tutte")}
       etichettaAccessibile="Stato iscrizione"
       onCambia={() => carica()}
@@ -129,7 +124,7 @@
   </div>
   <div class="filtro-stato">
     <Tendina
-      bind:valore={filtroAbbonamento}
+      bind:valore={filtriIscritti.statoAbbonamento}
       opzioni={opzioniStato("Abbonamento", "tutti")}
       etichettaAccessibile="Stato abbonamento"
       onCambia={() => carica()}
@@ -137,18 +132,26 @@
   </div>
   <div class="filtro-stato">
     <Tendina
-      bind:valore={filtroCertificato}
+      bind:valore={filtriIscritti.statoCertificato}
       opzioni={opzioniStato("Certificato", "tutti")}
       etichettaAccessibile="Stato del certificato medico"
       onCambia={() => carica()}
     />
   </div>
   <label class="spunta">
-    <input type="checkbox" bind:checked={includiArchiviati} onchange={() => carica()} />
+    <input
+      type="checkbox"
+      bind:checked={filtriIscritti.includiArchiviati}
+      onchange={() => carica()}
+    />
     Mostra archiviati
   </label>
   <label class="spunta">
-    <input type="checkbox" bind:checked={soloDaCompletare} onchange={() => carica()} />
+    <input
+      type="checkbox"
+      bind:checked={filtriIscritti.soloDaCompletare}
+      onchange={() => carica()}
+    />
     Solo da completare
   </label>
 </div>

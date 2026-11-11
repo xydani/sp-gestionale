@@ -9,10 +9,8 @@
   import TabellaPagamenti from "$lib/components/TabellaPagamenti.svelte";
   import { confermaEliminazionePagamento } from "$lib/conferma";
   import { OPZIONI_METODO } from "$lib/metodi-pagamento";
-  import { meseCorrente } from "$lib/periodo";
-  import type { MetodoPagamento, Pagamento, PaginaPagamenti } from "$lib/types";
-
-  const periodoIniziale = meseCorrente();
+  import { filtriPagamenti } from "$lib/filtri.svelte";
+  import type { Pagamento, PaginaPagamenti } from "$lib/types";
 
   let pagina = $state<PaginaPagamenti>({
     elementi: [],
@@ -21,16 +19,18 @@
     totaleElementi: 0,
     totaleImportoCent: 0,
   });
-  let dal = $state(periodoIniziale.dal);
-  let al = $state(periodoIniziale.al);
-  let metodo = $state<MetodoPagamento | "">("");
   let nuovoPagamentoAperto = $state(false);
 
   /** Carica una pagina; cambiando i filtri si riparte dalla prima. */
   async function carica(numeroPagina = 1) {
     try {
       pagina = await elencaPagamenti(
-        { dal: dal || null, al: al || null, metodo: metodo || null, iscrittoId: null },
+        {
+          dal: filtriPagamenti.dal || null,
+          al: filtriPagamenti.al || null,
+          metodo: filtriPagamenti.metodo || null,
+          iscrittoId: null,
+        },
         numeroPagina,
       );
     } catch (errore) {
@@ -59,8 +59,8 @@
   }
 
   function tuttoLoStorico() {
-    dal = "";
-    al = "";
+    filtriPagamenti.dal = "";
+    filtriPagamenti.al = "";
     carica();
   }
 
@@ -88,17 +88,22 @@
 
 <div class="filtri">
   <label
-    >Dal <span class="campo-data"><CampoData bind:valore={dal} onCambia={() => carica()} /></span
+    >Dal <span class="campo-data"
+      ><CampoData bind:valore={filtriPagamenti.dal} onCambia={() => carica()} /></span
     ></label
   >
   <label
     >Al <span class="campo-data"
-      ><CampoData bind:valore={al} minimaIso={dal} onCambia={() => carica()} /></span
+      ><CampoData
+        bind:valore={filtriPagamenti.al}
+        minimaIso={filtriPagamenti.dal}
+        onCambia={() => carica()}
+      /></span
     ></label
   >
   <div class="filtro-metodo">
     <Tendina
-      bind:valore={metodo}
+      bind:valore={filtriPagamenti.metodo}
       opzioni={[{ valore: "", etichetta: "Tutti i metodi" }, ...OPZIONI_METODO]}
       etichettaAccessibile="Metodo di pagamento"
       onCambia={() => carica()}
