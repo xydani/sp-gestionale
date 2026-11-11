@@ -1,11 +1,32 @@
 <script lang="ts">
+  import { getVersion } from "@tauri-apps/api/app";
+  import { onMount, tick } from "svelte";
   import { messaggioErrore, sbloccaDatabase } from "$lib/api";
+  import { maiuscoleAttive } from "$lib/sblocco";
 
-  let { onSbloccato }: { onSbloccato: (avvisoBackup: string | null) => void } = $props();
+  let {
+    motivoBlocco = null,
+    onSbloccato,
+  }: {
+    /** Perché il programma si è bloccato da solo (es. inattività). */
+    motivoBlocco?: string | null;
+    onSbloccato: (avvisoBackup: string | null) => void;
+  } = $props();
 
   let password = $state("");
+  let passwordVisibile = $state(false);
+  let maiuscole = $state(false);
   let errore = $state<string | null>(null);
   let inCorso = $state(false);
+  let aiutoAperto = $state(false);
+  let versione = $state("");
+  let campoPassword = $state<HTMLInputElement>();
+
+  onMount(() => {
+    getVersion()
+      .then((letta) => (versione = letta))
+      .catch(() => {});
+  });
 
   async function sblocca(evento: SubmitEvent) {
     evento.preventDefault();
@@ -14,33 +35,179 @@
     try {
       const esito = await sbloccaDatabase(password);
       password = "";
+      passwordVisibile = false;
       onSbloccato(esito.avvisoBackup);
     } catch (erroreBackend) {
       errore = messaggioErrore(erroreBackend);
-      password = "";
+      await selezionaPassword();
     } finally {
       inCorso = false;
     }
   }
+
+  /** Dopo un errore il testo resta selezionato: si riscrive da capo o si corregge. */
+  async function selezionaPassword() {
+    await tick();
+    campoPassword?.focus();
+    campoPassword?.select();
+  }
+
+  function controllaMaiuscole(evento: KeyboardEvent) {
+    maiuscole = maiuscoleAttive(evento);
+  }
+
+  async function tornaAllaPassword() {
+    aiutoAperto = false;
+    await tick();
+    campoPassword?.focus();
+  }
 </script>
 
-<form class="riquadro" onsubmit={sblocca}>
-  <h1>Bentornato</h1>
-  <p>Inserisci la password per aprire l'archivio.</p>
+{#if aiutoAperto}
+  <div class="riquadro">
+    <h1>Password dimenticata</h1>
+    <p class="testo-aiuto">
+      La password non si può recuperare né reimpostare: l'archivio è criptato proprio perché nessuno
+      possa leggerlo senza.
+    </p>
+    <p class="testo-aiuto">
+      Se hai un backup, puoi ripristinarlo dopo lo sblocco da Impostazioni › Backup, ma serve
+      comunque la password che l'archivio aveva quando il backup è stato fatto.
+    </p>
+    <p class="testo-aiuto">Prova anche le varianti con maiuscole e minuscole invertite.</p>
+    <!-- Fuori da un modulo non invia nulla: "submit" serve solo per avere lo stile del pulsante principale -->
+    <button type="submit" onclick={tornaAllaPassword}>Torna alla password</button>
+  </div>
+{:else}
+  <form class="riquadro" onsubmit={sblocca}>
+    <h1>Bentornato</h1>
+    {#if motivoBlocco}
+      <p class="motivo" role="status">{motivoBlocco}</p>
+    {:else}
+      <p>Inserisci la password per aprire l'archivio.</p>
+    {/if}
 
-  <label>
-    Password
-    <!-- svelte-ignore a11y_autofocus -->
-    <input
-      type="password"
-      bind:value={password}
-      autocomplete="current-password"
-      autofocus
-      required
-    />
-  </label>
+    <label>
+      Password
+      <span class="campo-password">
+        <!-- svelte-ignore a11y_autofocus -->
+        <input
+          bind:this={campoPassword}
+          type={passwordVisibile ? "text" : "password"}
+          bind:value={password}
+          autocomplete="current-password"
+          autofocus
+          required
+          onkeydown={controllaMaiuscole}
+          onkeyup={controllaMaiuscole}
+        />
+        <button
+          type="button"
+          class="occhio"
+          onclick={() => (passwordVisibile = !passwordVisibile)}
+          aria-label={passwordVisibile ? "Nascondi la password" : "Mostra la password"}
+          title={passwordVisibile ? "Nascondi la password" : "Mostra la password"}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+            <circle cx="12" cy="12" r="3" />
+            {#if passwordVisibile}<path d="M4 4l16 16" />{/if}
+          </svg>
+        </button>
+      </span>
+    </label>
 
-  {#if errore}<p class="errore" role="alert">{errore}</p>{/if}
+    {#if maiuscole}<p class="maiuscole" role="status">Maiuscole attive</p>{/if}
+    {#if errore}<p class="errore" role="alert">{errore}</p>{/if}
 
-  <button type="submit" disabled={inCorso}>{inCorso ? "Verifica…" : "Sblocca"}</button>
-</form>
+    <button type="submit" disabled={inCorso}>{inCorso ? "Verifica…" : "Sblocca"}</button>
+    <button type="button" class="link" onclick={() => (aiutoAperto = true)}>
+      Password dimenticata?
+    </button>
+  </form>
+{/if}
+
+{#if versione}<span class="versione">Versione {versione}</span>{/if}
+
+<style>
+  .campo-password {
+    position: relative;
+    display: grid;
+  }
+
+  .campo-password input {
+    padding-right: 2.75rem;
+  }
+
+  .occhio {
+    position: absolute;
+    top: 50%;
+    right: 0.4rem;
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--colore-testo-secondario);
+    transform: translateY(-50%);
+    cursor: pointer;
+  }
+
+  .occhio:hover {
+    color: var(--colore-testo);
+    background: var(--colore-sfondo-tenue);
+  }
+
+  .motivo,
+  .maiuscole {
+    padding: 0.5rem 0.75rem;
+    border-radius: 10px;
+    background: var(--colore-avviso-tenue);
+    color: var(--colore-avviso);
+    text-align: left;
+  }
+
+  .maiuscole {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+
+  .link {
+    justify-self: center;
+    padding: 0.25rem 0.5rem;
+    border: none;
+    background: transparent;
+    color: var(--colore-primario);
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+
+  .link:hover {
+    text-decoration: underline;
+  }
+
+  .testo-aiuto {
+    text-align: left;
+  }
+
+  .versione {
+    margin-top: auto;
+    padding-top: 1rem;
+    color: var(--colore-testo-secondario);
+    font-size: 0.75rem;
+  }
+</style>
