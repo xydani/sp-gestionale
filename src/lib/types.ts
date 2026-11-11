@@ -241,6 +241,18 @@ export interface IncassiMetodo {
   incassi: Incassi;
 }
 
+/** Un incasso: pagamento di un abbonamento o quota di iscrizione. */
+export interface Movimento {
+  data: string;
+  tipo: "abbonamento" | "iscrizione";
+  iscrittoId: number;
+  cognome: string;
+  nome: string;
+  descrizione: string;
+  metodo: MetodoPagamento;
+  importoCent: number;
+}
+
 export interface RiepilogoIncassi {
   totale: Incassi;
   numeroMovimenti: number;

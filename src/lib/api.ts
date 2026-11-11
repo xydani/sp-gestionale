@@ -20,6 +20,7 @@ import type {
   PaginaPagamenti,
   PropostaIscrizione,
   PropostaPagamento,
+  Movimento,
   Raggruppamento,
   RiepilogoDashboard,
   RiepilogoIncassi,
@@ -179,6 +180,11 @@ export function leggiRiepilogoIncassi(
   raggruppamento: Raggruppamento,
 ): Promise<RiepilogoIncassi> {
   return invoke<RiepilogoIncassi>("riepilogo_incassi", { dal, al, raggruppamento });
+}
+
+/** Incassi del periodo uno per uno, nell'ordine in cui sono stati registrati. */
+export function elencaMovimenti(dal: string, al: string): Promise<Movimento[]> {
+  return invoke<Movimento[]>("elenca_movimenti", { dal, al });
 }
 
 /** Scrive nel file indicato i movimenti del periodo in formato CSV. */
