@@ -4,6 +4,7 @@
   import { resolve } from "$app/paths";
   import { onDestroy, onMount, type Snippet } from "svelte";
   import { page } from "$app/state";
+  import { applicaDimensioneTesto, leggiDimensioneTesto } from "$lib/dimensione-testo";
   import { bloccaDatabase, leggiImpostazioni, leggiStatoDatabase } from "$lib/api";
   import {
     EVENTI_ATTIVITA,
@@ -162,6 +163,8 @@
 
   onMount(async () => {
     document.documentElement.classList.toggle("finestra-compatta", finestraDiAccesso);
+    // La finestra di accesso ha dimensioni fisse: il testo si ingrandisce solo nella principale
+    if (!finestraDiAccesso) applicaDimensioneTesto(leggiDimensioneTesto());
     smettiDiAscoltare = await quandoCambiaStatoDatabase(gestisciCambioStato);
     await aggiornaStato();
   });

@@ -6,6 +6,7 @@
   import FormImpostazioni from "$lib/components/FormImpostazioni.svelte";
   import SezioneAvvioAutomatico from "$lib/components/SezioneAvvioAutomatico.svelte";
   import SezioneBackup from "$lib/components/SezioneBackup.svelte";
+  import SezioneDimensioneTesto from "$lib/components/SezioneDimensioneTesto.svelte";
   import SezioneCambioPassword from "$lib/components/SezioneCambioPassword.svelte";
   import SezioneLogo from "$lib/components/SezioneLogo.svelte";
   import { bloccoAutomatico } from "$lib/blocco-automatico.svelte";
@@ -63,6 +64,7 @@
       </section>
     {/if}
     <SezioneLogo />
+    <SezioneDimensioneTesto />
     <SezioneCambioPassword />
     <SezioneAvvioAutomatico />
     <SezioneBackup onRipristinato={ricaricaDopoRipristino} />
