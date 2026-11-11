@@ -3,6 +3,7 @@
   import { onMount } from "svelte";
   import { leggiRiepilogoDashboard, messaggioErrore } from "$lib/api";
   import { mostraAvviso } from "$lib/avvisi.svelte";
+  import FinestraRinnovo from "$lib/components/FinestraRinnovo.svelte";
   import RiquadroNumero from "$lib/components/RiquadroNumero.svelte";
   import {
     descriviScadenza,
@@ -13,6 +14,7 @@
     variazionePercentuale,
   } from "$lib/format";
   import { aggiornaConteggioScadenze } from "$lib/promemoria.svelte";
+  import { eRinnovabile, type TipoRinnovabile } from "$lib/rinnovo";
   import type { RiepilogoDashboard, TipoScadenza } from "$lib/types";
 
   let riepilogo = $state<RiepilogoDashboard | null>(null);
@@ -52,14 +54,24 @@
       : null,
   );
 
-  onMount(async () => {
+  /** Scadenza di cui è aperta la finestra di rinnovo. */
+  let daRinnovare = $state<{ iscrittoId: number; tipo: TipoRinnovabile } | null>(null);
+
+  async function carica() {
     try {
       riepilogo = await leggiRiepilogoDashboard();
       await aggiornaConteggioScadenze();
     } catch (errore) {
       mostraAvviso("errore", messaggioErrore(errore));
     }
-  });
+  }
+
+  async function chiudiRinnovo(registrato: boolean) {
+    daRinnovare = null;
+    if (registrato) await carica();
+  }
+
+  onMount(carica);
 </script>
 
 <h1>Dashboard</h1>
@@ -157,7 +169,7 @@
     {:else}
       <table class="tabella riquadrata">
         <thead>
-          <tr><th>Cognome e nome</th><th>Cosa scade</th><th>Data</th><th></th></tr>
+          <tr><th>Cognome e nome</th><th>Cosa scade</th><th>Data</th><th></th><th></th></tr>
         </thead>
         <tbody>
           {#each riepilogo.prossimeScadenze as scadenza (scadenza.tipo + scadenza.iscrittoId)}
@@ -171,6 +183,18 @@
               <td>{ETICHETTE_TIPO_SCADENZA[scadenza.tipo]}</td>
               <td>{formattaData(scadenza.dataScadenza)}</td>
               <td class="distanza">{descriviScadenza(scadenza.dataScadenza, oggi)}</td>
+              <td class="azione">
+                {#if eRinnovabile(scadenza.tipo)}
+                  {@const tipo = scadenza.tipo}
+                  <button
+                    type="button"
+                    class="pulsante piccolo"
+                    onclick={() => (daRinnovare = { iscrittoId: scadenza.iscrittoId, tipo })}
+                  >
+                    Rinnova
+                  </button>
+                {/if}
+              </td>
             </tr>
           {/each}
         </tbody>
@@ -178,6 +202,14 @@
       <a class="tutte" href={resolve("/scadenze")}>Tutte le scadenze →</a>
     {/if}
   </section>
+{/if}
+
+{#if daRinnovare}
+  <FinestraRinnovo
+    iscrittoId={daRinnovare.iscrittoId}
+    tipo={daRinnovare.tipo}
+    onChiusa={chiudiRinnovo}
+  />
 {/if}
 
 <style>
@@ -237,6 +269,11 @@
 
   .distanza {
     color: var(--colore-testo-secondario);
+  }
+
+  .azione {
+    width: 1%;
+    text-align: right;
   }
 
   .tutte {
