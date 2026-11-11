@@ -25,6 +25,7 @@
   let giorniPreavviso = $state(valoriIniziali.giorniPreavviso);
   let backupConservati = $state(valoriIniziali.backupConservati);
   let minutiBloccoAutomatico = $state(valoriIniziali.minutiBloccoAutomatico);
+  let giorniTolleranzaRientro = $state(valoriIniziali.giorniTolleranzaRientro);
   // Un valore non tra le scelte (es. impostato a mano) resta selezionabile
   const sceltePossibili = [
     ...new Set([...SCELTE_MINUTI_BLOCCO, valoriIniziali.minutiBloccoAutomatico]),
@@ -49,6 +50,7 @@
         giorniPreavviso,
         backupConservati,
         minutiBloccoAutomatico,
+        giorniTolleranzaRientro,
       });
     } finally {
       inCorso = false;
@@ -91,6 +93,11 @@
         etichetta: etichettaMinutiBlocco(minuti),
       }))}
     />
+  </label>
+
+  <label>
+    Chi rinnova entro questi giorni dalla scadenza non conta come abbandono
+    <input type="number" min="1" max="180" bind:value={giorniTolleranzaRientro} required />
   </label>
 
   {#if errore}<p class="errore largo" role="alert">{errore}</p>{/if}
