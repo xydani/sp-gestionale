@@ -26,6 +26,8 @@ impl DatabaseTemporaneo {
     }
 
     /// Crea il database criptato con lo schema aggiornato.
+    // Ogni file di test compila il modulo per conto suo: chi parte da uno schema vecchio non lo usa
+    #[allow(dead_code)]
     pub fn crea_con_schema(&self) -> Connection {
         let mut connessione = crea_database_criptato(&self.percorso, PASSWORD_TEST).unwrap();
         applica_migrazioni(&mut connessione).unwrap();
