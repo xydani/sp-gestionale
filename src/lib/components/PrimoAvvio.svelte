@@ -1,12 +1,14 @@
 <script lang="ts">
   import { creaDatabase, messaggioErrore } from "$lib/api";
   import { LUNGHEZZA_MINIMA_PASSWORD, validaNuovaPassword } from "$lib/password";
+  import AvvisoPasswordNonRecuperabile from "./AvvisoPasswordNonRecuperabile.svelte";
   import IndicatoreRobustezza from "./IndicatoreRobustezza.svelte";
 
   let { onCompletato }: { onCompletato: () => void } = $props();
 
   let password = $state("");
   let confermaPassword = $state("");
+  let passwordConservata = $state(false);
   let errore = $state<string | null>(null);
   let inCorso = $state(false);
 
@@ -33,11 +35,6 @@
   <h1>Benvenuto in SP Gestionale</h1>
   <p>Scegli la password che protegge i dati della palestra. Sarà richiesta a ogni avvio.</p>
 
-  <p class="avviso">
-    <strong>Attenzione:</strong> se perdi la password i dati non sono recuperabili. Conservala in un luogo
-    sicuro.
-  </p>
-
   <label>
     Password (almeno {LUNGHEZZA_MINIMA_PASSWORD} caratteri)
     <input type="password" bind:value={password} autocomplete="new-password" required />
@@ -47,6 +44,7 @@
     Ripeti la password
     <input type="password" bind:value={confermaPassword} autocomplete="new-password" required />
   </label>
+  <AvvisoPasswordNonRecuperabile bind:conservata={passwordConservata} />
 
   {#if errore}<p class="errore" role="alert">{errore}</p>{/if}
 

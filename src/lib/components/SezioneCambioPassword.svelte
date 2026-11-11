@@ -2,11 +2,13 @@
   import { cambiaPassword, messaggioErrore } from "$lib/api";
   import { mostraAvviso } from "$lib/avvisi.svelte";
   import { LUNGHEZZA_MINIMA_PASSWORD, validaNuovaPassword } from "$lib/password";
+  import AvvisoPasswordNonRecuperabile from "./AvvisoPasswordNonRecuperabile.svelte";
   import IndicatoreRobustezza from "./IndicatoreRobustezza.svelte";
 
   let passwordAttuale = $state("");
   let nuovaPassword = $state("");
   let confermaPassword = $state("");
+  let passwordConservata = $state(false);
   let errore = $state<string | null>(null);
   let inCorso = $state(false);
 
@@ -20,6 +22,7 @@
       passwordAttuale = "";
       nuovaPassword = "";
       confermaPassword = "";
+      passwordConservata = false;
       mostraAvviso("successo", "Password cambiata. Dal prossimo avvio usa quella nuova.");
     } catch (erroreBackend) {
       errore = messaggioErrore(erroreBackend);
@@ -54,6 +57,7 @@
       Ripeti la nuova password
       <input type="password" bind:value={confermaPassword} autocomplete="new-password" required />
     </label>
+    <AvvisoPasswordNonRecuperabile bind:conservata={passwordConservata} />
     {#if errore}<p class="errore" role="alert">{errore}</p>{/if}
     <div>
       <button class="pulsante" type="submit" disabled={inCorso}

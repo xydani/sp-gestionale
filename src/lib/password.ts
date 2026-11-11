@@ -1,6 +1,11 @@
 /** Deve coincidere con LUNGHEZZA_MINIMA_PASSWORD in src-tauri/src/db/crittografia.rs */
 export const LUNGHEZZA_MINIMA_PASSWORD = 12;
 
+/** Va detto quando si sceglie la password: dopo, quando la si è persa, è troppo tardi. */
+export const AVVISO_PASSWORD_NON_RECUPERABILE =
+  "Se perdi la password, i dati non si recuperano in nessun modo: nemmeno i backup " +
+  "si aprono senza. Scrivila e conservala in un posto sicuro, lontano dal computer.";
+
 /** Controlla la nuova password prima di inviarla: restituisce il messaggio d'errore o null. */
 export function validaNuovaPassword(password: string, confermaPassword: string): string | null {
   if ([...password].length < LUNGHEZZA_MINIMA_PASSWORD) {

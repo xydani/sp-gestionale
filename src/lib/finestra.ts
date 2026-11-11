@@ -11,7 +11,7 @@ export const ETICHETTA_FINESTRA_ACCESSO = "accesso";
 export const ETICHETTA_FINESTRA_PRINCIPALE = "principale";
 
 export const DIMENSIONE_SBLOCCO = { larghezza: 400, altezza: 560 };
-export const DIMENSIONE_PRIMO_AVVIO = { larghezza: 440, altezza: 740 };
+export const DIMENSIONE_PRIMO_AVVIO = { larghezza: 440, altezza: 800 };
 
 /** Evento inviato a tutte le finestre quando il database viene sbloccato o bloccato. */
 const EVENTO_STATO_DATABASE_CAMBIATO = "stato-database-cambiato";
