@@ -6,6 +6,7 @@
   import { elencaIscritti, messaggioErrore } from "$lib/api";
   import { mostraAvviso } from "$lib/avvisi.svelte";
   import BadgeStato from "$lib/components/BadgeStato.svelte";
+  import FormIscrittoGiaAttivo from "$lib/components/FormIscrittoGiaAttivo.svelte";
   import FormNuovoIscritto from "$lib/components/FormNuovoIscritto.svelte";
   import Paginazione from "$lib/components/Paginazione.svelte";
   import { formattaData } from "$lib/format";
@@ -26,7 +27,9 @@
   let filtroIscrizione = $state<StatoValidita | "">("");
   let filtroCertificato = $state<StatoValidita | "">("");
   let includiArchiviati = $state(false);
-  let nuovoIscrittoAperto = $state(false);
+  let soloDaCompletare = $state(false);
+  /** Un solo modulo di inserimento aperto alla volta. */
+  let moduloAperto = $state<"nuovo" | "gia-iscritto" | null>(null);
   let caricamento = $state(true);
 
   // Conta i caricamenti: una risposta lenta non deve sovrascrivere quella di una ricerca successiva
@@ -43,6 +46,7 @@
           statoAbbonamento: filtroAbbonamento || null,
           statoIscrizione: filtroIscrizione || null,
           statoCertificato: filtroCertificato || null,
+          soloDaCompletare,
         },
         numeroPagina,
       );
@@ -58,8 +62,20 @@
 
   async function apriNuovoIscritto(creato: Iscritto) {
     mostraAvviso("successo", `${creato.nome} ${creato.cognome} iscritto, pagamento registrato`);
-    nuovoIscrittoAperto = false;
+    moduloAperto = null;
     await goto(resolve("/iscritti/[id]", { id: String(creato.id) }));
+  }
+
+  async function chiudiGiaIscritto(inserito: Iscritto) {
+    mostraAvviso("successo", `${inserito.nome} ${inserito.cognome} inserito`);
+    moduloAperto = null;
+    await carica();
+  }
+
+  /** Chiudendo l'inserimento rapido l'elenco mostra anche chi è stato appena aggiunto. */
+  async function annullaGiaIscritto() {
+    moduloAperto = null;
+    await carica();
   }
 
   onMount(() => carica());
@@ -67,20 +83,31 @@
 
 <div class="intestazione">
   <h1>Iscritti</h1>
-  {#if !nuovoIscrittoAperto}
-    <button type="button" class="pulsante" onclick={() => (nuovoIscrittoAperto = true)}>
-      + Nuovo iscritto
-    </button>
+  {#if moduloAperto === null}
+    <div class="pulsanti">
+      <button
+        type="button"
+        class="pulsante secondario"
+        onclick={() => (moduloAperto = "gia-iscritto")}
+      >
+        + Aggiungi già iscritto
+      </button>
+      <button type="button" class="pulsante" onclick={() => (moduloAperto = "nuovo")}>
+        + Nuovo iscritto
+      </button>
+    </div>
   {/if}
 </div>
 
-{#if nuovoIscrittoAperto}
+{#if moduloAperto === "nuovo"}
   <section class="pannello">
     <h2>Nuovo iscritto</h2>
-    <FormNuovoIscritto
-      onIscritto={apriNuovoIscritto}
-      onAnnulla={() => (nuovoIscrittoAperto = false)}
-    />
+    <FormNuovoIscritto onIscritto={apriNuovoIscritto} onAnnulla={() => (moduloAperto = null)} />
+  </section>
+{:else if moduloAperto === "gia-iscritto"}
+  <section class="pannello">
+    <h2>Aggiungi già iscritto</h2>
+    <FormIscrittoGiaAttivo onSalvato={chiudiGiaIscritto} onAnnulla={annullaGiaIscritto} />
   </section>
 {/if}
 
@@ -120,6 +147,10 @@
     <input type="checkbox" bind:checked={includiArchiviati} onchange={() => carica()} />
     Mostra archiviati
   </label>
+  <label class="spunta">
+    <input type="checkbox" bind:checked={soloDaCompletare} onchange={() => carica()} />
+    Solo da completare
+  </label>
 </div>
 
 {#if !caricamento}
@@ -147,6 +178,7 @@
             >{iscritto.cognome} {iscritto.nome}</a
           >
           {#if iscritto.archiviato}<span class="etichetta-archiviato">archiviato</span>{/if}
+          {#if iscritto.daCompletare}<span class="etichetta-da-completare">da completare</span>{/if}
         </td>
         <td>{iscritto.telefono ?? "—"}</td>
         <td><BadgeStato stato={iscritto.statoIscrizione} /></td>
@@ -243,6 +275,20 @@
     margin-left: 0.5rem;
     font-size: 0.8rem;
     color: var(--colore-testo-secondario);
+  }
+
+  .pulsanti {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .etichetta-da-completare {
+    margin-left: 0.5rem;
+    padding: 0.1rem 0.45rem;
+    border-radius: var(--raggio);
+    font-size: 0.75rem;
+    background: var(--colore-avviso-tenue);
+    color: var(--colore-avviso);
   }
 
   .vuoto {
