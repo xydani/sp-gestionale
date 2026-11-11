@@ -3,6 +3,7 @@
   import { onMount } from "svelte";
   import { leggiRiepilogoDashboard, messaggioErrore } from "$lib/api";
   import { mostraAvviso } from "$lib/avvisi.svelte";
+  import CassaDiOggi from "$lib/components/CassaDiOggi.svelte";
   import FinestraRinnovo from "$lib/components/FinestraRinnovo.svelte";
   import RiquadroNumero from "$lib/components/RiquadroNumero.svelte";
   import {
@@ -56,6 +57,8 @@
 
   /** Scadenza di cui è aperta la finestra di rinnovo. */
   let daRinnovare = $state<{ iscrittoId: number; tipo: TipoRinnovabile } | null>(null);
+  /** Cresce a ogni rinnovo: la cassa di oggi si ricarica. */
+  let rinnoviRegistrati = $state(0);
 
   async function carica() {
     try {
@@ -68,7 +71,9 @@
 
   async function chiudiRinnovo(registrato: boolean) {
     daRinnovare = null;
-    if (registrato) await carica();
+    if (!registrato) return;
+    rinnoviRegistrati++;
+    await carica();
   }
 
   onMount(carica);
@@ -161,6 +166,8 @@
       {/snippet}
     </RiquadroNumero>
   </div>
+
+  <CassaDiOggi aggiornamento={rinnoviRegistrati} />
 
   <section class="prossime">
     <h2>Prossime scadenze <span class="nota">(30 giorni)</span></h2>
