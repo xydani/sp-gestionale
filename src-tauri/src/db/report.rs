@@ -13,18 +13,58 @@ use crate::domain::pagamento::MetodoPagamento;
 /// Le voci pregresse sono escluse: il denaro è stato incassato prima del programma.
 const MOVIMENTI: &str = "
     SELECT p.data_pagamento AS data, 'abbonamento' AS tipo, i.cognome, i.nome,
-           p.tipologia_nome AS descrizione, p.metodo, p.importo_cent
+           p.tipologia_nome AS descrizione, p.metodo, p.importo_cent,
+           p.iscritto_id, p.creato_il
     FROM pagamenti p JOIN iscritti i ON i.id = p.iscritto_id
     WHERE p.data_pagamento BETWEEN ?1 AND ?2 AND p.pregresso = 0
     UNION ALL
     SELECT s.data_pagamento, 'iscrizione', i.cognome, i.nome,
-           'Iscrizione annuale', s.metodo, s.importo_cent
+           'Iscrizione annuale', s.metodo, s.importo_cent,
+           s.iscritto_id, s.creato_il
     FROM iscrizioni s JOIN iscritti i ON i.id = s.iscritto_id
     WHERE s.data_pagamento BETWEEN ?1 AND ?2 AND s.pregresso = 0";
 
 const SOMME_PER_TIPO: &str = "
     coalesce(sum(CASE WHEN tipo = 'abbonamento' THEN importo_cent END), 0),
     coalesce(sum(CASE WHEN tipo = 'iscrizione' THEN importo_cent END), 0)";
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum TipoMovimento {
+    Abbonamento,
+    Iscrizione,
+}
+
+impl TipoMovimento {
+    fn da_testo(testo: &str) -> Self {
+        if testo == "abbonamento" {
+            Self::Abbonamento
+        } else {
+            Self::Iscrizione
+        }
+    }
+
+    fn etichetta(self) -> &'static str {
+        match self {
+            Self::Abbonamento => "Abbonamento",
+            Self::Iscrizione => "Iscrizione",
+        }
+    }
+}
+
+/// Un incasso: pagamento di un abbonamento o quota di iscrizione.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Movimento {
+    pub data: NaiveDate,
+    pub tipo: TipoMovimento,
+    pub iscritto_id: i64,
+    pub cognome: String,
+    pub nome: String,
+    pub descrizione: String,
+    pub metodo: MetodoPagamento,
+    pub importo_cent: i64,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -147,35 +187,78 @@ const INTESTAZIONE_CSV: [&str; 7] = [
     "Importo (€)",
 ];
 
+/// Movimenti del periodo in ordine di registrazione: per la cassa del giorno.
+pub fn elenca_movimenti(
+    connessione: &Connection,
+    dal: NaiveDate,
+    al: NaiveDate,
+) -> Result<Vec<Movimento>, ErroreDatabase> {
+    leggi_movimenti(connessione, dal, al, "ORDER BY data, creato_il")
+}
+
 /// Tutti i movimenti del periodo in formato CSV, in ordine di data.
 pub fn esporta_incassi_csv(
     connessione: &Connection,
     dal: NaiveDate,
     al: NaiveDate,
 ) -> Result<String, ErroreDatabase> {
+    let movimenti = leggi_movimenti(
+        connessione,
+        dal,
+        al,
+        "ORDER BY data, cognome COLLATE NOCASE, nome COLLATE NOCASE",
+    )?;
+    let righe: Vec<Vec<String>> = movimenti.into_iter().map(riga_csv).collect();
+    Ok(componi_csv(&INTESTAZIONE_CSV, &righe))
+}
+
+fn riga_csv(movimento: Movimento) -> Vec<String> {
+    vec![
+        movimento.data.format("%d/%m/%Y").to_string(),
+        movimento.tipo.etichetta().to_string(),
+        movimento.cognome,
+        movimento.nome,
+        movimento.descrizione,
+        movimento.metodo.come_testo().to_string(),
+        importo_per_csv(movimento.importo_cent),
+    ]
+}
+
+fn leggi_movimenti(
+    connessione: &Connection,
+    dal: NaiveDate,
+    al: NaiveDate,
+    ordinamento: &str,
+) -> Result<Vec<Movimento>, ErroreDatabase> {
     valida_periodo(dal, al)?;
     let mut query = connessione.prepare(&format!(
-        "SELECT * FROM ({MOVIMENTI}) ORDER BY data, cognome COLLATE NOCASE, nome COLLATE NOCASE"
+        "SELECT data, tipo, iscritto_id, cognome, nome, descrizione, metodo, importo_cent
+         FROM ({MOVIMENTI}) {ordinamento}"
     ))?;
-    let righe = query
-        .query_map(params![dal, al], |riga| {
-            let data: NaiveDate = riga.get(0)?;
-            let tipo: String = riga.get(1)?;
-            Ok(vec![
-                data.format("%d/%m/%Y").to_string(),
-                if tipo == "abbonamento" {
-                    "Abbonamento"
-                } else {
-                    "Iscrizione"
-                }
-                .to_string(),
-                riga.get(2)?,
-                riga.get(3)?,
-                riga.get(4)?,
-                riga.get(5)?,
-                importo_per_csv(riga.get(6)?),
-            ])
-        })?
+    let movimenti = query
+        .query_map(params![dal, al], leggi_movimento)?
         .collect::<Result<Vec<_>, _>>()?;
-    Ok(componi_csv(&INTESTAZIONE_CSV, &righe))
+    Ok(movimenti)
+}
+
+fn leggi_movimento(riga: &rusqlite::Row<'_>) -> rusqlite::Result<Movimento> {
+    let tipo: String = riga.get(1)?;
+    let testo_metodo: String = riga.get(6)?;
+    let metodo = MetodoPagamento::da_testo(&testo_metodo).ok_or_else(|| {
+        rusqlite::Error::FromSqlConversionFailure(
+            6,
+            rusqlite::types::Type::Text,
+            format!("metodo di pagamento sconosciuto: {testo_metodo}").into(),
+        )
+    })?;
+    Ok(Movimento {
+        data: riga.get(0)?,
+        tipo: TipoMovimento::da_testo(&tipo),
+        iscritto_id: riga.get(2)?,
+        cognome: riga.get(3)?,
+        nome: riga.get(4)?,
+        descrizione: riga.get(5)?,
+        metodo,
+        importo_cent: riga.get(7)?,
+    })
 }

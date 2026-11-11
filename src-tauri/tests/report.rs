@@ -6,7 +6,7 @@ use rusqlite::Connection;
 use sp_gestionale_lib::dati_prova::genera_dati_prova;
 use sp_gestionale_lib::db::dashboard::{Incassi, incassi_tra, mese_di};
 use sp_gestionale_lib::db::report::{
-    Raggruppamento, RiepilogoIncassi, esporta_incassi_csv, riepilogo_incassi,
+    Raggruppamento, RiepilogoIncassi, elenca_movimenti, esporta_incassi_csv, riepilogo_incassi,
 };
 
 const OGGI: NaiveDate = NaiveDate::from_ymd_opt(2026, 11, 10).unwrap();
@@ -125,4 +125,22 @@ fn il_csv_contiene_una_riga_per_movimento() {
     assert_eq!(righe.len() as u32, riepilogo.numero_movimenti + 1);
     assert!(righe[1..].iter().any(|riga| riga.contains(";Iscrizione;")));
     assert!(righe[1..].iter().any(|riga| riga.contains(";Abbonamento;")));
+}
+
+#[test]
+fn i_movimenti_del_giorno_tornano_con_il_totale_della_cassa() {
+    let (_database, connessione) = database_con_dati_prova();
+    let riepilogo = riepilogo_incassi(&connessione, DAL, AL, Raggruppamento::Giorno).unwrap();
+    let giorno_con_incassi = riepilogo.per_periodo.last().unwrap();
+    let giorno: NaiveDate = giorno_con_incassi.periodo.parse().unwrap();
+
+    let movimenti = elenca_movimenti(&connessione, giorno, giorno).unwrap();
+
+    assert!(!movimenti.is_empty());
+    assert!(movimenti.iter().all(|movimento| movimento.data == giorno));
+    let totale: i64 = movimenti
+        .iter()
+        .map(|movimento| movimento.importo_cent)
+        .sum();
+    assert_eq!(totale, giorno_con_incassi.incassi.totale_cent);
 }

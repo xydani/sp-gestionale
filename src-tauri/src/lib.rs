@@ -59,6 +59,7 @@ pub fn run() {
             commands::promemoria::conta_in_scadenza,
             commands::dashboard::riepilogo_dashboard,
             commands::report::riepilogo_incassi,
+            commands::report::elenca_movimenti,
             commands::report::esporta_incassi_csv,
             commands::impostazioni::leggi_impostazioni,
             commands::impostazioni::salva_impostazioni,
