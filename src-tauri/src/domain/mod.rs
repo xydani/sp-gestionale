@@ -5,6 +5,7 @@ pub mod csv;
 pub mod date;
 pub mod pagamento;
 pub mod rinnovo;
+pub mod statistiche;
 pub mod stato;
 pub mod testo;
 pub mod validazione;
