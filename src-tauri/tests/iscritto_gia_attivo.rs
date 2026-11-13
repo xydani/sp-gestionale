@@ -40,6 +40,7 @@ fn dati_minimi() -> DatiIscrittoGiaAttivo {
         cognome: "Ferri".into(),
         telefono: Some(" ".into()),
         data_scadenza_certificato: None,
+        certificato_presentato: false,
         tipologia_id: MENSILE,
         data_scadenza_abbonamento: data("2026-11-25"),
         importo_abbonamento_cent: 4500,
@@ -244,6 +245,7 @@ fn il_filtro_trova_gli_iscritti_da_completare_finche_non_si_completano() {
         email: None,
         note: None,
         data_scadenza_certificato: None,
+        certificato_presentato: false,
     };
     let completato = modifica_iscritto(&connessione, iscritto.id, &completo, RIFERIMENTO).unwrap();
 

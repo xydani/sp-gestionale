@@ -44,6 +44,7 @@ fn dati_completi(connessione: &Connection) -> DatiNuovoIscritto {
             email: None,
             note: None,
             data_scadenza_certificato: None,
+            certificato_presentato: false,
         },
         iscrizione: DatiIscrizione {
             iscritto_id: ID_IGNORATO,

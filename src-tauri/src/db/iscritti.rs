@@ -36,8 +36,10 @@ pub struct Iscritto {
     pub stato_iscrizione: StatoValidita,
     pub ultima_data_scadenza_abbonamento: Option<NaiveDate>,
     pub stato_abbonamento: StatoValidita,
-    /// Assente se il certificato medico non è stato presentato.
+    /// Assente se il certificato non è stato presentato o è stato presentato senza scadenza.
     pub data_scadenza_certificato: Option<NaiveDate>,
+    /// Anche senza una data di scadenza indicata.
+    pub certificato_presentato: bool,
     pub stato_certificato: StatoValidita,
     /// Mancano dati anagrafici obbligatori: vanno completati dalla scheda.
     pub da_completare: bool,
@@ -54,9 +56,19 @@ pub struct DatiIscritto {
     pub telefono: Option<String>,
     pub email: Option<String>,
     pub note: Option<String>,
-    /// Scadenza del certificato medico; assente se non è stato presentato.
+    /// Scadenza del certificato medico; può mancare anche se il certificato è stato presentato.
     #[serde(default)]
     pub data_scadenza_certificato: Option<NaiveDate>,
+    /// Certificato consegnato: con una scadenza conta comunque come presentato.
+    #[serde(default)]
+    pub certificato_presentato: bool,
+}
+
+impl DatiIscritto {
+    /// Valore della colonna `certificato_senza_scadenza`.
+    fn certificato_senza_scadenza(&self) -> bool {
+        self.certificato_presentato && self.data_scadenza_certificato.is_none()
+    }
 }
 
 /// Ordine dell'elenco: alfabetico, oppure per data (le scadenze vicine prima o le più recenti).
@@ -90,10 +102,10 @@ impl OrdinamentoIscritti {
                 "ORDER BY s.ultima_data_fine_iscrizione DESC, i.cognome COLLATE NOCASE, i.id"
             }
             Self::ScadenzaCertificatoCrescente => {
-                "ORDER BY i.data_scadenza_certificato, i.cognome COLLATE NOCASE, i.id"
+                "ORDER BY c.data_scadenza_certificato, i.cognome COLLATE NOCASE, i.id"
             }
             Self::ScadenzaCertificatoDecrescente => {
-                "ORDER BY i.data_scadenza_certificato DESC, i.cognome COLLATE NOCASE, i.id"
+                "ORDER BY c.data_scadenza_certificato DESC, i.cognome COLLATE NOCASE, i.id"
             }
         }
     }
@@ -141,10 +153,11 @@ pub fn riferimento_per_oggi(
 const SELEZIONE_ISCRITTI: &str = "
     SELECT i.id, i.nome, i.cognome, i.data_nascita, i.luogo_nascita, i.telefono, i.email,
            i.note, i.archiviato, s.ultima_data_fine_iscrizione, a.ultima_data_scadenza,
-           i.data_scadenza_certificato
+           i.data_scadenza_certificato, c.data_scadenza_certificato, i.certificato_senza_scadenza
     FROM iscritti i
     JOIN v_ultima_iscrizione_iscritti s ON s.iscritto_id = i.id
-    JOIN v_ultima_scadenza_iscritti a ON a.iscritto_id = i.id";
+    JOIN v_ultima_scadenza_iscritti a ON a.iscritto_id = i.id
+    JOIN v_certificato_iscritti c ON c.iscritto_id = i.id";
 
 /// Gli iscritti eliminati restano solo come riferimento anonimo dei pagamenti.
 const NON_ELIMINATO: &str = "i.data_eliminazione IS NULL";
@@ -155,7 +168,8 @@ const CONTEGGIO_ISCRITTI: &str = "
     SELECT count(*)
     FROM iscritti i
     JOIN v_ultima_iscrizione_iscritti s ON s.iscritto_id = i.id
-    JOIN v_ultima_scadenza_iscritti a ON a.iscritto_id = i.id";
+    JOIN v_ultima_scadenza_iscritti a ON a.iscritto_id = i.id
+    JOIN v_certificato_iscritti c ON c.iscritto_id = i.id";
 
 /// Tutti gli iscritti che corrispondono al filtro (senza paginazione).
 pub fn elenca_iscritti(
@@ -236,8 +250,8 @@ pub fn crea_iscritto(
     let dati = valida_dati_iscritto(dati, riferimento.oggi)?;
     connessione.execute(
         "INSERT INTO iscritti (nome, cognome, data_nascita, luogo_nascita, telefono, email, note,
-                               data_scadenza_certificato)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+                               data_scadenza_certificato, certificato_senza_scadenza)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
         params![
             dati.nome,
             dati.cognome,
@@ -246,7 +260,8 @@ pub fn crea_iscritto(
             dati.telefono,
             dati.email,
             dati.note,
-            dati.data_scadenza_certificato
+            dati.data_scadenza_certificato,
+            dati.certificato_senza_scadenza(),
         ],
     )?;
     trova_iscritto(connessione, connessione.last_insert_rowid(), riferimento)
@@ -262,8 +277,9 @@ pub fn modifica_iscritto(
     let righe_modificate = connessione.execute(
         "UPDATE iscritti
          SET nome = ?1, cognome = ?2, data_nascita = ?3, luogo_nascita = ?4, telefono = ?5,
-             email = ?6, note = ?7, data_scadenza_certificato = ?8, modificato_il = datetime('now')
-         WHERE id = ?9 AND data_eliminazione IS NULL",
+             email = ?6, note = ?7, data_scadenza_certificato = ?8,
+             certificato_senza_scadenza = ?9, modificato_il = datetime('now')
+         WHERE id = ?10 AND data_eliminazione IS NULL",
         params![
             dati.nome,
             dati.cognome,
@@ -273,6 +289,7 @@ pub fn modifica_iscritto(
             dati.email,
             dati.note,
             dati.data_scadenza_certificato,
+            dati.certificato_senza_scadenza(),
             id
         ],
     )?;
@@ -314,6 +331,7 @@ pub fn valida_dati_iscritto(
         email: testo_facoltativo(dati.email.as_deref()),
         note: testo_facoltativo(dati.note.as_deref()),
         data_scadenza_certificato: dati.data_scadenza_certificato,
+        certificato_presentato: dati.certificato_presentato,
     };
     controlla_anagrafica(&pulito, oggi).map_err(ErroreDatabase::non_valido)?;
     Ok(pulito)
@@ -371,7 +389,7 @@ fn condizioni_filtro(filtro: &FiltroIscritti, riferimento: Riferimento) -> (Stri
     let filtri_stato = [
         ("a.ultima_data_scadenza", filtro.stato_abbonamento),
         ("s.ultima_data_fine_iscrizione", filtro.stato_iscrizione),
-        ("i.data_scadenza_certificato", filtro.stato_certificato),
+        ("c.data_scadenza_certificato", filtro.stato_certificato),
     ];
     for (colonna, stato) in filtri_stato {
         if let Some(stato) = stato {
@@ -421,6 +439,9 @@ fn leggi_iscritto(riga: &Row<'_>, riferimento: Riferimento) -> rusqlite::Result<
     let ultima_data_fine_iscrizione: Option<NaiveDate> = riga.get(9)?;
     let ultima_data_scadenza_abbonamento: Option<NaiveDate> = riga.get(10)?;
     let data_scadenza_certificato: Option<NaiveDate> = riga.get(11)?;
+    // Per stato, promemoria e filtri un certificato senza data vale come sempre valido
+    let scadenza_certificato_effettiva: Option<NaiveDate> = riga.get(12)?;
+    let certificato_senza_scadenza: bool = riga.get(13)?;
     let data_nascita: Option<NaiveDate> = riga.get(3)?;
     let luogo_nascita: Option<String> = riga.get(4)?;
     let da_completare = data_nascita.is_none() || luogo_nascita.is_none();
@@ -439,7 +460,8 @@ fn leggi_iscritto(riga: &Row<'_>, riferimento: Riferimento) -> rusqlite::Result<
         ultima_data_scadenza_abbonamento,
         stato_abbonamento: stato_di(ultima_data_scadenza_abbonamento),
         data_scadenza_certificato,
-        stato_certificato: stato_di(data_scadenza_certificato),
+        certificato_presentato: data_scadenza_certificato.is_some() || certificato_senza_scadenza,
+        stato_certificato: stato_di(scadenza_certificato_effettiva),
         da_completare,
     })
 }
@@ -460,6 +482,7 @@ mod test {
             email: Some(" mario@esempio.it ".into()),
             note: Some(" nota ".into()),
             data_scadenza_certificato: None,
+            certificato_presentato: false,
         }
     }
 

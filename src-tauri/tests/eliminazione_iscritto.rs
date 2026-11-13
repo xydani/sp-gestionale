@@ -28,6 +28,7 @@ fn dati_anagrafici() -> DatiIscritto {
         email: Some("giulia@esempio.it".into()),
         note: Some("Allergica al lattice".into()),
         data_scadenza_certificato: Some("2027-03-01".parse().unwrap()),
+        certificato_presentato: false,
     }
 }
 

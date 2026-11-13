@@ -254,6 +254,7 @@ fn inserisci_iscritto_gia_attivo(
         cognome: casuale.scegli(COGNOMI).to_string(),
         telefono: None,
         data_scadenza_certificato: None,
+        certificato_presentato: false,
         tipologia_id: tipologia.id,
         data_scadenza_abbonamento: oggi
             + Days::new(casuale.tra(0, GIORNI_MASSIMI_SCADENZA_GIA_ATTIVI)),

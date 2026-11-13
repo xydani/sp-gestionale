@@ -33,6 +33,9 @@ pub struct DatiIscrittoGiaAttivo {
     pub telefono: Option<String>,
     #[serde(default)]
     pub data_scadenza_certificato: Option<NaiveDate>,
+    /// Certificato consegnato, anche se la scadenza non è indicata.
+    #[serde(default)]
+    pub certificato_presentato: bool,
     pub tipologia_id: i64,
     pub data_scadenza_abbonamento: NaiveDate,
     pub importo_abbonamento_cent: i64,
@@ -74,9 +77,16 @@ fn crea_anagrafica_essenziale(
     controlla_anagrafica_essenziale(nome, cognome, telefono.as_deref(), dati, oggi)
         .map_err(ErroreDatabase::non_valido)?;
     connessione.execute(
-        "INSERT INTO iscritti (nome, cognome, telefono, data_scadenza_certificato)
-         VALUES (?1, ?2, ?3, ?4)",
-        params![nome, cognome, telefono, dati.data_scadenza_certificato],
+        "INSERT INTO iscritti (nome, cognome, telefono, data_scadenza_certificato,
+                               certificato_senza_scadenza)
+         VALUES (?1, ?2, ?3, ?4, ?5)",
+        params![
+            nome,
+            cognome,
+            telefono,
+            dati.data_scadenza_certificato,
+            dati.certificato_presentato && dati.data_scadenza_certificato.is_none(),
+        ],
     )?;
     Ok(connessione.last_insert_rowid())
 }

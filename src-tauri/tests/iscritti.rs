@@ -32,6 +32,7 @@ fn dati(nome: &str, cognome: &str) -> DatiIscritto {
         email: None,
         note: None,
         data_scadenza_certificato: None,
+        certificato_presentato: false,
     }
 }
 

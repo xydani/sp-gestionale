@@ -37,6 +37,7 @@ fn iscritto(connessione: &Connection, nome: &str) -> i64 {
         email: None,
         note: None,
         data_scadenza_certificato: None,
+        certificato_presentato: false,
     };
     crea_iscritto(connessione, &dati, RIFERIMENTO).unwrap().id
 }
@@ -71,6 +72,7 @@ fn rinnovi_abbandoni_e_valore_medio_su_un_caso_noto() {
         cognome: "Prova".into(),
         telefono: None,
         data_scadenza_certificato: None,
+        certificato_presentato: false,
         tipologia_id: MENSILE,
         data_scadenza_abbonamento: data("2026-11-20"),
         importo_abbonamento_cent: 5000,

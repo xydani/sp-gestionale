@@ -28,6 +28,7 @@ fn dati(cognome: &str, scadenza_certificato: Option<NaiveDate>) -> DatiIscritto 
         email: None,
         note: None,
         data_scadenza_certificato: scadenza_certificato,
+        certificato_presentato: false,
     }
 }
 
@@ -166,4 +167,81 @@ fn la_migrazione_conserva_i_promemoria_gia_inviati() {
         )
         .unwrap();
     assert_eq!(certificato, None);
+}
+
+fn presentato_senza_scadenza(cognome: &str) -> DatiIscritto {
+    DatiIscritto {
+        certificato_presentato: true,
+        ..dati(cognome, None)
+    }
+}
+
+#[test]
+fn un_certificato_senza_scadenza_conta_come_presentato_e_valido() {
+    let database = DatabaseTemporaneo::nuovo();
+    let mut connessione = database.crea_con_schema();
+    let iscritto = crea_iscritto(
+        &connessione,
+        &presentato_senza_scadenza("SenzaData"),
+        RIFERIMENTO,
+    )
+    .unwrap();
+
+    assert!(iscritto.certificato_presentato);
+    assert_eq!(iscritto.data_scadenza_certificato, None);
+    assert_eq!(iscritto.stato_certificato, StatoValidita::Attivo);
+
+    let mancanti = FiltroIscritti {
+        stato_certificato: Some(StatoValidita::Nessuno),
+        ..Default::default()
+    };
+    assert!(
+        elenca_iscritti(&connessione, &mancanti, RIFERIMENTO)
+            .unwrap()
+            .is_empty()
+    );
+    let certificati = riepilogo_dashboard(&connessione, RIFERIMENTO)
+        .unwrap()
+        .certificati;
+    assert_eq!((certificati.attivi, certificati.assenti), (1, 0));
+    let promemoria = controlla_promemoria(&mut connessione, RIFERIMENTO).unwrap();
+    assert_eq!(promemoria.nuovi.certificati, 0);
+}
+
+#[test]
+fn togliendo_la_spunta_il_certificato_torna_mancante() {
+    let database = DatabaseTemporaneo::nuovo();
+    let connessione = database.crea_con_schema();
+    let iscritto = crea_iscritto(
+        &connessione,
+        &presentato_senza_scadenza("SenzaData"),
+        RIFERIMENTO,
+    )
+    .unwrap();
+
+    let modificato = modifica_iscritto(
+        &connessione,
+        iscritto.id,
+        &dati("SenzaData", None),
+        RIFERIMENTO,
+    )
+    .unwrap();
+
+    assert!(!modificato.certificato_presentato);
+    assert_eq!(modificato.stato_certificato, StatoValidita::Nessuno);
+}
+
+#[test]
+fn con_una_data_il_certificato_segue_la_sua_scadenza() {
+    let database = DatabaseTemporaneo::nuovo();
+    let connessione = database.crea_con_schema();
+    let scaduto = DatiIscritto {
+        certificato_presentato: true,
+        ..dati("ConData", tra_giorni(-1))
+    };
+
+    let iscritto = crea_iscritto(&connessione, &scaduto, RIFERIMENTO).unwrap();
+
+    assert!(iscritto.certificato_presentato);
+    assert_eq!(iscritto.stato_certificato, StatoValidita::Scaduto);
 }

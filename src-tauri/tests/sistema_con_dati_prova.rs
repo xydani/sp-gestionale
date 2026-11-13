@@ -256,6 +256,7 @@ fn gli_iscritti_inventati_superano_i_controlli_dell_anagrafica() {
             email: iscritto.email,
             note: iscritto.note,
             data_scadenza_certificato: iscritto.data_scadenza_certificato,
+            certificato_presentato: false,
         };
         if let Err(errore) = valida_dati_iscritto(&dati, OGGI) {
             panic!("{} {}: {errore}", dati.nome, dati.cognome);

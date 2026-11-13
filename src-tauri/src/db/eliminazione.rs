@@ -37,6 +37,7 @@ pub fn elimina_dati_iscritto(
         "UPDATE iscritti
          SET nome = ?1, cognome = ?2, data_nascita = NULL, luogo_nascita = NULL, telefono = NULL,
              email = NULL, note = NULL, data_scadenza_certificato = NULL,
+             certificato_senza_scadenza = 0,
              data_eliminazione = ?3, modificato_il = datetime('now')
          WHERE id = ?4",
         params![

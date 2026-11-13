@@ -37,6 +37,7 @@ fn anagrafica() -> DatiIscritto {
         email: Some("mario.rossi@esempio.it".into()),
         note: None,
         data_scadenza_certificato: Some(data("2027-06-30")),
+        certificato_presentato: false,
     }
 }
 
