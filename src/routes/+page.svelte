@@ -212,7 +212,7 @@
       {#if riepilogo.prossimeScadenze.length === 0}
         <p class="vuoto">Nessuna scadenza nei prossimi 30 giorni.</p>
       {:else}
-        <table class="tabella riquadrata compatta">
+        <table class="tabella riquadrata compatta prossime">
           <thead>
             <tr><th>Cognome e nome</th><th>Cosa scade</th><th>Quando</th><th></th></tr>
           </thead>
@@ -360,6 +360,11 @@
     justify-self: end;
     color: var(--colore-primario);
     text-decoration: none;
+  }
+
+  /* Bordo giallo come gli elenchi in scadenza, rosso per i già scaduti */
+  .prossime {
+    border-left: 4px solid #e0a100;
   }
 
   .vuoto {
