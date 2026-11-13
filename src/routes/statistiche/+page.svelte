@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { page } from "$app/state";
   import { onMount } from "svelte";
   import { leggiImpostazioni, leggiStatistiche, messaggioErrore } from "$lib/api";
   import { mostraAvviso } from "$lib/avvisi.svelte";
@@ -17,6 +18,19 @@
   import type { Statistiche } from "$lib/types";
 
   const PERIODI = Object.keys(ETICHETTE_PERIODO_STATISTICHE) as PeriodoStatistiche[];
+
+  /** Una scheda per argomento: ognuna sta nella finestra; il periodo vale per tutte. */
+  const SCHEDE = [
+    { chiave: "rinnovi", etichetta: "Rinnovi" },
+    { chiave: "attivi", etichetta: "Iscritti attivi" },
+    { chiave: "incassi", etichetta: "Incassi" },
+    { chiave: "vendite", etichetta: "Vendite" },
+  ] as const;
+  // Si può aprire una scheda dall'indirizzo, es. `?scheda=vendite`
+  const schedaIniziale = SCHEDE.find(
+    (scheda) => scheda.chiave === page.url.searchParams.get("scheda"),
+  );
+  let schedaAttiva = $state<(typeof SCHEDE)[number]["chiave"]>(schedaIniziale?.chiave ?? "rinnovi");
 
   let meseInizioAnnoSportivo = MESE_INIZIO_ANNO_SPORTIVO_PREDEFINITO;
   let sceltaPeriodo = $state<PeriodoStatistiche | null>("ultimi_12_mesi");
@@ -59,7 +73,20 @@
   }
 </script>
 
-<h1>Reportistica e statistiche</h1>
+<div class="intestazione">
+  <h1>Statistiche</h1>
+  <div class="segmenti" role="group" aria-label="Argomento">
+    {#each SCHEDE as scheda (scheda.chiave)}
+      <button
+        type="button"
+        aria-pressed={schedaAttiva === scheda.chiave}
+        onclick={() => (schedaAttiva = scheda.chiave)}
+      >
+        {scheda.etichetta}
+      </button>
+    {/each}
+  </div>
+</div>
 
 <div class="periodo">
   <div class="segmenti" role="group" aria-label="Periodo">
@@ -84,26 +111,43 @@
 
 {#if statistiche}
   <div class="sezioni">
-    <SezioneRinnovi
-      abbonamenti={statistiche.rinnoviAbbonamenti}
-      iscrizioni={statistiche.rinnoviIscrizioni}
-      persi={statistiche.persi}
-      giorniTolleranza={statistiche.giorniTolleranzaRientro}
-    />
-    <SezioneAttivi attivi={statistiche.attiviPerMese} />
-    <SezioneValoreMedio valore={statistiche.valoreMedio} />
-    <SezionePrevisione previsione={statistiche.previsione} />
-    <SezioneVendite vendite={statistiche.venditePerTipologia} />
+    {#if schedaAttiva === "rinnovi"}
+      <SezioneRinnovi
+        abbonamenti={statistiche.rinnoviAbbonamenti}
+        iscrizioni={statistiche.rinnoviIscrizioni}
+        persi={statistiche.persi}
+        giorniTolleranza={statistiche.giorniTolleranzaRientro}
+      />
+    {:else if schedaAttiva === "attivi"}
+      <SezioneAttivi attivi={statistiche.attiviPerMese} />
+    {:else if schedaAttiva === "incassi"}
+      <SezioneValoreMedio valore={statistiche.valoreMedio} />
+      <SezionePrevisione previsione={statistiche.previsione} />
+    {:else}
+      <SezioneVendite vendite={statistiche.venditePerTipologia} />
+    {/if}
   </div>
 {/if}
 
 <style>
+  .intestazione {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .intestazione h1 {
+    margin: 0;
+  }
+
   .periodo {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 0.75rem 1.25rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
   }
 
   .date {

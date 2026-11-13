@@ -18,6 +18,7 @@
     massimo,
     etichettaMassimo,
     titoloAccessibile,
+    altezzaArea = "10rem",
   }: {
     voci: VoceGrafico[];
     /** Valore in cima all'asse; se assente, il più alto tra le voci. */
@@ -25,6 +26,8 @@
     /** Testo della linea in cima (es. "100%" o "204"). */
     etichettaMassimo: string;
     titoloAccessibile: string;
+    /** Altezza delle colonne: più bassa dove il grafico divide la pagina con altro. */
+    altezzaArea?: string;
   } = $props();
 
   let evidenziata = $state<number | null>(null);
@@ -39,7 +42,7 @@
   }
 </script>
 
-<figure class="grafico" aria-label={titoloAccessibile}>
+<figure class="grafico" aria-label={titoloAccessibile} style:--altezza-grafico={altezzaArea}>
   <p class="dettaglio" aria-live="polite">{dettaglio ?? ""}</p>
   <div class="area">
     <span class="riga-cima" aria-hidden="true"><span>{etichettaMassimo}</span></span>
@@ -87,7 +90,7 @@
 
   .area {
     position: relative;
-    height: 10rem;
+    height: var(--altezza-grafico);
     border-bottom: 1px solid var(--colore-bordo-hover);
   }
 
