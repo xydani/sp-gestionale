@@ -7,6 +7,7 @@
     testoItalianoInIso,
   } from "$lib/data-italiana";
   import CalendarioMese from "./CalendarioMese.svelte";
+  import { sospesoSottoCampo } from "$lib/riquadro-sospeso";
 
   /**
    * Campo data nel formato italiano GG/MM/AAAA, indipendente dalla lingua del sistema.
@@ -109,7 +110,7 @@
     <Icona nome="calendario" spessore={1.8} />
   </button>
   {#if calendarioAperto}
-    <div class="riquadro-calendario">
+    <div class="riquadro-calendario" use:sospesoSottoCampo={{ ancora: contenitore }}>
       <CalendarioMese
         selezionata={valore}
         {minimaIso}
@@ -147,10 +148,8 @@
     color: var(--colore-primario);
   }
 
+  /* Posizione calcolata da sospesoSottoCampo */
   .riquadro-calendario {
-    position: absolute;
-    top: calc(100% + 6px);
-    left: 0;
     z-index: 20;
   }
 

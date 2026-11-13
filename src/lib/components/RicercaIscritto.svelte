@@ -1,5 +1,6 @@
 <script lang="ts">
   import { elencaIscritti } from "$lib/api";
+  import { sospesoSottoCampo } from "$lib/riquadro-sospeso";
   import { ritarda } from "$lib/ritarda";
   import type { Iscritto } from "$lib/types";
   import BadgeStato from "./BadgeStato.svelte";
@@ -10,6 +11,7 @@
   let { onScelto }: { onScelto: (iscritto: Iscritto) => void } = $props();
 
   let testo = $state("");
+  let contenitore = $state<HTMLDivElement>();
   let risultati = $state<Iscritto[]>([]);
 
   // Conta le ricerche: una risposta lenta non deve sovrascrivere quella di una ricerca successiva
@@ -39,7 +41,7 @@
   }
 </script>
 
-<div class="ricerca">
+<div class="ricerca" bind:this={contenitore}>
   <!-- svelte-ignore a11y_autofocus -->
   <input
     type="search"
@@ -49,7 +51,7 @@
     autofocus
   />
   {#if risultati.length > 0}
-    <ul>
+    <ul use:sospesoSottoCampo={{ ancora: contenitore, larghezza: "uguale" }}>
       {#each risultati as iscritto (iscritto.id)}
         <li>
           <button type="button" onclick={() => scegli(iscritto)}>
@@ -75,12 +77,10 @@
     font: inherit;
   }
 
+  /* Posizione e larghezza calcolate da sospesoSottoCampo */
   ul {
-    position: absolute;
     z-index: 10;
-    left: 0;
-    right: 0;
-    margin: 0.25rem 0 0;
+    margin: 0;
     padding: 0.25rem;
     list-style: none;
     background: var(--colore-superficie);

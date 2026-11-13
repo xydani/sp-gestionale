@@ -7,6 +7,7 @@
     type OpzioneTendina,
   } from "$lib/tendina";
   import { validita } from "$lib/validazione";
+  import { sospesoSottoCampo } from "$lib/riquadro-sospeso";
 
   /** Tendina disegnata dall'app: uguale su ogni sistema, usabile con mouse e tastiera. */
   let {
@@ -163,7 +164,13 @@
   {/if}
 
   {#if aperta}
-    <ul class="elenco" id={idElenco} role="listbox" bind:this={elenco}>
+    <ul
+      class="elenco"
+      id={idElenco}
+      role="listbox"
+      bind:this={elenco}
+      use:sospesoSottoCampo={{ ancora: contenitore, larghezza: "minima" }}
+    >
       {#each opzioni as opzione, indice (indice)}
         <!-- La tastiera è gestita dal pulsante della tendina, che indica l'opzione evidenziata -->
         <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -254,12 +261,9 @@
     pointer-events: none;
   }
 
+  /* Posizione e larghezza minima calcolate da sospesoSottoCampo */
   .elenco {
-    position: absolute;
-    top: calc(100% + 6px);
-    left: 0;
     z-index: 30;
-    min-width: 100%;
     max-height: 18rem;
     overflow-y: auto;
     margin: 0;
