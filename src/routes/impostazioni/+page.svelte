@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { page } from "$app/state";
   import { onMount } from "svelte";
   import { leggiImpostazioni, messaggioErrore, salvaImpostazioni } from "$lib/api";
   import { mostraAvviso } from "$lib/avvisi.svelte";
@@ -12,9 +13,17 @@
   import { bloccoAutomatico } from "$lib/blocco-automatico.svelte";
   import { palestra } from "$lib/palestra.svelte";
   import { aggiornaConteggioScadenze } from "$lib/promemoria.svelte";
+  import {
+    SCHEDE_IMPOSTAZIONI,
+    schedaDaIndirizzo,
+    type SchedaImpostazioni,
+  } from "$lib/schede-impostazioni";
   import type { Impostazioni } from "$lib/types";
 
   let impostazioni = $state<Impostazioni | null>(null);
+  let schedaAttiva = $state<SchedaImpostazioni>(
+    schedaDaIndirizzo(page.url.searchParams.get("scheda")),
+  );
 
   onMount(async () => {
     try {
@@ -53,26 +62,55 @@
 </script>
 
 <div class="pagina-stretta">
-  <h1>Impostazioni</h1>
+  <div class="intestazione">
+    <h1>Impostazioni</h1>
+    <div class="segmenti" role="group" aria-label="Sezione delle impostazioni">
+      {#each SCHEDE_IMPOSTAZIONI as scheda (scheda.chiave)}
+        <button
+          type="button"
+          aria-pressed={schedaAttiva === scheda.chiave}
+          onclick={() => (schedaAttiva = scheda.chiave)}
+        >
+          {scheda.etichetta}
+        </button>
+      {/each}
+    </div>
+  </div>
   <div class="sezioni">
-    {#if impostazioni}
+    {#if schedaAttiva === "palestra" && impostazioni}
       <section class="scheda">
         <h2>Palestra</h2>
         {#key impostazioni}
           <FormImpostazioni iniziale={impostazioni} etichettaConferma="Salva" onSalva={salva} />
         {/key}
       </section>
+    {:else if schedaAttiva === "aspetto"}
+      <SezioneLogo />
+      <SezioneDimensioneTesto />
+    {:else if schedaAttiva === "password"}
+      <SezioneCambioPassword />
+    {:else if schedaAttiva === "backup"}
+      <SezioneBackup onRipristinato={ricaricaDopoRipristino} />
+    {:else if schedaAttiva === "programma"}
+      <SezioneAvvioAutomatico />
+      <SezioneAggiornamenti />
     {/if}
-    <SezioneLogo />
-    <SezioneDimensioneTesto />
-    <SezioneCambioPassword />
-    <SezioneAvvioAutomatico />
-    <SezioneBackup onRipristinato={ricaricaDopoRipristino} />
-    <SezioneAggiornamenti />
   </div>
 </div>
 
 <style>
+  .intestazione {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .intestazione h1 {
+    margin: 0;
+  }
+
   .sezioni {
     display: grid;
     gap: 1.25rem;

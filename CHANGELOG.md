@@ -7,6 +7,7 @@
 - Anche Iscritti e Pagamenti mostrano le righe che stanno nella finestra, con le pagine sotto l'elenco
 - Scheda iscritto su due colonne: anagrafica a sinistra, quota e abbonamento a destra; lo storico dei pagamenti va a pagine che seguono la finestra e lo storico delle quote si apre a richiesta
 - Incassi più raccolti: metodi di pagamento e andamento per periodo affiancati, con i periodi a pagine che seguono la finestra
+- Impostazioni divise in schede: Palestra, Aspetto, Password, Backup e Programma; dalla dashboard «Fai un backup» apre direttamente la scheda Backup
 - Certificati scaduti e mai presentati si scelgono con un selettore nella stessa scheda
 - Logo della palestra ridisegnato fedele all'originale
 - Già iscritti: dell'abbonamento basta la data di inizio oppure quella di scadenza, l'altra si calcola dalla durata

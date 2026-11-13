@@ -125,7 +125,8 @@
       </li>
       <li>Per chi si iscrive da oggi usa «Nuovo iscritto»: registra anche quota e pagamento.</li>
       <li>
-        Fai un backup su una chiavetta da <a href={resolve("/impostazioni")}>Impostazioni</a>.
+        Fai un backup su una chiavetta da
+        <a href="{resolve('/impostazioni')}?scheda=backup">Impostazioni › Backup</a>.
       </li>
     </ol>
   </section>
