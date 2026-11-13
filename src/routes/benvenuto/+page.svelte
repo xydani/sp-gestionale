@@ -11,6 +11,7 @@
   import { mostraAvviso } from "$lib/avvisi.svelte";
   import FormImpostazioni from "$lib/components/FormImpostazioni.svelte";
   import SezioneLogo from "$lib/components/SezioneLogo.svelte";
+  import SezioneQuotaAnnuale from "$lib/components/SezioneQuotaAnnuale.svelte";
   import SezioneTipologie from "$lib/components/SezioneTipologie.svelte";
   import { configurazione, descriviPasso } from "$lib/configurazione-guidata.svelte";
   import { bloccoAutomatico } from "$lib/blocco-automatico.svelte";
@@ -79,10 +80,11 @@
     </div>
   {:else}
     <p class="introduzione">
-      Questi sono gli abbonamenti proposti quando si registra un pagamento. Correggi i prezzi,
-      aggiungi quelli che mancano e disattiva quelli che non usi. Potrai cambiarli in ogni momento
-      dalla pagina Listino.
+      Questi sono la quota annuale e gli abbonamenti proposti quando si registra un pagamento.
+      Correggi i prezzi, aggiungi quelli che mancano e disattiva quelli che non usi. Potrai
+      cambiarli in ogni momento dalla pagina Listino.
     </p>
+    <SezioneQuotaAnnuale />
     <SezioneTipologie />
     <div class="azioni">
       <button type="button" class="pulsante secondario" onclick={() => (passo = 0)}>Indietro</button

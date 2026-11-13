@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from "$app/paths";
   import { page } from "$app/state";
   import { onMount } from "svelte";
   import { leggiImpostazioni, messaggioErrore, salvaImpostazioni } from "$lib/api";
@@ -80,6 +81,10 @@
     {#if schedaAttiva === "palestra" && impostazioni}
       <section class="scheda">
         <h2>Palestra</h2>
+        <p class="nota">
+          Quota annuale e inizio dell'anno sportivo si cambiano dal
+          <a href={resolve("/listino")}>Listino</a>, insieme agli altri prezzi.
+        </p>
         {#key impostazioni}
           <FormImpostazioni iniziale={impostazioni} etichettaConferma="Salva" onSalva={salva} />
         {/key}
@@ -114,5 +119,9 @@
   .sezioni {
     display: grid;
     gap: 1.25rem;
+  }
+
+  .nota {
+    color: var(--colore-testo-secondario);
   }
 </style>

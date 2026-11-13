@@ -3,7 +3,7 @@ import { configurazioneInizialeCompletata } from "./api";
 /** Passi della configurazione guidata di un nuovo archivio, in ordine. */
 export const PASSI_CONFIGURAZIONE = [
   { titolo: "Opzioni della palestra" },
-  { titolo: "Listino abbonamenti" },
+  { titolo: "Listino prezzi" },
 ] as const;
 
 /** "Passo 1 di 2 · Opzioni della palestra" (indice da 0). */
