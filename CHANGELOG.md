@@ -2,28 +2,20 @@
 
 ## [Non rilasciato]
 
-- L'icona del programma riprende lo scudo del logo ridisegnato
-- Quota annuale e inizio dell'anno sportivo si impostano dal Listino, ora «Listino prezzi», insieme agli abbonamenti; anche nella configurazione iniziale stanno nel passo del listino
-- Listino più chiaro: «+ Nuova tipologia» e «Modifica» si aprono in primo piano con i campi etichettati, accanto al prezzo c'è quanto costa al mese e le tipologie disattivate stanno a parte, chiuse
-- Anche «Nuovo iscritto», «Aggiungi già iscritto» e «Registra pagamento» si aprono in primo piano sopra l'elenco
-- Nella scheda iscritto «Modifica dati», rinnovi di quota e abbonamento e certificato si aprono in una finestra in primo piano, senza allungare la pagina
-- Corretto: calendari e tendine non vengono più tagliati dentro le finestre sovrapposte e, se sotto il campo manca spazio, si aprono sopra
-- Pagina Scadenze su due colonne, già scaduti e in scadenza, ognuna con le schede per tipo e il loro numero; tra i certificati scaduti anche quelli mai presentati
-- Gli elenchi di Scadenze e dashboard mostrano tante righe quante ne stanno nella finestra, secondo schermo e dimensione del testo; il resto si sfoglia a pagine
-- Anche Iscritti e Pagamenti mostrano le righe che stanno nella finestra, con le pagine sotto l'elenco
-- Scheda iscritto su due colonne: anagrafica a sinistra, quota e abbonamento a destra; lo storico dei pagamenti va a pagine che seguono la finestra e lo storico delle quote si apre a richiesta
-- Incassi più raccolti: metodi di pagamento e andamento per periodo affiancati, con i periodi a pagine che seguono la finestra
-- Impostazioni divise in schede: Palestra, Aspetto, Password, Backup e Programma; dalla dashboard «Fai un backup» apre direttamente la scheda Backup
-- Statistiche divise in schede (Rinnovi, Iscritti attivi, Incassi, Vendite) con il periodo in comune; chi non ha rinnovato e le vendite mese per mese vanno a pagine
-- Il modulo «Nuovo iscritto» è su due colonne (persona a sinistra, quota e abbonamento a destra) e sta nella finestra; contatti e certificato medico sono in un'unica sezione
-- Nella configurazione iniziale opzioni e logo stanno affiancati
-- Certificati scaduti e mai presentati si scelgono con un selettore nella stessa scheda
-- Logo della palestra ridisegnato fedele all'originale
+- Interfaccia ripensata per vedere tutto senza scorrere, adattandosi da sola a schermo, dimensione della finestra e del testo:
+  - gli elenchi (dashboard, Scadenze, Iscritti, Pagamenti, storico dei pagamenti, Incassi, Statistiche) mostrano le righe che stanno nella finestra e il resto si sfoglia a pagine
+  - dashboard più compatta, con già scaduti e prossime scadenze affiancati: i già scaduti compaiono solo se ci sono, divisi per tipo; le prossime scadenze hanno il bordo giallo e date brevi come «domani · 14/11»
+  - Scadenze su due colonne, già scaduti e in scadenza, ognuna con le schede per tipo e il loro numero
+  - scheda iscritto su due colonne: anagrafica e certificato a sinistra, quota e abbonamento a destra; lo storico delle quote si apre a richiesta
+  - Incassi con metodi di pagamento e andamento per periodo affiancati
+  - Impostazioni (Palestra, Aspetto, Password, Backup, Programma) e Statistiche (Rinnovi, Iscritti attivi, Incassi, Vendite) divise in schede
+  - i moduli si aprono in una finestra in primo piano invece di allungare la pagina: nuovo iscritto (su due colonne), già iscritto, pagamento, modifica dati, rinnovi, certificato e listino
+  - nella configurazione iniziale opzioni e logo stanno affiancati
+- Certificato medico con una sezione propria nella scheda iscritto; «Aggiorna» dalle scadenze apre direttamente il modulo; tra i certificati scaduti anche quelli mai presentati
+- Listino prezzi: ci sono anche la quota annuale e l'inizio dell'anno sportivo, spostati dalle Impostazioni; accanto al prezzo il costo al mese; le tipologie disattivate stanno a parte
 - Già iscritti: dell'abbonamento basta la data di inizio oppure quella di scadenza, l'altra si calcola dalla durata
-- Dashboard più compatta: scaduti e prossime scadenze affiancati e visibili senza scorrere
-- I già scaduti compaiono in dashboard solo se ci sono, divisi in schede per tipo con il loro numero
-- Nelle prossime scadenze i certificati hanno il pulsante «Aggiorna», che apre la scheda con il certificato pronto da aggiornare
-- Nella scheda iscritto il certificato medico ha una sezione sua, separata dall'anagrafica, con il modulo per registrarlo o aggiornarlo
+- Logo e icona del programma ridisegnati fedeli all'originale
+- Corretto: calendari e tendine non vengono più tagliati dentro le finestre in primo piano e, se sotto il campo manca spazio, si aprono sopra
 
 ## [0.1.6] - 2026-11-13
 
