@@ -1,4 +1,5 @@
 <script lang="ts">
+  import CampiCertificato from "./CampiCertificato.svelte";
   import CampoData from "./CampoData.svelte";
   import { untrack, type Snippet } from "svelte";
   import {
@@ -10,7 +11,6 @@
     erroreNomeProprio,
     erroreTelefono,
     limitiDataNascita,
-    limitiScadenzaCertificato,
   } from "$lib/validazione";
   import type { DatiIscritto } from "$lib/types";
 
@@ -20,6 +20,7 @@
     onConferma,
     onAnnulla,
     sezioniAggiuntive,
+    conCertificato = true,
   }: {
     iniziale?: Partial<DatiIscritto>;
     etichettaConferma: string;
@@ -27,6 +28,8 @@
     onAnnulla: () => void;
     /** Altre parti del modulo prima dei pulsanti (es. i pagamenti del nuovo iscritto). */
     sezioniAggiuntive?: Snippet;
+    /** Nella scheda iscritto il certificato ha una sezione sua e qui non compare. */
+    conCertificato?: boolean;
   } = $props();
 
   // Il form parte dai valori iniziali e poi li modifica in autonomia
@@ -46,7 +49,6 @@
   let inCorso = $state(false);
 
   const nascita = limitiDataNascita();
-  const certificato = limitiScadenzaCertificato();
 
   async function conferma(evento: SubmitEvent) {
     evento.preventDefault();
@@ -112,7 +114,7 @@
       </fieldset>
 
       <fieldset>
-        <legend>Contatti e certificato medico</legend>
+        <legend>{conCertificato ? "Contatti e certificato medico" : "Contatti"}</legend>
         <div class="griglia">
           <label>
             Telefono (facoltativo)
@@ -135,20 +137,12 @@
             />
           </label>
         </div>
-        <div class="griglia certificato">
-          <label class="spunta">
-            <input type="checkbox" bind:checked={certificatoPresentato} />
-            Certificato presentato
-          </label>
-          {#if certificatoPresentato}
-            <label>
-              Scade il (facoltativo)
-              <CampoData bind:valore={scadenzaCertificato} {...certificato} />
-            </label>
-          {:else}
-            <p class="avviso">Da portare: finché manca, l'iscritto compare tra le scadenze.</p>
-          {/if}
-        </div>
+        {#if conCertificato}
+          <CampiCertificato
+            bind:presentato={certificatoPresentato}
+            bind:scadenza={scadenzaCertificato}
+          />
+        {/if}
       </fieldset>
 
       <label>
@@ -232,30 +226,6 @@
     border-radius: var(--raggio);
     font: inherit;
     font-weight: 400;
-  }
-
-  .certificato {
-    align-items: end;
-  }
-
-  label.spunta {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    min-height: 2.5rem;
-  }
-
-  label.spunta input {
-    width: 1.1rem;
-    height: 1.1rem;
-    padding: 0;
-  }
-
-  .avviso {
-    margin: 0;
-    align-self: center;
-    color: var(--colore-avviso);
-    font-size: 0.9rem;
   }
 
   .azioni {
