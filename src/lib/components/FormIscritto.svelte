@@ -55,8 +55,8 @@
       await onConferma({
         nome,
         cognome,
-        dataNascita,
-        luogoNascita,
+        dataNascita: dataNascita || null,
+        luogoNascita: luogoNascita || null,
         telefono: telefono || null,
         email: email || null,
         note: note || null,
@@ -71,7 +71,7 @@
 
 <form onsubmit={conferma}>
   <fieldset>
-    <legend>Dati obbligatori</legend>
+    <legend>Anagrafica (obbligatori solo nome e cognome)</legend>
     <div class="griglia">
       <label>
         Nome
@@ -95,13 +95,12 @@
       </label>
       <label>
         Data di nascita
-        <CampoData bind:valore={dataNascita} {...nascita} obbligatoria />
+        <CampoData bind:valore={dataNascita} {...nascita} />
       </label>
       <label>
         Luogo di nascita
         <input
           bind:value={luogoNascita}
-          required
           maxlength={LUNGHEZZA_MASSIMA_LUOGO}
           use:validita={erroreNomeProprio("Il luogo di nascita", luogoNascita)}
         />

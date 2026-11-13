@@ -57,8 +57,9 @@ export interface Iscritto {
 export interface DatiIscritto {
   nome: string;
   cognome: string;
-  dataNascita: string;
-  luogoNascita: string;
+  /** Facoltativi: se mancano l'iscritto risulta da completare. */
+  dataNascita: string | null;
+  luogoNascita: string | null;
   telefono: string | null;
   email: string | null;
   note: string | null;
