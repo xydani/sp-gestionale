@@ -2,6 +2,8 @@
 
 ## [Non rilasciato]
 
+## [0.1.6] - 2026-11-13
+
 - La password deve avere almeno 8 caratteri (prima 12)
 - Inserimento rapido dei già iscritti con gli importi pagati: la quota entra negli incassi a inizio anno sportivo, l'abbonamento nel mese in cui è iniziato
 - In dashboard l'elenco dei già scaduti, diviso tra abbonamenti, quote annuali e certificati
