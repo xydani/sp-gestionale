@@ -6,9 +6,12 @@
   import { mostraAvviso } from "$lib/avvisi.svelte";
   import { confermaEsportazioneCsv } from "$lib/conferma";
   import CampoData from "$lib/components/CampoData.svelte";
+  import Paginazione from "$lib/components/Paginazione.svelte";
   import RiquadroNumero from "$lib/components/RiquadroNumero.svelte";
   import { formattaEuro, formattaPercentuale, formattaPeriodo } from "$lib/format";
   import { ETICHETTE_METODO } from "$lib/metodi-pagamento";
+  import { paginaDiElenco } from "$lib/paginazione";
+  import { RIGHE_MINIME, seguiFinestra } from "$lib/righe-visibili";
   import {
     ETICHETTE_PERIODO_RAPIDO,
     calcolaPeriodoRapido,
@@ -34,6 +37,27 @@
   let raggruppamento = $state<Raggruppamento>(raggruppamentoAdatto(iniziale));
   let riepilogo = $state<RiepilogoIncassi | null>(null);
 
+  /** Sotto l'elenco dei periodi: le pagine e il margine. */
+  const SPAZIO_SOTTO_PX = 80;
+  let tabellaPeriodi = $state<HTMLTableElement>();
+  let numeroPaginaPeriodi = $state(1);
+  let righePeriodi = $state(RIGHE_MINIME);
+  /** I periodi sono già tutti in memoria: si sfogliano senza tornare al programma. */
+  const paginaPeriodi = $derived(
+    paginaDiElenco(riepilogo?.perPeriodo ?? [], numeroPaginaPeriodi, righePeriodi),
+  );
+
+  $effect(() => {
+    if (!tabellaPeriodi) return;
+    return seguiFinestra(tabellaPeriodi, SPAZIO_SOTTO_PX, {
+      numeroPagina: () => numeroPaginaPeriodi,
+      carica: (numero, righe) => {
+        righePeriodi = righe;
+        numeroPaginaPeriodi = numero;
+      },
+    });
+  });
+
   const totaleMassimoPeriodo = $derived(
     Math.max(0, ...(riepilogo?.perPeriodo.map((riga) => riga.incassi.totaleCent) ?? [])),
   );
@@ -42,6 +66,7 @@
     if (!dal || !al || dal > al) return;
     try {
       riepilogo = await leggiRiepilogoIncassi(dal, al, raggruppamento);
+      numeroPaginaPeriodi = 1;
     } catch (errore) {
       mostraAvviso("errore", messaggioErrore(errore));
     }
@@ -78,16 +103,17 @@
   onMount(carica);
 </script>
 
-<h1>Incassi</h1>
-
-<div class="segmenti periodi-rapidi" role="group" aria-label="Periodo">
-  {#each PERIODI_RAPIDI as scelta (scelta)}
-    <button
-      type="button"
-      aria-pressed={periodoRapido === scelta}
-      onclick={() => scegliPeriodoRapido(scelta)}>{ETICHETTE_PERIODO_RAPIDO[scelta]}</button
-    >
-  {/each}
+<div class="intestazione">
+  <h1>Incassi</h1>
+  <div class="segmenti" role="group" aria-label="Periodo">
+    {#each PERIODI_RAPIDI as scelta (scelta)}
+      <button
+        type="button"
+        aria-pressed={periodoRapido === scelta}
+        onclick={() => scegliPeriodoRapido(scelta)}>{ETICHETTE_PERIODO_RAPIDO[scelta]}</button
+      >
+    {/each}
+  </div>
 </div>
 
 <div class="filtri">
@@ -118,18 +144,27 @@
 
 {#if riepilogo}
   <div class="riquadri">
-    <RiquadroNumero etichetta="Totale incassato" valore={formattaEuro(riepilogo.totale.totaleCent)}>
+    <RiquadroNumero
+      compatto
+      etichetta="Totale incassato"
+      valore={formattaEuro(riepilogo.totale.totaleCent)}
+    >
       {#snippet dettaglio()}
         {riepilogo!.numeroMovimenti}
         {riepilogo!.numeroMovimenti === 1 ? "movimento" : "movimenti"}
       {/snippet}
     </RiquadroNumero>
-    <RiquadroNumero etichetta="Abbonamenti" valore={formattaEuro(riepilogo.totale.abbonamentiCent)}>
+    <RiquadroNumero
+      compatto
+      etichetta="Abbonamenti"
+      valore={formattaEuro(riepilogo.totale.abbonamentiCent)}
+    >
       {#snippet dettaglio()}
         {formattaPercentuale(riepilogo!.totale.abbonamentiCent, riepilogo!.totale.totaleCent)} del totale
       {/snippet}
     </RiquadroNumero>
     <RiquadroNumero
+      compatto
       etichetta="Iscrizioni annuali"
       valore={formattaEuro(riepilogo.totale.iscrizioniCent)}
     >
@@ -142,64 +177,73 @@
   {#if riepilogo.numeroMovimenti === 0}
     <p class="vuoto">Nessun incasso nel periodo scelto.</p>
   {:else}
-    <section>
-      <h2>Per metodo di pagamento</h2>
-      <table class="tabella riquadrata">
-        <thead>
-          <tr>
-            <th>Metodo</th>
-            <th class="importo">Abbonamenti</th>
-            <th class="importo">Iscrizioni</th>
-            <th class="importo">Totale</th>
-            <th class="importo">Quota</th>
-          </tr>
-        </thead>
-        <tbody>
-          {#each riepilogo.perMetodo as riga (riga.metodo)}
+    <!-- Metodi e periodi affiancati, così il riepilogo sta nella finestra -->
+    <div class="colonne">
+      <section>
+        <h2>Per metodo di pagamento</h2>
+        <table class="tabella riquadrata compatta">
+          <thead>
             <tr>
-              <td>{ETICHETTE_METODO[riga.metodo]}</td>
-              <td class="importo">{formattaEuro(riga.incassi.abbonamentiCent)}</td>
-              <td class="importo">{formattaEuro(riga.incassi.iscrizioniCent)}</td>
-              <td class="importo totale">{formattaEuro(riga.incassi.totaleCent)}</td>
-              <td class="importo"
-                >{formattaPercentuale(riga.incassi.totaleCent, riepilogo.totale.totaleCent)}</td
-              >
+              <th>Metodo</th>
+              <th class="importo">Abbonamenti</th>
+              <th class="importo">Iscrizioni</th>
+              <th class="importo">Totale</th>
+              <th class="importo">Quota</th>
             </tr>
-          {/each}
-        </tbody>
-      </table>
-    </section>
+          </thead>
+          <tbody>
+            {#each riepilogo.perMetodo as riga (riga.metodo)}
+              <tr>
+                <td>{ETICHETTE_METODO[riga.metodo]}</td>
+                <td class="importo">{formattaEuro(riga.incassi.abbonamentiCent)}</td>
+                <td class="importo">{formattaEuro(riga.incassi.iscrizioniCent)}</td>
+                <td class="importo totale">{formattaEuro(riga.incassi.totaleCent)}</td>
+                <td class="importo"
+                  >{formattaPercentuale(riga.incassi.totaleCent, riepilogo.totale.totaleCent)}</td
+                >
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </section>
 
-    <section>
-      <h2>{ETICHETTE_RAGGRUPPAMENTO[raggruppamento]}</h2>
-      <table class="tabella riquadrata">
-        <thead>
-          <tr>
-            <th>Periodo</th>
-            <th class="importo">Abbonamenti</th>
-            <th class="importo">Iscrizioni</th>
-            <th class="importo">Totale</th>
-            <th class="colonna-barra"><span class="nascosto">Andamento</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          {#each riepilogo.perPeriodo as riga (riga.periodo)}
+      <section>
+        <h2>{ETICHETTE_RAGGRUPPAMENTO[raggruppamento]}</h2>
+        <table bind:this={tabellaPeriodi} class="tabella riquadrata compatta">
+          <thead>
             <tr>
-              <td>{formattaPeriodo(riga.periodo)}</td>
-              <td class="importo">{formattaEuro(riga.incassi.abbonamentiCent)}</td>
-              <td class="importo">{formattaEuro(riga.incassi.iscrizioniCent)}</td>
-              <td class="importo totale">{formattaEuro(riga.incassi.totaleCent)}</td>
-              <td class="colonna-barra" aria-hidden="true">
-                <span
-                  class="barra"
-                  style:width="{(riga.incassi.totaleCent / totaleMassimoPeriodo) * 100}%"
-                ></span>
-              </td>
+              <th>Periodo</th>
+              <th class="importo">Abbonamenti</th>
+              <th class="importo">Iscrizioni</th>
+              <th class="importo">Totale</th>
+              <th class="colonna-barra"><span class="nascosto">Andamento</span></th>
             </tr>
-          {/each}
-        </tbody>
-      </table>
-    </section>
+          </thead>
+          <tbody>
+            {#each paginaPeriodi.elementi as riga (riga.periodo)}
+              <tr>
+                <td>{formattaPeriodo(riga.periodo)}</td>
+                <td class="importo">{formattaEuro(riga.incassi.abbonamentiCent)}</td>
+                <td class="importo">{formattaEuro(riga.incassi.iscrizioniCent)}</td>
+                <td class="importo totale">{formattaEuro(riga.incassi.totaleCent)}</td>
+                <td class="colonna-barra" aria-hidden="true">
+                  <span
+                    class="barra"
+                    style:width="{(riga.incassi.totaleCent / totaleMassimoPeriodo) * 100}%"
+                  ></span>
+                </td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+        {#if paginaPeriodi.totaleElementi > paginaPeriodi.elementiPerPagina}
+          <Paginazione
+            pagina={paginaPeriodi}
+            onCambia={(numero) => (numeroPaginaPeriodi = numero)}
+          />
+        {/if}
+      </section>
+    </div>
   {/if}
 {/if}
 
@@ -209,16 +253,37 @@
   }
 
   h2 {
-    margin: 0 0 0.75rem;
+    margin: 0 0 0.6rem;
     font-size: 1.15rem;
   }
 
-  section {
-    margin-top: 2rem;
+  .intestazione {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1.5rem;
+    margin-bottom: 0.75rem;
   }
 
-  .periodi-rapidi {
-    margin-bottom: 0.75rem;
+  .intestazione h1 {
+    margin: 0;
+  }
+
+  .colonne {
+    display: grid;
+    gap: 1.25rem;
+    align-items: start;
+    margin-top: 1.25rem;
+  }
+
+  @media (min-width: 1100px) {
+    .colonne {
+      grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    }
+  }
+
+  section {
+    min-width: 0;
   }
 
   .filtri {
@@ -226,7 +291,7 @@
     flex-wrap: wrap;
     gap: 0.75rem;
     align-items: center;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
   }
 
   .filtri label {
@@ -245,8 +310,8 @@
 
   .riquadri {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem;
   }
 
   .importo {
