@@ -4,6 +4,7 @@
   import { onMount } from "svelte";
   import { elencaPagamenti, eliminaPagamento, messaggioErrore } from "$lib/api";
   import { mostraAvviso } from "$lib/avvisi.svelte";
+  import FinestraSovrapposta from "$lib/components/FinestraSovrapposta.svelte";
   import FormPagamento from "$lib/components/FormPagamento.svelte";
   import Paginazione from "$lib/components/Paginazione.svelte";
   import TabellaPagamenti from "$lib/components/TabellaPagamenti.svelte";
@@ -98,21 +99,18 @@
 
 <div class="intestazione">
   <h1>Pagamenti</h1>
-  {#if !nuovoPagamentoAperto}
-    <button type="button" class="pulsante" onclick={() => (nuovoPagamentoAperto = true)}>
-      + Registra pagamento
-    </button>
-  {/if}
+  <button type="button" class="pulsante" onclick={() => (nuovoPagamentoAperto = true)}>
+    + Registra pagamento
+  </button>
 </div>
 
 {#if nuovoPagamentoAperto}
-  <section class="pannello">
-    <h2>Nuovo pagamento</h2>
+  <FinestraSovrapposta titolo="Nuovo pagamento" onChiusa={() => (nuovoPagamentoAperto = false)}>
     <FormPagamento
       onRegistrato={pagamentoRegistrato}
       onAnnulla={() => (nuovoPagamentoAperto = false)}
     />
-  </section>
+  </FinestraSovrapposta>
 {/if}
 
 <div class="filtri">
@@ -163,22 +161,6 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-  }
-
-  .pannello {
-    display: grid;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-    padding: 1.5rem;
-    background: var(--colore-superficie);
-    border: 1px solid var(--colore-bordo);
-    border-radius: var(--raggio-grande);
-    box-shadow: var(--ombra-scheda);
-  }
-
-  h2 {
-    margin: 0;
-    font-size: 1.15rem;
   }
 
   .filtri {

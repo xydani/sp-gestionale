@@ -7,6 +7,7 @@
   import { mostraAvviso } from "$lib/avvisi.svelte";
   import BadgeStato from "$lib/components/BadgeStato.svelte";
   import FormIscrittoGiaAttivo from "$lib/components/FormIscrittoGiaAttivo.svelte";
+  import FinestraSovrapposta from "$lib/components/FinestraSovrapposta.svelte";
   import FormNuovoIscritto from "$lib/components/FormNuovoIscritto.svelte";
   import Paginazione from "$lib/components/Paginazione.svelte";
   import { formattaData } from "$lib/format";
@@ -95,32 +96,32 @@
 
 <div class="intestazione">
   <h1>Iscritti</h1>
-  {#if moduloAperto === null}
-    <div class="pulsanti">
-      <button
-        type="button"
-        class="pulsante secondario"
-        onclick={() => (moduloAperto = "gia-iscritto")}
-      >
-        + Aggiungi già iscritto
-      </button>
-      <button type="button" class="pulsante" onclick={() => (moduloAperto = "nuovo")}>
-        + Nuovo iscritto
-      </button>
-    </div>
-  {/if}
+  <div class="pulsanti">
+    <button
+      type="button"
+      class="pulsante secondario"
+      onclick={() => (moduloAperto = "gia-iscritto")}
+    >
+      + Aggiungi già iscritto
+    </button>
+    <button type="button" class="pulsante" onclick={() => (moduloAperto = "nuovo")}>
+      + Nuovo iscritto
+    </button>
+  </div>
 </div>
 
 {#if moduloAperto === "nuovo"}
-  <section class="pannello">
-    <h2>Nuovo iscritto</h2>
+  <FinestraSovrapposta
+    titolo="Nuovo iscritto"
+    larghezza="larga"
+    onChiusa={() => (moduloAperto = null)}
+  >
     <FormNuovoIscritto onIscritto={apriNuovoIscritto} onAnnulla={() => (moduloAperto = null)} />
-  </section>
+  </FinestraSovrapposta>
 {:else if moduloAperto === "gia-iscritto"}
-  <section class="pannello">
-    <h2>Aggiungi già iscritto</h2>
+  <FinestraSovrapposta titolo="Aggiungi già iscritto" onChiusa={annullaGiaIscritto}>
     <FormIscrittoGiaAttivo onSalvato={chiudiGiaIscritto} onAnnulla={annullaGiaIscritto} />
-  </section>
+  </FinestraSovrapposta>
 {/if}
 
 <div class="filtri">
@@ -236,22 +237,6 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-  }
-
-  .pannello {
-    display: grid;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-    padding: 1.5rem;
-    background: var(--colore-superficie);
-    border: 1px solid var(--colore-bordo);
-    border-radius: var(--raggio-grande);
-    box-shadow: var(--ombra-scheda);
-  }
-
-  h2 {
-    margin: 0;
-    font-size: 1.15rem;
   }
 
   .filtri {

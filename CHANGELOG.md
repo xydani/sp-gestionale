@@ -2,6 +2,7 @@
 
 ## [Non rilasciato]
 
+- Anche «Nuovo iscritto», «Aggiungi già iscritto» e «Registra pagamento» si aprono in primo piano sopra l'elenco
 - Nella scheda iscritto «Modifica dati», rinnovi di quota e abbonamento e certificato si aprono in una finestra in primo piano, senza allungare la pagina
 - Corretto: calendari e tendine non vengono più tagliati dentro le finestre sovrapposte e, se sotto il campo manca spazio, si aprono sopra
 - Pagina Scadenze su due colonne, già scaduti e in scadenza, ognuna con le schede per tipo e il loro numero; tra i certificati scaduti anche quelli mai presentati
