@@ -8,6 +8,7 @@
   import { ETICHETTE_METODO } from "$lib/metodi-pagamento";
   import type { Iscritto, Iscrizione } from "$lib/types";
   import BadgeStato from "./BadgeStato.svelte";
+  import FinestraSovrapposta from "./FinestraSovrapposta.svelte";
   import FormIscrizione from "./FormIscrizione.svelte";
 
   let {
@@ -63,7 +64,7 @@
     <h2>Iscrizione annuale</h2>
     <BadgeStato stato={iscritto.statoIscrizione} />
     <span class="spazio"></span>
-    {#if !formAperto && !iscritto.archiviato}
+    {#if !iscritto.archiviato}
       <button class="pulsante" type="button" onclick={() => (formAperto = true)}>
         {iscrizioni.length > 0 ? "Rinnova iscrizione" : "Iscrivi"}
       </button>
@@ -91,11 +92,17 @@
   </div>
 
   {#if formAperto}
-    <FormIscrizione
-      iscrittoId={iscritto.id}
-      onRegistrata={registrata}
-      onAnnulla={() => (formAperto = false)}
-    />
+    <FinestraSovrapposta
+      titolo={iscrizioni.length > 0 ? "Rinnova iscrizione annuale" : "Iscrizione annuale"}
+      sottotitolo="{iscritto.cognome} {iscritto.nome}"
+      onChiusa={() => (formAperto = false)}
+    >
+      <FormIscrizione
+        iscrittoId={iscritto.id}
+        onRegistrata={registrata}
+        onAnnulla={() => (formAperto = false)}
+      />
+    </FinestraSovrapposta>
   {/if}
 
   {#if storicoAperto && iscrizioni.length > 0}

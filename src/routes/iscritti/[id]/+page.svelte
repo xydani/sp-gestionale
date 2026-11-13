@@ -2,7 +2,7 @@
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
-  import { onMount, tick } from "svelte";
+  import { onMount } from "svelte";
   import {
     eliminaIscrittoDefinitivamente,
     impostaIscrittoArchiviato,
@@ -11,6 +11,7 @@
     trovaIscritto,
   } from "$lib/api";
   import { mostraAvviso } from "$lib/avvisi.svelte";
+  import FinestraSovrapposta from "$lib/components/FinestraSovrapposta.svelte";
   import FormIscritto from "$lib/components/FormIscritto.svelte";
   import { confermaEliminazioneIscritto } from "$lib/conferma";
   import SezioneAbbonamento from "$lib/components/SezioneAbbonamento.svelte";
@@ -30,22 +31,12 @@
   let rinnovoAbbonamentoAperto = $state(false);
   let certificatoAperto = $state(false);
 
-  const SEZIONI_AZIONE: Record<AzioneMancanza, string> = {
-    anagrafica: "sezione-anagrafica",
-    iscrizione: "sezione-iscrizione",
-    abbonamento: "sezione-abbonamento",
-    certificato: "sezione-certificato",
-  };
-
-  /** Dalla striscia «Da sistemare»: apre il modulo giusto e ci porta la vista. */
-  async function sistema(azione: AzioneMancanza) {
+  /** Dalla striscia «Da sistemare»: apre in primo piano il modulo giusto. */
+  function sistema(azione: AzioneMancanza) {
     if (azione === "anagrafica") inModifica = true;
     if (azione === "iscrizione") rinnovoIscrizioneAperto = true;
     if (azione === "abbonamento") rinnovoAbbonamentoAperto = true;
     if (azione === "certificato") certificatoAperto = true;
-    await tick();
-    const sezione = document.getElementById(SEZIONI_AZIONE[azione]);
-    sezione?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   $effect(() => {
@@ -57,7 +48,7 @@
     const azione = azioneDaIndirizzo(page.url.searchParams.get("sistema"));
     if (!azione) return;
     await carica(idIscritto);
-    await sistema(azione);
+    sistema(azione);
   });
 
   /** Ricarica i dati e gli stati dopo ogni modifica di iscrizione o abbonamento. */
@@ -127,45 +118,50 @@
         <section class="scheda" id="sezione-anagrafica">
           <h2>Anagrafica</h2>
           {#if inModifica}
-            <FormIscritto
-              iniziale={{
-                ...iscritto,
-                dataNascita: iscritto.dataNascita ?? "",
-                luogoNascita: iscritto.luogoNascita ?? "",
-              }}
-              conCertificato={false}
-              etichettaConferma="Salva modifiche"
-              onConferma={salvaModifiche}
-              onAnnulla={() => (inModifica = false)}
-            />
-          {:else}
-            <dl>
-              <dt>Nato/a il</dt>
-              <dd>
-                {iscritto.dataNascita ? formattaData(iscritto.dataNascita) : "—"}
-                {#if iscritto.luogoNascita}a {iscritto.luogoNascita}{/if}
-              </dd>
-              <dt>Telefono</dt>
-              <dd>{iscritto.telefono ?? "—"}</dd>
-              <dt>Email</dt>
-              <dd>{iscritto.email ?? "—"}</dd>
-              <dt>Note</dt>
-              <dd class="note">{iscritto.note ?? "—"}</dd>
-            </dl>
-            <div class="azioni">
-              <button class="pulsante" type="button" onclick={() => (inModifica = true)}
-                >Modifica dati</button
-              >
-              <button type="button" class="pulsante secondario" onclick={alternaArchiviazione}>
-                {iscritto.archiviato ? "Ripristina iscritto" : "Archivia iscritto"}
-              </button>
-              {#if iscritto.archiviato}
-                <button type="button" class="pulsante pericolo" onclick={eliminaDefinitivamente}>
-                  Elimina definitivamente
-                </button>
-              {/if}
-            </div>
+            <FinestraSovrapposta
+              titolo="Modifica dati"
+              sottotitolo="{iscritto.cognome} {iscritto.nome}"
+              onChiusa={() => (inModifica = false)}
+            >
+              <FormIscritto
+                iniziale={{
+                  ...iscritto,
+                  dataNascita: iscritto.dataNascita ?? "",
+                  luogoNascita: iscritto.luogoNascita ?? "",
+                }}
+                conCertificato={false}
+                etichettaConferma="Salva modifiche"
+                onConferma={salvaModifiche}
+                onAnnulla={() => (inModifica = false)}
+              />
+            </FinestraSovrapposta>
           {/if}
+          <dl>
+            <dt>Nato/a il</dt>
+            <dd>
+              {iscritto.dataNascita ? formattaData(iscritto.dataNascita) : "—"}
+              {#if iscritto.luogoNascita}a {iscritto.luogoNascita}{/if}
+            </dd>
+            <dt>Telefono</dt>
+            <dd>{iscritto.telefono ?? "—"}</dd>
+            <dt>Email</dt>
+            <dd>{iscritto.email ?? "—"}</dd>
+            <dt>Note</dt>
+            <dd class="note">{iscritto.note ?? "—"}</dd>
+          </dl>
+          <div class="azioni">
+            <button class="pulsante" type="button" onclick={() => (inModifica = true)}
+              >Modifica dati</button
+            >
+            <button type="button" class="pulsante secondario" onclick={alternaArchiviazione}>
+              {iscritto.archiviato ? "Ripristina iscritto" : "Archivia iscritto"}
+            </button>
+            {#if iscritto.archiviato}
+              <button type="button" class="pulsante pericolo" onclick={eliminaDefinitivamente}>
+                Elimina definitivamente
+              </button>
+            {/if}
+          </div>
         </section>
         <SezioneCertificato
           {iscritto}

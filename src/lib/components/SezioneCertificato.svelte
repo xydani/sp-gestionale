@@ -7,6 +7,7 @@
   import type { Iscritto } from "$lib/types";
   import BadgeStato from "./BadgeStato.svelte";
   import CampiCertificato from "./CampiCertificato.svelte";
+  import FinestraSovrapposta from "./FinestraSovrapposta.svelte";
 
   let {
     iscritto,
@@ -58,7 +59,7 @@
     <h2>Certificato medico</h2>
     <BadgeStato stato={iscritto.statoCertificato} />
     <span class="spazio"></span>
-    {#if !formAperto && !iscritto.archiviato}
+    {#if !iscritto.archiviato}
       <button class="pulsante" type="button" onclick={() => (formAperto = true)}>
         {iscritto.certificatoPresentato ? "Aggiorna" : "Registra"}
       </button>
@@ -77,15 +78,22 @@
   </p>
 
   {#if formAperto}
-    <form onsubmit={salva}>
-      <CampiCertificato bind:presentato bind:scadenza />
-      <div class="azioni">
-        <button class="pulsante" type="submit" disabled={inCorso}>Salva certificato</button>
-        <button type="button" class="pulsante secondario" onclick={() => (formAperto = false)}>
-          Annulla
-        </button>
-      </div>
-    </form>
+    <FinestraSovrapposta
+      titolo="Certificato medico"
+      larghezza="stretta"
+      sottotitolo="{iscritto.cognome} {iscritto.nome}"
+      onChiusa={() => (formAperto = false)}
+    >
+      <form onsubmit={salva}>
+        <CampiCertificato bind:presentato bind:scadenza />
+        <div class="azioni">
+          <button class="pulsante" type="submit" disabled={inCorso}>Salva certificato</button>
+          <button type="button" class="pulsante secondario" onclick={() => (formAperto = false)}>
+            Annulla
+          </button>
+        </div>
+      </form>
+    </FinestraSovrapposta>
   {/if}
 </section>
 

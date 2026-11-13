@@ -8,6 +8,7 @@
   import { seguiFinestra } from "$lib/righe-visibili";
   import type { Iscritto, Pagamento, PaginaPagamenti } from "$lib/types";
   import BadgeStato from "./BadgeStato.svelte";
+  import FinestraSovrapposta from "./FinestraSovrapposta.svelte";
   import FormPagamento from "./FormPagamento.svelte";
   import Paginazione from "./Paginazione.svelte";
   import TabellaPagamenti from "./TabellaPagamenti.svelte";
@@ -91,7 +92,7 @@
     <h2>Abbonamento</h2>
     <BadgeStato stato={iscritto.statoAbbonamento} />
     <span class="spazio"></span>
-    {#if !formAperto && !iscritto.archiviato}
+    {#if !iscritto.archiviato}
       <button class="pulsante" type="button" onclick={() => (formAperto = true)}>
         {storico.totaleElementi > 0 ? "Rinnova abbonamento" : "Primo abbonamento"}
       </button>
@@ -107,11 +108,17 @@
   </p>
 
   {#if formAperto}
-    <FormPagamento
-      iscrittoIniziale={iscritto}
-      onRegistrato={registrato}
-      onAnnulla={() => (formAperto = false)}
-    />
+    <FinestraSovrapposta
+      titolo={storico.totaleElementi > 0 ? "Rinnova abbonamento" : "Primo abbonamento"}
+      sottotitolo="{iscritto.cognome} {iscritto.nome}"
+      onChiusa={() => (formAperto = false)}
+    >
+      <FormPagamento
+        iscrittoIniziale={iscritto}
+        onRegistrato={registrato}
+        onAnnulla={() => (formAperto = false)}
+      />
+    </FinestraSovrapposta>
   {/if}
 
   <TabellaPagamenti

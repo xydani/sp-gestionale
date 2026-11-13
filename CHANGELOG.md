@@ -2,6 +2,7 @@
 
 ## [Non rilasciato]
 
+- Nella scheda iscritto «Modifica dati», rinnovi di quota e abbonamento e certificato si aprono in una finestra in primo piano, senza allungare la pagina
 - Corretto: calendari e tendine non vengono più tagliati dentro le finestre sovrapposte e, se sotto il campo manca spazio, si aprono sopra
 - Pagina Scadenze su due colonne, già scaduti e in scadenza, ognuna con le schede per tipo e il loro numero; tra i certificati scaduti anche quelli mai presentati
 - Gli elenchi di Scadenze e dashboard mostrano tante righe quante ne stanno nella finestra, secondo schermo e dimensione del testo; il resto si sfoglia a pagine
