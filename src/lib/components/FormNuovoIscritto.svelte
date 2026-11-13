@@ -249,20 +249,23 @@
     letter-spacing: 0.04em;
   }
 
+  /* Sta nella colonna destra del modulo: tre campi per riga */
   .griglia {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 1rem;
   }
 
   label {
     display: grid;
+    min-width: 0;
     gap: 0.35rem;
     font-weight: 500;
     font-size: 0.9rem;
   }
 
   input {
+    min-width: 0;
     padding: 0.55rem 0.75rem;
     border: 1px solid var(--colore-bordo);
     border-radius: var(--raggio);

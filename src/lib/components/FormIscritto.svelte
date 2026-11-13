@@ -70,93 +70,99 @@
 </script>
 
 <form onsubmit={conferma}>
-  <fieldset>
-    <legend>Anagrafica (obbligatori solo nome e cognome)</legend>
-    <div class="griglia">
+  <!-- Con le sezioni aggiuntive (nuovo iscritto) i dati della persona stanno a sinistra -->
+  <div class="corpo" class:affiancato={Boolean(sezioniAggiuntive)}>
+    <div class="colonna">
+      <fieldset>
+        <legend>Anagrafica (obbligatori solo nome e cognome)</legend>
+        <div class="griglia">
+          <label>
+            Nome
+            <!-- svelte-ignore a11y_autofocus -->
+            <input
+              bind:value={nome}
+              required
+              autofocus
+              maxlength={LUNGHEZZA_MASSIMA_NOME}
+              use:validita={erroreNomeProprio("Il nome", nome)}
+            />
+          </label>
+          <label>
+            Cognome
+            <input
+              bind:value={cognome}
+              required
+              maxlength={LUNGHEZZA_MASSIMA_NOME}
+              use:validita={erroreNomeProprio("Il cognome", cognome)}
+            />
+          </label>
+          <label>
+            Data di nascita
+            <CampoData bind:valore={dataNascita} {...nascita} />
+          </label>
+          <label>
+            Luogo di nascita
+            <input
+              bind:value={luogoNascita}
+              maxlength={LUNGHEZZA_MASSIMA_LUOGO}
+              use:validita={erroreNomeProprio("Il luogo di nascita", luogoNascita)}
+            />
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Contatti e certificato medico</legend>
+        <div class="griglia">
+          <label>
+            Telefono (facoltativo)
+            <input
+              type="tel"
+              bind:value={telefono}
+              placeholder="+39 …"
+              maxlength="25"
+              use:validita={erroreTelefono(telefono)}
+            />
+          </label>
+          <label>
+            Email (facoltativa)
+            <input
+              type="email"
+              bind:value={email}
+              placeholder="nome@esempio.it"
+              maxlength="254"
+              use:validita={erroreEmail(email)}
+            />
+          </label>
+        </div>
+        <div class="griglia certificato">
+          <label class="spunta">
+            <input type="checkbox" bind:checked={certificatoPresentato} />
+            Certificato presentato
+          </label>
+          {#if certificatoPresentato}
+            <label>
+              Scade il (facoltativo)
+              <CampoData bind:valore={scadenzaCertificato} {...certificato} />
+            </label>
+          {:else}
+            <p class="avviso">Da portare: finché manca, l'iscritto compare tra le scadenze.</p>
+          {/if}
+        </div>
+      </fieldset>
+
       <label>
-        Nome
-        <!-- svelte-ignore a11y_autofocus -->
-        <input
-          bind:value={nome}
-          required
-          autofocus
-          maxlength={LUNGHEZZA_MASSIMA_NOME}
-          use:validita={erroreNomeProprio("Il nome", nome)}
-        />
-      </label>
-      <label>
-        Cognome
-        <input
-          bind:value={cognome}
-          required
-          maxlength={LUNGHEZZA_MASSIMA_NOME}
-          use:validita={erroreNomeProprio("Il cognome", cognome)}
-        />
-      </label>
-      <label>
-        Data di nascita
-        <CampoData bind:valore={dataNascita} {...nascita} />
-      </label>
-      <label>
-        Luogo di nascita
-        <input
-          bind:value={luogoNascita}
-          maxlength={LUNGHEZZA_MASSIMA_LUOGO}
-          use:validita={erroreNomeProprio("Il luogo di nascita", luogoNascita)}
-        />
+        Note
+        <textarea
+          bind:value={note}
+          rows={sezioniAggiuntive ? 2 : 3}
+          maxlength={LUNGHEZZA_MASSIMA_NOTE}></textarea>
       </label>
     </div>
-  </fieldset>
-
-  <fieldset>
-    <legend>Contatti (facoltativi)</legend>
-    <div class="griglia">
-      <label>
-        Telefono
-        <input
-          type="tel"
-          bind:value={telefono}
-          placeholder="+39 …"
-          maxlength="25"
-          use:validita={erroreTelefono(telefono)}
-        />
-      </label>
-      <label>
-        Email
-        <input
-          type="email"
-          bind:value={email}
-          placeholder="nome@esempio.it"
-          maxlength="254"
-          use:validita={erroreEmail(email)}
-        />
-      </label>
-    </div>
-  </fieldset>
-
-  <fieldset>
-    <legend>Certificato medico</legend>
-    <div class="griglia certificato">
-      <label class="spunta">
-        <input type="checkbox" bind:checked={certificatoPresentato} />
-        Certificato presentato
-      </label>
-      {#if certificatoPresentato}
-        <label>
-          Scade il (facoltativo)
-          <CampoData bind:valore={scadenzaCertificato} {...certificato} />
-        </label>
-      {:else}
-        <p class="avviso">Da portare: finché manca, l'iscritto compare tra le scadenze.</p>
-      {/if}
-    </div>
-  </fieldset>
-
-  <label>
-    Note
-    <textarea bind:value={note} rows="3" maxlength={LUNGHEZZA_MASSIMA_NOTE}></textarea>
-  </label>
-  {@render sezioniAggiuntive?.()}
+    {#if sezioniAggiuntive}
+      <div class="colonna">{@render sezioniAggiuntive()}</div>
+    {/if}
+  </div>
   <div class="azioni">
     <button class="pulsante" type="submit" disabled={inCorso}>{etichettaConferma}</button>
     <button type="button" class="pulsante secondario" onclick={onAnnulla}>Annulla</button>
@@ -164,9 +170,27 @@
 </form>
 
 <style>
-  form {
+  form,
+  .colonna {
     display: grid;
     gap: 1rem;
+    align-content: start;
+  }
+
+  .corpo {
+    display: grid;
+    gap: 1rem 2rem;
+  }
+
+  @media (min-width: 1100px) {
+    .corpo.affiancato {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    /* In mezza larghezza tre campi per riga, così il modulo sta nella finestra */
+    .corpo.affiancato .griglia {
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
   }
 
   fieldset {
@@ -194,6 +218,7 @@
 
   label {
     display: grid;
+    min-width: 0;
     gap: 0.35rem;
     font-weight: 500;
     font-size: 0.9rem;
@@ -201,6 +226,7 @@
 
   input,
   textarea {
+    min-width: 0;
     padding: 0.55rem 0.75rem;
     border: 1px solid var(--colore-bordo);
     border-radius: var(--raggio);
