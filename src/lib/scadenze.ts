@@ -48,7 +48,7 @@ export const TIPI_SCADENZA = Object.keys(REGOLE_SCADENZA) as TipoScadenza[];
 /** Le due colonne della pagina Scadenze. */
 export type ColonnaScadenze = "scaduto" | "in_scadenza";
 
-/** Una scheda di colonna: un tipo e gli stati da elencare, uno sotto l'altro. */
+/** Una scheda di colonna: un tipo e gli stati tra cui scegliere (di solito uno solo). */
 export interface SchedaScadenze {
   tipo: TipoScadenza;
   etichetta: string;
@@ -70,20 +70,32 @@ export function schedeColonna(colonna: ColonnaScadenze): SchedaScadenze[] {
   }));
 }
 
-/** Quanti iscritti ci sono in una scheda, dai conteggi della dashboard. */
-export function numeroNellaScheda(scheda: SchedaScadenze, riepilogo: RiepilogoDashboard): number {
+/** Quanti iscritti hanno quel tipo di scadenza in quello stato, dai conteggi della dashboard. */
+export function numeroIscritti(
+  tipo: TipoScadenza,
+  stato: StatoScadenza,
+  riepilogo: RiepilogoDashboard,
+): number {
   const conteggi: Record<TipoScadenza, ConteggioStati> = {
     abbonamento: riepilogo.abbonamenti,
     iscrizione: riepilogo.iscrizioni,
     certificato: riepilogo.certificati,
   };
-  const stati = conteggi[scheda.tipo];
+  const stati = conteggi[tipo];
   const numeri: Record<StatoScadenza, number> = {
     in_scadenza: stati.inScadenza,
     scaduto: stati.scaduti,
     nessuno: stati.assenti,
   };
-  return scheda.stati.reduce((totale, stato) => totale + numeri[stato], 0);
+  return numeri[stato];
+}
+
+/** Quanti iscritti ci sono in una scheda: la somma dei suoi stati. */
+export function numeroNellaScheda(scheda: SchedaScadenze, riepilogo: RiepilogoDashboard): number {
+  return scheda.stati.reduce(
+    (totale, stato) => totale + numeroIscritti(scheda.tipo, stato, riepilogo),
+    0,
+  );
 }
 
 /**

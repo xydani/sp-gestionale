@@ -3,7 +3,8 @@
 ## [Non rilasciato]
 
 - Pagina Scadenze su due colonne, già scaduti e in scadenza, ognuna con le schede per tipo e il loro numero; tra i certificati scaduti anche quelli mai presentati
-- Gli elenchi delle Scadenze vanno a pagine da 10 righe, da sfogliare senza scorrere
+- Gli elenchi di Scadenze e dashboard mostrano tante righe quante ne stanno nella finestra, secondo schermo e dimensione del testo; il resto si sfoglia a pagine
+- Certificati scaduti e mai presentati si scelgono con un selettore nella stessa scheda
 - Logo della palestra ridisegnato fedele all'originale
 - Già iscritti: dell'abbonamento basta la data di inizio oppure quella di scadenza, l'altra si calcola dalla durata
 - Dashboard più compatta: scaduti e prossime scadenze affiancati e visibili senza scorrere

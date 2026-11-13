@@ -10,8 +10,8 @@ use crate::domain::stato::{CondizioneScadenza, StatoValidita, condizione_scadenz
 
 /// Quanti giorni avanti guardare per l'elenco delle prossime scadenze.
 pub const GIORNI_PROSSIME_SCADENZE: u64 = 30;
-/// Massimo numero di scadenze mostrate nell'elenco della dashboard.
-pub const PROSSIME_SCADENZE_MASSIME: u32 = 10;
+/// Massimo numero di prossime scadenze: la dashboard ne mostra quante stanno nella finestra.
+pub const PROSSIME_SCADENZE_MASSIME: u32 = 50;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]

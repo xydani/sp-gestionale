@@ -16,6 +16,7 @@
     variazionePercentuale,
   } from "$lib/format";
   import { aggiornaConteggioScadenze } from "$lib/promemoria.svelte";
+  import { RIGHE_MINIME, osservaRigheVisibili } from "$lib/righe-visibili";
   import { eRinnovabile, type TipoRinnovabile } from "$lib/rinnovo";
   import { gruppiConScaduti, gruppoDaMostrare } from "$lib/scadenze";
   import type { RiepilogoDashboard, TipoScadenza } from "$lib/types";
@@ -34,8 +35,23 @@
     certificato: "Certificati",
   };
 
-  /** In dashboard bastano i più recenti: l'elenco completo è nella pagina Scadenze. */
-  const SCADUTI_MOSTRATI = 8;
+  /** Sotto le prossime scadenze: il collegamento a tutte e il margine. */
+  const SPAZIO_SOTTO_PROSSIME_PX = 80;
+  let tabellaProssime = $state<HTMLTableElement>();
+  /** Quante prossime scadenze stanno nella finestra; le altre sono nella pagina Scadenze. */
+  let prossimeVisibili = $state<number>(RIGHE_MINIME);
+  const prossimeMostrate = $derived(
+    riepilogo ? riepilogo.prossimeScadenze.slice(0, prossimeVisibili) : [],
+  );
+
+  $effect(() => {
+    if (!tabellaProssime) return;
+    return osservaRigheVisibili(
+      tabellaProssime,
+      SPAZIO_SOTTO_PROSSIME_PX,
+      (righe) => (prossimeVisibili = righe),
+    );
+  });
 
   const gruppiScaduti = $derived(riepilogo ? gruppiConScaduti(riepilogo) : []);
   let gruppoScelto = $state<TipoScadenza | null>(null);
@@ -199,7 +215,7 @@
           <ElencoScadenze
             tipo={gruppoMostrato}
             stato="scaduto"
-            massimo={SCADUTI_MOSTRATI}
+            anteprima
             compatto
             onCambiato={carica}
           />
@@ -212,15 +228,18 @@
       {#if riepilogo.prossimeScadenze.length === 0}
         <p class="vuoto">Nessuna scadenza nei prossimi 30 giorni.</p>
       {:else}
-        <table class="tabella riquadrata compatta prossime">
+        <table bind:this={tabellaProssime} class="tabella riquadrata compatta prossime">
           <thead>
             <tr><th>Cognome e nome</th><th>Cosa scade</th><th>Quando</th><th></th></tr>
           </thead>
           <tbody>
-            {#each riepilogo.prossimeScadenze as scadenza (scadenza.tipo + scadenza.iscrittoId)}
+            {#each prossimeMostrate as scadenza (scadenza.tipo + scadenza.iscrittoId)}
               <tr>
                 <td>
-                  <a href={resolve("/iscritti/[id]", { id: String(scadenza.iscrittoId) })}>
+                  <a
+                    href={resolve("/iscritti/[id]", { id: String(scadenza.iscrittoId) })}
+                    title="{scadenza.cognome} {scadenza.nome}"
+                  >
                     {scadenza.cognome}
                     {scadenza.nome}
                   </a>

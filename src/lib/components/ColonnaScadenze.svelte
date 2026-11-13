@@ -1,5 +1,11 @@
 <script lang="ts">
-  import { numeroNellaScheda, schedeColonna, type ColonnaScadenze } from "$lib/scadenze";
+  import {
+    numeroIscritti,
+    numeroNellaScheda,
+    schedeColonna,
+    type ColonnaScadenze,
+    type StatoScadenza,
+  } from "$lib/scadenze";
   import type { RiepilogoDashboard, TipoScadenza } from "$lib/types";
   import ElencoScadenze from "./ElencoScadenze.svelte";
 
@@ -24,40 +30,50 @@
   let tipoScelto = $state<TipoScadenza>("abbonamento");
   const schedaScelta = $derived(schede.find((scheda) => scheda.tipo === tipoScelto) ?? schede[0]);
 
-  /** Righe per pagina: la colonna sta nello schermo senza scorrere. */
-  const RIGHE_PER_PAGINA = 10;
-  /** Con due elenchi nella stessa scheda ognuno ha metà delle righe. */
-  const righePerElenco = $derived(RIGHE_PER_PAGINA / schedaScelta.stati.length);
-
-  /** Sottotitoli solo quando la scheda ha più elenchi (certificati scaduti e mai presentati). */
-  const SOTTOTITOLI = { in_scadenza: "In scadenza", scaduto: "Scaduti", nessuno: "Non presentati" };
+  /** Scelta interna quando la scheda ha più stati (certificati scaduti e mai presentati). */
+  let statoScelto = $state<StatoScadenza | null>(null);
+  const statoMostrato = $derived(
+    statoScelto && schedaScelta.stati.includes(statoScelto) ? statoScelto : schedaScelta.stati[0],
+  );
+  const ETICHETTE_STATO: Record<StatoScadenza, string> = {
+    in_scadenza: "In scadenza",
+    scaduto: "Scaduti",
+    nessuno: "Non presentati",
+  };
 </script>
 
 <section class="colonna">
   <h2 class={colonna}>{titolo} <span class="nota">{nota}</span></h2>
-  <div class="segmenti" role="group" aria-label="Tipo di scadenza">
-    {#each schede as scheda (scheda.tipo)}
-      <button
-        type="button"
-        aria-pressed={scheda.tipo === schedaScelta.tipo}
-        onclick={() => (tipoScelto = scheda.tipo)}
-      >
-        {scheda.etichetta}
-        {#if riepilogo}({numeroNellaScheda(scheda, riepilogo)}){/if}
-      </button>
-    {/each}
+  <div class="scelte">
+    <div class="segmenti" role="group" aria-label="Tipo di scadenza">
+      {#each schede as scheda (scheda.tipo)}
+        <button
+          type="button"
+          aria-pressed={scheda.tipo === schedaScelta.tipo}
+          onclick={() => (tipoScelto = scheda.tipo)}
+        >
+          {scheda.etichetta}
+          {#if riepilogo}({numeroNellaScheda(scheda, riepilogo)}){/if}
+        </button>
+      {/each}
+    </div>
+    {#if schedaScelta.stati.length > 1}
+      <div class="segmenti" role="group" aria-label="Stato">
+        {#each schedaScelta.stati as stato (stato)}
+          <button
+            type="button"
+            aria-pressed={stato === statoMostrato}
+            onclick={() => (statoScelto = stato)}
+          >
+            {ETICHETTE_STATO[stato]}
+            {#if riepilogo}({numeroIscritti(schedaScelta.tipo, stato, riepilogo)}){/if}
+          </button>
+        {/each}
+      </div>
+    {/if}
   </div>
-  {#key schedaScelta.tipo}
-    {#each schedaScelta.stati as stato (stato)}
-      {#if schedaScelta.stati.length > 1}<h3>{SOTTOTITOLI[stato]}</h3>{/if}
-      <ElencoScadenze
-        tipo={schedaScelta.tipo}
-        {stato}
-        compatto
-        elementiPerPagina={righePerElenco}
-        {onCambiato}
-      />
-    {/each}
+  {#key `${schedaScelta.tipo}-${statoMostrato}`}
+    <ElencoScadenze tipo={schedaScelta.tipo} stato={statoMostrato} compatto {onCambiato} />
   {/key}
 </section>
 
@@ -88,12 +104,9 @@
     font-size: 0.95rem;
   }
 
-  .segmenti {
-    justify-self: start;
-  }
-
-  h3 {
-    margin: 0.4rem 0 0;
-    font-size: 1rem;
+  .scelte {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
   }
 </style>

@@ -3,6 +3,7 @@ import {
   filtroScadenze,
   gruppiConScaduti,
   gruppoDaMostrare,
+  numeroIscritti,
   numeroNellaScheda,
   schedeColonna,
 } from "./scadenze";
@@ -54,6 +55,11 @@ describe("numeroNellaScheda", () => {
     expect(numeroNellaScheda(schedeColonna("in_scadenza")[2], conteggi)).toBe(3);
     // Scaduti più mai presentati
     expect(numeroNellaScheda(certificati, conteggi)).toBe(10);
+  });
+
+  it("per un solo stato conta solo quello", () => {
+    expect(numeroIscritti("certificato", "nessuno", conteggi)).toBe(9);
+    expect(numeroIscritti("certificato", "scaduto", conteggi)).toBe(1);
   });
 });
 

@@ -250,9 +250,10 @@ progress {
   white-space: nowrap;
 }
 
-/* I nomi lunghi si accorciano invece di allargare la tabella */
+/* Il nome prende lo spazio che resta e si accorcia, invece di allargare la tabella */
 .tabella.compatta td:first-child {
-  max-width: 13rem;
+  width: 100%;
+  max-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
 }

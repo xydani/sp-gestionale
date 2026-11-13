@@ -4,32 +4,36 @@
   import { elencaIscritti, messaggioErrore } from "$lib/api";
   import { mostraAvviso } from "$lib/avvisi.svelte";
   import { descriviScadenza, formattaData } from "$lib/format";
+  import { osservaRigheVisibili, paginaDopoCambioRighe } from "$lib/righe-visibili";
   import { REGOLE_SCADENZA, filtroScadenze, type StatoScadenza } from "$lib/scadenze";
   import type { Iscritto, Pagina, TipoScadenza } from "$lib/types";
   import { eRinnovabile } from "$lib/rinnovo";
   import FinestraRinnovo from "./FinestraRinnovo.svelte";
   import Paginazione from "./Paginazione.svelte";
 
-  /** Elenco paginato degli iscritti con una scadenza in arrivo, passata o mancante. */
+  /**
+   * Elenco degli iscritti con una scadenza in arrivo, passata o mancante. Mostra le righe che
+   * stanno nella finestra: a pagine, oppure in anteprima con il collegamento all'elenco completo.
+   */
   let {
     tipo,
     stato,
-    massimo,
+    anteprima = false,
     compatto = false,
-    elementiPerPagina,
     onCambiato,
   }: {
     tipo: TipoScadenza;
     stato: StatoScadenza;
-    /** Se indicato, solo le prime righe e un collegamento all'elenco completo (es. in dashboard). */
-    massimo?: number;
+    /** Solo la prima pagina e un collegamento alle Scadenze (es. in dashboard). */
+    anteprima?: boolean;
     /** Righe più basse, per stare in poco spazio. */
     compatto?: boolean;
-    /** Pagine più corte, per non dover scorrere; di base 50. */
-    elementiPerPagina?: number;
     /** Dopo un rinnovo, per aggiornare il resto della pagina. */
     onCambiato?: () => void;
   } = $props();
+
+  /** Sotto la tabella: pagine o collegamento, più il margine della pagina. */
+  const SPAZIO_SOTTO_PX = 80;
 
   let pagina = $state<Pagina<Iscritto>>({
     elementi: [],
@@ -40,6 +44,11 @@
 
   /** Iscritto di cui è aperta la finestra di rinnovo. */
   let daRinnovare = $state<number | null>(null);
+  let tabella = $state<HTMLTableElement>();
+  /** Righe che entrano nella finestra; null finché non sono misurate. */
+  let righePerPagina = $state<number | null>(null);
+  /** Finché i dati non arrivano non si mostra «Nessuno», che falserebbe la misura delle righe. */
+  let caricato = $state(false);
 
   async function chiudiRinnovo(registrato: boolean) {
     daRinnovare = null;
@@ -48,10 +57,7 @@
     onCambiato?.();
   }
 
-  const righe = $derived(
-    massimo === undefined ? pagina.elementi : pagina.elementi.slice(0, massimo),
-  );
-  const altreRighe = $derived(massimo !== undefined && pagina.totaleElementi > massimo);
+  const altreRighe = $derived(anteprima && pagina.totaleElementi > pagina.elementi.length);
 
   function dataScadenza(iscritto: Iscritto): string {
     return REGOLE_SCADENZA[tipo].dataScadenza(iscritto) ?? "";
@@ -59,16 +65,29 @@
 
   async function carica(numeroPagina = 1) {
     try {
-      pagina = await elencaIscritti(filtroScadenze(tipo, stato), numeroPagina, elementiPerPagina);
+      const righe = righePerPagina ?? undefined;
+      pagina = await elencaIscritti(filtroScadenze(tipo, stato), numeroPagina, righe);
+      caricato = true;
     } catch (errore) {
       mostraAvviso("errore", messaggioErrore(errore));
     }
   }
 
-  onMount(() => carica());
+  /** Con un'altra altezza disponibile si ricarica restando all'incirca dove si era. */
+  function cambiaRighePerPagina(righe: number) {
+    const numero =
+      righePerPagina === null ? 1 : paginaDopoCambioRighe(pagina.numero, righePerPagina, righe);
+    righePerPagina = righe;
+    carica(numero);
+  }
+
+  onMount(() => {
+    if (!tabella) return;
+    return osservaRigheVisibili(tabella, SPAZIO_SOTTO_PX, cambiaRighePerPagina);
+  });
 </script>
 
-<table class="tabella riquadrata {stato}" class:compatta={compatto}>
+<table bind:this={tabella} class="tabella riquadrata {stato}" class:compatta={compatto}>
   <thead>
     <tr>
       <th>Cognome e nome</th>
@@ -78,10 +97,13 @@
     </tr>
   </thead>
   <tbody>
-    {#each righe as iscritto (iscritto.id)}
+    {#each pagina.elementi as iscritto (iscritto.id)}
       <tr>
         <td>
-          <a href={resolve("/iscritti/[id]", { id: String(iscritto.id) })}>
+          <a
+            href={resolve("/iscritti/[id]", { id: String(iscritto.id) })}
+            title="{iscritto.cognome} {iscritto.nome}"
+          >
             {iscritto.cognome}
             {iscritto.nome}
           </a>
@@ -117,13 +139,13 @@
         </td>
       </tr>
     {:else}
-      <tr><td colspan={compatto ? 4 : 5} class="vuoto">Nessuno</td></tr>
+      {#if caricato}<tr><td colspan={compatto ? 4 : 5} class="vuoto">Nessuno</td></tr>{/if}
     {/each}
   </tbody>
 </table>
 {#if altreRighe}
   <a class="tutti" href={resolve("/scadenze")}>Tutti ({pagina.totaleElementi}) →</a>
-{:else if massimo === undefined && pagina.totaleElementi > pagina.elementiPerPagina}
+{:else if !anteprima && pagina.totaleElementi > pagina.elementiPerPagina}
   <Paginazione {pagina} onCambia={carica} />
 {/if}
 
