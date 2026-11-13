@@ -2,6 +2,11 @@
 
 ## [Non rilasciato]
 
+- La password deve avere almeno 8 caratteri (prima 12)
+- Inserimento rapido dei già iscritti con gli importi pagati: la quota entra negli incassi a inizio anno sportivo, l'abbonamento nel mese in cui è iniziato
+- In dashboard l'elenco dei già scaduti, diviso tra abbonamenti, quote annuali e certificati
+- Il certificato medico si può segnare come presentato anche senza data di scadenza
+- Per registrare un iscritto bastano nome e cognome: data e luogo di nascita sono facoltativi
 - L'avviso che la password non si recupera compare quando la si crea o la si cambia, con una conferma obbligatoria; tolto il pulsante «Password dimenticata?»
 
 ## [0.1.5] - 2026-11-11
