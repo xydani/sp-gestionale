@@ -241,22 +241,26 @@ pub fn genera_dati_prova(
     Ok(())
 }
 
-/// Solo nome, cognome e abbonamento in corso, come dall'inserimento rapido.
+/// Solo nome, cognome, abbonamento in corso e quota, come dall'inserimento rapido.
 fn inserisci_iscritto_gia_attivo(
     connessione: &mut Connection,
     casuale: &mut GeneratoreCasuale,
     tipologie: &[TipologiaAbbonamento],
     oggi: NaiveDate,
 ) -> Result<(), ErroreDatabase> {
+    let tipologia = casuale.scegli(tipologie);
     let dati = DatiIscrittoGiaAttivo {
         nome: casuale.scegli(NOMI).to_string(),
         cognome: casuale.scegli(COGNOMI).to_string(),
         telefono: None,
         data_scadenza_certificato: None,
-        tipologia_id: casuale.scegli(tipologie).id,
+        tipologia_id: tipologia.id,
         data_scadenza_abbonamento: oggi
             + Days::new(casuale.tra(0, GIORNI_MASSIMI_SCADENZA_GIA_ATTIVI)),
+        importo_abbonamento_cent: tipologia.prezzo_cent,
         quota_pagata: true,
+        quota_cent: QUOTA_ISCRIZIONE_CENT,
+        metodo: MetodoPagamento::Contanti,
     };
     let riferimento = Riferimento {
         oggi,

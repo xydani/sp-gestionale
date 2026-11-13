@@ -1,5 +1,7 @@
 //! Inserimento rapido di chi era già iscritto quando si è iniziato a usare il programma:
-//! anagrafica essenziale, abbonamento in corso e quota dell'anno, senza incassi registrati.
+//! anagrafica essenziale, abbonamento in corso e quota dell'anno con i loro importi.
+//! Sono incassi veri: la quota conta nel mese di inizio dell'anno sportivo,
+//! l'abbonamento nel mese in cui è iniziato.
 
 use chrono::NaiveDate;
 use rusqlite::{Connection, params};
@@ -8,7 +10,8 @@ use serde::Deserialize;
 use super::ErroreDatabase;
 use super::impostazioni::{CHIAVE_MESE_INIZIO_ANNO_SPORTIVO, leggi_impostazione_numerica};
 use super::iscritti::{Iscritto, Riferimento, trova_iscritto};
-use super::pagamenti::trova_tipologia_in_vendita;
+use super::iscrizioni::{DatiIscrizione, registra_iscrizione};
+use super::pagamenti::{DatiPagamento, registra_pagamento, trova_tipologia_in_vendita};
 use crate::domain::anno_sportivo::{
     MESE_INIZIO_ANNO_SPORTIVO_PREDEFINITO, anno_sportivo_contenente,
 };
@@ -21,10 +24,6 @@ use crate::domain::validazione::{
     controlla_telefono,
 };
 
-/// Il denaro è stato incassato prima del programma: nessun importo né metodo reale.
-const IMPORTO_PREGRESSO_CENT: i64 = 0;
-const METODO_PREGRESSO: MetodoPagamento = MetodoPagamento::Altro;
-
 /// Dati minimi per inserire una persona già iscritta; il resto si completa dalla scheda.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -36,8 +35,13 @@ pub struct DatiIscrittoGiaAttivo {
     pub data_scadenza_certificato: Option<NaiveDate>,
     pub tipologia_id: i64,
     pub data_scadenza_abbonamento: NaiveDate,
+    pub importo_abbonamento_cent: i64,
     /// La quota dell'anno sportivo in corso è già stata pagata.
     pub quota_pagata: bool,
+    /// Usata solo se la quota è stata pagata.
+    pub quota_cent: i64,
+    /// Come sono stati pagati abbonamento e quota.
+    pub metodo: MetodoPagamento,
 }
 
 /// Crea l'iscritto con abbonamento in corso ed eventuale quota dell'anno:
@@ -49,9 +53,9 @@ pub fn registra_iscritto_gia_attivo(
 ) -> Result<Iscritto, ErroreDatabase> {
     let transazione = connessione.transaction()?;
     let iscritto_id = crea_anagrafica_essenziale(&transazione, dati, riferimento.oggi)?;
-    registra_abbonamento_pregresso(&transazione, iscritto_id, dati, riferimento.oggi)?;
+    registra_abbonamento_in_corso(&transazione, iscritto_id, dati, riferimento.oggi)?;
     if dati.quota_pagata {
-        registra_quota_pregressa(&transazione, iscritto_id, riferimento.oggi)?;
+        registra_quota_dell_anno(&transazione, iscritto_id, dati, riferimento.oggi)?;
     }
     let iscritto = trova_iscritto(&transazione, iscritto_id, riferimento)?;
     transazione.commit()?;
@@ -97,9 +101,9 @@ fn controlla_anagrafica_essenziale(
     Ok(())
 }
 
-/// L'inizio si ricava dalla scadenza e dalla durata della tipologia;
-/// il rinnovo successivo partirà dal giorno dopo la scadenza come per ogni abbonamento.
-fn registra_abbonamento_pregresso(
+/// L'inizio si ricava dalla scadenza e dalla durata della tipologia; il pagamento
+/// è datato a quel giorno. Il rinnovo successivo partirà dal giorno dopo la scadenza.
+fn registra_abbonamento_in_corso(
     connessione: &Connection,
     iscritto_id: i64,
     dati: &DatiIscrittoGiaAttivo,
@@ -111,27 +115,26 @@ fn registra_abbonamento_pregresso(
         .map_err(|errore| ErroreDatabase::non_valido(errore.to_string()))?;
     controlla_abbonamento_pregresso(data_inizio, data_scadenza, oggi)
         .map_err(ErroreDatabase::non_valido)?;
-    connessione.execute(
-        "INSERT INTO pagamenti (iscritto_id, tipologia_id, tipologia_nome, importo_cent,
-             data_pagamento, metodo, data_inizio, data_scadenza, pregresso)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?5, ?7, 1)",
-        params![
-            iscritto_id,
-            tipologia.id,
-            tipologia.nome,
-            IMPORTO_PREGRESSO_CENT,
-            data_inizio,
-            METODO_PREGRESSO.come_testo(),
-            data_scadenza,
-        ],
-    )?;
+    let pagamento = DatiPagamento {
+        iscritto_id,
+        tipologia_id: tipologia.id,
+        importo_cent: dati.importo_abbonamento_cent,
+        data_pagamento: data_inizio,
+        metodo: dati.metodo,
+        data_inizio,
+        data_scadenza,
+        note: None,
+        rinnovo_di_id: None,
+    };
+    registra_pagamento(connessione, &pagamento, oggi)?;
     Ok(())
 }
 
-/// Copre l'anno sportivo in corso.
-fn registra_quota_pregressa(
+/// Copre l'anno sportivo in corso ed è datata al suo primo giorno (di solito il 1° settembre).
+fn registra_quota_dell_anno(
     connessione: &Connection,
     iscritto_id: i64,
+    dati: &DatiIscrittoGiaAttivo,
     oggi: NaiveDate,
 ) -> Result<(), ErroreDatabase> {
     let mese_inizio = leggi_impostazione_numerica(
@@ -140,17 +143,15 @@ fn registra_quota_pregressa(
         MESE_INIZIO_ANNO_SPORTIVO_PREDEFINITO as usize,
     )?;
     let anno_sportivo = anno_sportivo_contenente(oggi, mese_inizio as u32);
-    connessione.execute(
-        "INSERT INTO iscrizioni (iscritto_id, importo_cent, data_pagamento, metodo,
-             data_inizio, data_fine, pregresso)
-         VALUES (?1, ?2, ?3, ?4, ?3, ?5, 1)",
-        params![
-            iscritto_id,
-            IMPORTO_PREGRESSO_CENT,
-            anno_sportivo.inizio,
-            METODO_PREGRESSO.come_testo(),
-            anno_sportivo.fine,
-        ],
-    )?;
+    let iscrizione = DatiIscrizione {
+        iscritto_id,
+        importo_cent: dati.quota_cent,
+        data_pagamento: anno_sportivo.inizio,
+        metodo: dati.metodo,
+        data_inizio: anno_sportivo.inizio,
+        data_fine: anno_sportivo.fine,
+        note: None,
+    };
+    registra_iscrizione(connessione, &iscrizione, oggi)?;
     Ok(())
 }

@@ -65,15 +65,18 @@ fn rinnovi_abbandoni_e_valore_medio_su_un_caso_noto() {
     mensile(&connessione, fedele, "2026-09-01", "2026-09-30");
     let perso = iscritto(&connessione, "Perso");
     mensile(&connessione, perso, "2026-08-01", "2026-08-31");
-    // Già iscritto prima del programma: conta per i rinnovi, non per gli incassi
+    // Già iscritto inserito di corsa: il suo abbonamento è di ottobre, fuori dal periodo
     let gia_attivo = DatiIscrittoGiaAttivo {
-        nome: "Pregresso".into(),
+        nome: "Giaiscritto".into(),
         cognome: "Prova".into(),
         telefono: None,
         data_scadenza_certificato: None,
         tipologia_id: MENSILE,
         data_scadenza_abbonamento: data("2026-11-20"),
+        importo_abbonamento_cent: 5000,
         quota_pagata: false,
+        quota_cent: 0,
+        metodo: MetodoPagamento::Contanti,
     };
     registra_iscritto_gia_attivo(&mut connessione, &gia_attivo, RIFERIMENTO).unwrap();
 
