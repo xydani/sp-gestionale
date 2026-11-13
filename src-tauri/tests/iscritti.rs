@@ -26,8 +26,8 @@ fn dati(nome: &str, cognome: &str) -> DatiIscritto {
     DatiIscritto {
         nome: nome.into(),
         cognome: cognome.into(),
-        data_nascita: NaiveDate::from_ymd_opt(1990, 5, 20).unwrap(),
-        luogo_nascita: "Roma".into(),
+        data_nascita: Some(NaiveDate::from_ymd_opt(1990, 5, 20).unwrap()),
+        luogo_nascita: Some("Roma".into()),
         telefono: Some("+39 333 1234567".into()),
         email: None,
         note: None,

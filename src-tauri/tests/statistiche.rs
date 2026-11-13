@@ -31,8 +31,8 @@ fn iscritto(connessione: &Connection, nome: &str) -> i64 {
     let dati = DatiIscritto {
         nome: nome.into(),
         cognome: "Prova".into(),
-        data_nascita: data("1990-01-01"),
-        luogo_nascita: "Roma".into(),
+        data_nascita: Some(data("1990-01-01")),
+        luogo_nascita: Some("Roma".into()),
         telefono: None,
         email: None,
         note: None,

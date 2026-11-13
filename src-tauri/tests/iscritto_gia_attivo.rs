@@ -239,8 +239,8 @@ fn il_filtro_trova_gli_iscritti_da_completare_finche_non_si_completano() {
     let completo = DatiIscritto {
         nome: iscritto.nome.clone(),
         cognome: iscritto.cognome.clone(),
-        data_nascita: data("1990-02-03"),
-        luogo_nascita: "Pisa".into(),
+        data_nascita: Some(data("1990-02-03")),
+        luogo_nascita: Some("Pisa".into()),
         telefono: None,
         email: None,
         note: None,

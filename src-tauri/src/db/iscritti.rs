@@ -51,8 +51,9 @@ pub struct Iscritto {
 pub struct DatiIscritto {
     pub nome: String,
     pub cognome: String,
-    pub data_nascita: NaiveDate,
-    pub luogo_nascita: String,
+    /// Facoltativi: se mancano l'iscritto risulta da completare.
+    pub data_nascita: Option<NaiveDate>,
+    pub luogo_nascita: Option<String>,
     pub telefono: Option<String>,
     pub email: Option<String>,
     pub note: Option<String>,
@@ -326,7 +327,7 @@ pub fn valida_dati_iscritto(
         nome: dati.nome.trim().to_string(),
         cognome: dati.cognome.trim().to_string(),
         data_nascita: dati.data_nascita,
-        luogo_nascita: dati.luogo_nascita.trim().to_string(),
+        luogo_nascita: testo_facoltativo(dati.luogo_nascita.as_deref()),
         telefono: testo_facoltativo(dati.telefono.as_deref()),
         email: testo_facoltativo(dati.email.as_deref()),
         note: testo_facoltativo(dati.note.as_deref()),
@@ -341,15 +342,18 @@ pub fn valida_dati_iscritto(
 fn controlla_anagrafica(dati: &DatiIscritto, oggi: NaiveDate) -> EsitoControllo {
     controlla_obbligatorio(&dati.nome, "Il nome")?;
     controlla_obbligatorio(&dati.cognome, "Il cognome")?;
-    controlla_obbligatorio(&dati.luogo_nascita, "Il luogo di nascita")?;
     controlla_nome_proprio(&dati.nome, "Il nome", LUNGHEZZA_MASSIMA_NOME)?;
     controlla_nome_proprio(&dati.cognome, "Il cognome", LUNGHEZZA_MASSIMA_NOME)?;
-    controlla_nome_proprio(
-        &dati.luogo_nascita,
-        "Il luogo di nascita",
-        LUNGHEZZA_MASSIMA_LUOGO,
-    )?;
-    controlla_data_nascita(dati.data_nascita, oggi)?;
+    if let Some(luogo_nascita) = &dati.luogo_nascita {
+        controlla_nome_proprio(
+            luogo_nascita,
+            "Il luogo di nascita",
+            LUNGHEZZA_MASSIMA_LUOGO,
+        )?;
+    }
+    if let Some(data_nascita) = dati.data_nascita {
+        controlla_data_nascita(data_nascita, oggi)?;
+    }
     if let Some(telefono) = &dati.telefono {
         controlla_telefono(telefono)?;
     }
@@ -476,8 +480,8 @@ mod test {
         DatiIscritto {
             nome: nome.into(),
             cognome: cognome.into(),
-            data_nascita: NaiveDate::from_ymd_opt(1990, 5, 20).unwrap(),
-            luogo_nascita: " Roma ".into(),
+            data_nascita: Some(NaiveDate::from_ymd_opt(1990, 5, 20).unwrap()),
+            luogo_nascita: Some(" Roma ".into()),
             telefono: Some("   ".into()),
             email: Some(" mario@esempio.it ".into()),
             note: Some(" nota ".into()),
@@ -491,27 +495,29 @@ mod test {
         let puliti = valida_dati_iscritto(&dati("  Mario ", " Rossi "), OGGI).unwrap();
         assert_eq!(puliti.nome, "Mario");
         assert_eq!(puliti.cognome, "Rossi");
-        assert_eq!(puliti.luogo_nascita, "Roma");
+        assert_eq!(puliti.luogo_nascita.as_deref(), Some("Roma"));
         assert_eq!(puliti.telefono, None);
         assert_eq!(puliti.email.as_deref(), Some("mario@esempio.it"));
         assert_eq!(puliti.note.as_deref(), Some("nota"));
     }
 
     #[test]
-    fn nome_cognome_e_luogo_di_nascita_sono_obbligatori() {
+    fn solo_nome_e_cognome_sono_obbligatori() {
         assert!(valida_dati_iscritto(&dati(" ", "Rossi"), OGGI).is_err());
         assert!(valida_dati_iscritto(&dati("Mario", ""), OGGI).is_err());
-        let senza_luogo = DatiIscritto {
-            luogo_nascita: "  ".into(),
+        let solo_nome_e_cognome = DatiIscritto {
+            data_nascita: None,
+            luogo_nascita: Some("  ".into()),
             ..dati("Mario", "Rossi")
         };
-        assert!(valida_dati_iscritto(&senza_luogo, OGGI).is_err());
+        let puliti = valida_dati_iscritto(&solo_nome_e_cognome, OGGI).unwrap();
+        assert_eq!((puliti.data_nascita, puliti.luogo_nascita), (None, None));
     }
 
     #[test]
     fn la_data_di_nascita_non_puo_essere_nel_futuro() {
         let futura = DatiIscritto {
-            data_nascita: OGGI.succ_opt().unwrap(),
+            data_nascita: Some(OGGI.succ_opt().unwrap()),
             ..dati("Mario", "Rossi")
         };
         assert!(valida_dati_iscritto(&futura, OGGI).is_err());

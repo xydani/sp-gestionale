@@ -22,8 +22,8 @@ fn dati_anagrafici() -> DatiIscritto {
     DatiIscritto {
         nome: "Giulia".into(),
         cognome: "Esposito".into(),
-        data_nascita: "1995-04-12".parse().unwrap(),
-        luogo_nascita: "Bari".into(),
+        data_nascita: Some("1995-04-12".parse().unwrap()),
+        luogo_nascita: Some("Bari".into()),
         telefono: Some("333 1234567".into()),
         email: Some("giulia@esempio.it".into()),
         note: Some("Allergica al lattice".into()),

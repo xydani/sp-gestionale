@@ -38,8 +38,8 @@ fn dati_completi(connessione: &Connection) -> DatiNuovoIscritto {
         anagrafica: DatiIscritto {
             nome: "Giulia".into(),
             cognome: "Esposito".into(),
-            data_nascita: data("1995-04-12"),
-            luogo_nascita: "Bari".into(),
+            data_nascita: Some(data("1995-04-12")),
+            luogo_nascita: Some("Bari".into()),
             telefono: None,
             email: None,
             note: None,

@@ -31,8 +31,8 @@ fn anagrafica() -> DatiIscritto {
     DatiIscritto {
         nome: "Mario".into(),
         cognome: "Rossi".into(),
-        data_nascita: data("1990-05-20"),
-        luogo_nascita: "Roma".into(),
+        data_nascita: Some(data("1990-05-20")),
+        luogo_nascita: Some("Roma".into()),
         telefono: Some("+39 333 1234567".into()),
         email: Some("mario.rossi@esempio.it".into()),
         note: None,
@@ -87,9 +87,9 @@ fn con_iscritto() -> (DatabaseTemporaneo, Connection, i64) {
 fn l_anagrafica_rifiuta_dati_non_plausibili() {
     let (_database, connessione, _) = con_iscritto();
     let varianti: [Variante<DatiIscritto>; 6] = [
-        (|d| d.luogo_nascita = "123".into(), "luogo di nascita"),
+        (|d| d.luogo_nascita = Some("123".into()), "luogo di nascita"),
         (|d| d.nome = "Mario2".into(), "nome"),
-        (|d| d.data_nascita = data("2026-11-11"), "futuro"),
+        (|d| d.data_nascita = Some(data("2026-11-11")), "futuro"),
         (|d| d.telefono = Some("telefono".into()), "telefono"),
         (|d| d.email = Some("mario@esempio".into()), "email"),
         (

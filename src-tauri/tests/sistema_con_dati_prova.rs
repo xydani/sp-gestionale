@@ -250,8 +250,8 @@ fn gli_iscritti_inventati_superano_i_controlli_dell_anagrafica() {
         let dati = DatiIscritto {
             nome: iscritto.nome,
             cognome: iscritto.cognome,
-            data_nascita: iscritto.data_nascita.unwrap(),
-            luogo_nascita: iscritto.luogo_nascita.unwrap(),
+            data_nascita: iscritto.data_nascita,
+            luogo_nascita: iscritto.luogo_nascita,
             telefono: iscritto.telefono,
             email: iscritto.email,
             note: iscritto.note,

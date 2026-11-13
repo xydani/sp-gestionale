@@ -22,8 +22,8 @@ fn dati(cognome: &str, scadenza_certificato: Option<NaiveDate>) -> DatiIscritto 
     DatiIscritto {
         nome: "Prova".into(),
         cognome: cognome.into(),
-        data_nascita: "1990-01-01".parse().unwrap(),
-        luogo_nascita: "Roma".into(),
+        data_nascita: Some("1990-01-01".parse().unwrap()),
+        luogo_nascita: Some("Roma".into()),
         telefono: None,
         email: None,
         note: None,
