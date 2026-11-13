@@ -5,6 +5,7 @@
   import { aggiornaConteggioScadenze } from "$lib/promemoria.svelte";
   import type { TipoRinnovabile } from "$lib/rinnovo";
   import type { Iscritto } from "$lib/types";
+  import FinestraSovrapposta from "./FinestraSovrapposta.svelte";
   import FormIscrizione from "./FormIscrizione.svelte";
   import FormPagamento from "./FormPagamento.svelte";
 
@@ -25,11 +26,9 @@
     iscrizione: "Rinnova iscrizione annuale",
   };
 
-  let finestra = $state<HTMLDialogElement>();
   let iscritto = $state<Iscritto | null>(null);
 
   onMount(async () => {
-    finestra?.showModal();
     try {
       iscritto = await trovaIscritto(iscrittoId);
     } catch (errore) {
@@ -43,35 +42,13 @@
     await aggiornaConteggioScadenze();
     onChiusa(true);
   }
-
-  /** Esc chiude la finestra come «Annulla». */
-  function annullaConEsc(evento: Event) {
-    evento.preventDefault();
-    onChiusa(false);
-  }
-
-  /**
-   * Esc chiude sempre: alcuni campi (come quello di ricerca) usano Esc per svuotarsi
-   * e il browser integrato allora non avvisa la finestra.
-   */
-  function chiudiConEsc(evento: KeyboardEvent) {
-    if (evento.key !== "Escape") return;
-    evento.preventDefault();
-    evento.stopPropagation();
-    onChiusa(false);
-  }
 </script>
 
-<dialog
-  bind:this={finestra}
-  oncancel={annullaConEsc}
-  onkeydown={chiudiConEsc}
-  aria-label={TITOLI[tipo]}
+<FinestraSovrapposta
+  titolo={TITOLI[tipo]}
+  sottotitolo={iscritto ? `${iscritto.cognome} ${iscritto.nome}` : null}
+  onChiusa={() => onChiusa(false)}
 >
-  <h2>
-    {TITOLI[tipo]}
-    {#if iscritto}<span class="nome">· {iscritto.cognome} {iscritto.nome}</span>{/if}
-  </h2>
   {#if iscritto && tipo === "abbonamento"}
     <FormPagamento
       iscrittoIniziale={iscritto}
@@ -85,30 +62,4 @@
       onAnnulla={() => onChiusa(false)}
     />
   {/if}
-</dialog>
-
-<style>
-  dialog {
-    width: min(48rem, calc(100vw - 3rem));
-    padding: 1.5rem;
-    border: 1px solid var(--colore-bordo);
-    border-radius: var(--raggio-grande);
-    background: var(--colore-superficie);
-    color: var(--colore-testo);
-    box-shadow: var(--ombra-sospesa);
-  }
-
-  dialog::backdrop {
-    background: rgb(24 24 27 / 0.35);
-  }
-
-  h2 {
-    margin: 0 0 1rem;
-    font-size: 1.15rem;
-  }
-
-  .nome {
-    color: var(--colore-testo-secondario);
-    font-weight: 500;
-  }
-</style>
+</FinestraSovrapposta>
