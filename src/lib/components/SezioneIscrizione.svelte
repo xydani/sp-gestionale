@@ -22,6 +22,8 @@
   } = $props();
 
   let iscrizioni = $state<Iscrizione[]>([]);
+  /** Lo storico delle quote serve di rado: resta chiuso per lasciare spazio all'abbonamento. */
+  let storicoAperto = $state(false);
 
   async function carica() {
     iscrizioni = await elencaIscrizioni(iscritto.id);
@@ -68,13 +70,25 @@
     {/if}
   </div>
 
-  <p class="riepilogo">
-    {#if iscritto.ultimaDataFineIscrizione}
-      Valida fino al <strong>{formattaData(iscritto.ultimaDataFineIscrizione)}</strong>
-    {:else}
-      Nessuna iscrizione registrata
+  <div class="riepilogo">
+    <span>
+      {#if iscritto.ultimaDataFineIscrizione}
+        Valida fino al <strong>{formattaData(iscritto.ultimaDataFineIscrizione)}</strong>
+      {:else}
+        Nessuna iscrizione registrata
+      {/if}
+    </span>
+    {#if iscrizioni.length > 0}
+      <button
+        type="button"
+        class="pulsante-testo"
+        aria-expanded={storicoAperto}
+        onclick={() => (storicoAperto = !storicoAperto)}
+      >
+        {storicoAperto ? "Nascondi lo storico" : `Storico delle quote (${iscrizioni.length})`}
+      </button>
     {/if}
-  </p>
+  </div>
 
   {#if formAperto}
     <FormIscrizione
@@ -84,8 +98,8 @@
     />
   {/if}
 
-  {#if iscrizioni.length > 0}
-    <table class="tabella">
+  {#if storicoAperto && iscrizioni.length > 0}
+    <table class="tabella compatta">
       <thead>
         <tr
           ><th>Periodo</th><th>Pagata il</th><th>Metodo</th><th class="importo">Quota</th><th
@@ -120,11 +134,12 @@
     color: var(--colore-testo-secondario);
   }
 
+  /* Più raccolta delle schede normali: la scheda iscritto deve stare nella finestra */
   .scheda {
     display: grid;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-    padding: 1.5rem;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding: 1.1rem 1.25rem;
     background: var(--colore-superficie);
     border: 1px solid var(--colore-bordo);
     border-radius: var(--raggio-grande);
@@ -147,7 +162,10 @@
   }
 
   .riepilogo {
-    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.75rem;
     color: var(--colore-testo-secondario);
   }
 

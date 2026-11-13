@@ -97,89 +97,111 @@
   }
 </script>
 
-<div class="pagina-stretta">
-  <a class="indietro" href={resolve("/iscritti")}>← Iscritti</a>
-
+<div>
   {#if errore}
+    <a class="indietro" href={resolve("/iscritti")}>← Iscritti</a>
     <p class="errore">{errore}</p>
   {:else if iscritto}
     <div class="intestazione">
+      <a class="indietro" href={resolve("/iscritti")}>← Iscritti</a>
       <h1>{iscritto.nome} {iscritto.cognome}</h1>
       {#if iscritto.archiviato}<span class="archiviato">Archiviato</span>{/if}
     </div>
 
     <StrisciaCosaManca {iscritto} onAzione={sistema} />
 
-    <section class="scheda" id="sezione-anagrafica">
-      <h2>Anagrafica</h2>
-      {#if inModifica}
-        <FormIscritto
-          iniziale={{
-            ...iscritto,
-            dataNascita: iscritto.dataNascita ?? "",
-            luogoNascita: iscritto.luogoNascita ?? "",
-          }}
-          etichettaConferma="Salva modifiche"
-          onConferma={salvaModifiche}
-          onAnnulla={() => (inModifica = false)}
-        />
-      {:else}
-        <dl>
-          <dt>Nato/a il</dt>
-          <dd>
-            {iscritto.dataNascita ? formattaData(iscritto.dataNascita) : "—"}
-            {#if iscritto.luogoNascita}a {iscritto.luogoNascita}{/if}
-          </dd>
-          <dt>Telefono</dt>
-          <dd>{iscritto.telefono ?? "—"}</dd>
-          <dt>Email</dt>
-          <dd>{iscritto.email ?? "—"}</dd>
-          <dt>Certificato medico</dt>
-          <dd class="certificato">
-            {#if iscritto.dataScadenzaCertificato}
-              <BadgeStato stato={iscritto.statoCertificato} />
-              scade il {formattaData(iscritto.dataScadenzaCertificato)}
-            {:else if iscritto.certificatoPresentato}
-              <BadgeStato stato="attivo" /> presentato, scadenza non indicata
-            {:else}
-              <BadgeStato stato="nessuno" /> non presentato
-            {/if}
-          </dd>
-          <dt>Note</dt>
-          <dd class="note">{iscritto.note ?? "—"}</dd>
-        </dl>
-        <div class="azioni">
-          <button class="pulsante" type="button" onclick={() => (inModifica = true)}
-            >Modifica dati</button
-          >
-          <button type="button" class="pulsante secondario" onclick={alternaArchiviazione}>
-            {iscritto.archiviato ? "Ripristina iscritto" : "Archivia iscritto"}
-          </button>
-          {#if iscritto.archiviato}
-            <button type="button" class="pulsante pericolo" onclick={eliminaDefinitivamente}>
-              Elimina definitivamente
-            </button>
+    <!-- Anagrafica a sinistra; quota e abbonamento con lo storico a destra -->
+    <div class="colonne">
+      <div class="colonna">
+        <section class="scheda" id="sezione-anagrafica">
+          <h2>Anagrafica</h2>
+          {#if inModifica}
+            <FormIscritto
+              iniziale={{
+                ...iscritto,
+                dataNascita: iscritto.dataNascita ?? "",
+                luogoNascita: iscritto.luogoNascita ?? "",
+              }}
+              etichettaConferma="Salva modifiche"
+              onConferma={salvaModifiche}
+              onAnnulla={() => (inModifica = false)}
+            />
+          {:else}
+            <dl>
+              <dt>Nato/a il</dt>
+              <dd>
+                {iscritto.dataNascita ? formattaData(iscritto.dataNascita) : "—"}
+                {#if iscritto.luogoNascita}a {iscritto.luogoNascita}{/if}
+              </dd>
+              <dt>Telefono</dt>
+              <dd>{iscritto.telefono ?? "—"}</dd>
+              <dt>Email</dt>
+              <dd>{iscritto.email ?? "—"}</dd>
+              <dt>Certificato medico</dt>
+              <dd class="certificato">
+                {#if iscritto.dataScadenzaCertificato}
+                  <BadgeStato stato={iscritto.statoCertificato} />
+                  scade il {formattaData(iscritto.dataScadenzaCertificato)}
+                {:else if iscritto.certificatoPresentato}
+                  <BadgeStato stato="attivo" /> presentato, scadenza non indicata
+                {:else}
+                  <BadgeStato stato="nessuno" /> non presentato
+                {/if}
+              </dd>
+              <dt>Note</dt>
+              <dd class="note">{iscritto.note ?? "—"}</dd>
+            </dl>
+            <div class="azioni">
+              <button class="pulsante" type="button" onclick={() => (inModifica = true)}
+                >Modifica dati</button
+              >
+              <button type="button" class="pulsante secondario" onclick={alternaArchiviazione}>
+                {iscritto.archiviato ? "Ripristina iscritto" : "Archivia iscritto"}
+              </button>
+              {#if iscritto.archiviato}
+                <button type="button" class="pulsante pericolo" onclick={eliminaDefinitivamente}>
+                  Elimina definitivamente
+                </button>
+              {/if}
+            </div>
           {/if}
-        </div>
-      {/if}
-    </section>
-
-    {#key iscritto.id}
-      <SezioneIscrizione
-        {iscritto}
-        bind:formAperto={rinnovoIscrizioneAperto}
-        onCambiata={() => carica(idIscritto)}
-      />
-      <SezioneAbbonamento
-        {iscritto}
-        bind:formAperto={rinnovoAbbonamentoAperto}
-        onCambiato={() => carica(idIscritto)}
-      />
-    {/key}
+        </section>
+      </div>
+      <div class="colonna">
+        {#key iscritto.id}
+          <SezioneIscrizione
+            {iscritto}
+            bind:formAperto={rinnovoIscrizioneAperto}
+            onCambiata={() => carica(idIscritto)}
+          />
+          <SezioneAbbonamento
+            {iscritto}
+            bind:formAperto={rinnovoAbbonamentoAperto}
+            onCambiato={() => carica(idIscritto)}
+          />
+        {/key}
+      </div>
+    </div>
   {/if}
 </div>
 
 <style>
+  .colonne {
+    display: grid;
+    gap: 0 1.25rem;
+    align-items: start;
+  }
+
+  @media (min-width: 1100px) {
+    .colonne {
+      grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    }
+  }
+
+  .colonna {
+    min-width: 0;
+  }
+
   .certificato {
     display: flex;
     align-items: center;
@@ -187,8 +209,6 @@
   }
 
   .indietro {
-    display: inline-block;
-    margin-bottom: 0.5rem;
     color: var(--colore-primario);
     text-decoration: none;
   }
@@ -196,19 +216,25 @@
   .intestazione {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
+    align-items: baseline;
     gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .intestazione h1 {
+    margin: 0;
   }
 
   .archiviato {
     color: var(--colore-testo-secondario);
   }
 
+  /* Più raccolta delle schede normali: la scheda iscritto deve stare nella finestra */
   .scheda {
     display: grid;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-    padding: 1.5rem;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding: 1.1rem 1.25rem;
     background: var(--colore-superficie);
     border: 1px solid var(--colore-bordo);
     border-radius: var(--raggio-grande);

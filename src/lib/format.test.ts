@@ -10,6 +10,7 @@ import {
   euroInCentesimi,
   formattaData,
   formattaDataBreve,
+  formattaIntervalloBreve,
   formattaEuro,
   formattaPercentuale,
   formattaPeriodo,
@@ -159,5 +160,15 @@ describe("formattaDataBreve", () => {
   it("di un altro anno resta completa", () => {
     expect(formattaDataBreve("2025-12-20", "2026-01-10")).toBe("20/12/2025");
     expect(formattaDataBreve("2027-01-02", "2026-12-30")).toBe("02/01/2027");
+  });
+});
+
+describe("formattaIntervalloBreve", () => {
+  it("nello stesso anno l'inizio non ripete l'anno", () => {
+    expect(formattaIntervalloBreve("2026-04-05", "2026-10-04")).toBe("05/04 – 04/10/2026");
+  });
+
+  it("a cavallo d'anno entrambe le date sono complete", () => {
+    expect(formattaIntervalloBreve("2026-12-01", "2027-02-28")).toBe("01/12/2026 – 28/02/2027");
   });
 });

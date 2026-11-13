@@ -5,6 +5,7 @@
 - Pagina Scadenze su due colonne, già scaduti e in scadenza, ognuna con le schede per tipo e il loro numero; tra i certificati scaduti anche quelli mai presentati
 - Gli elenchi di Scadenze e dashboard mostrano tante righe quante ne stanno nella finestra, secondo schermo e dimensione del testo; il resto si sfoglia a pagine
 - Anche Iscritti e Pagamenti mostrano le righe che stanno nella finestra, con le pagine sotto l'elenco
+- Scheda iscritto su due colonne: anagrafica a sinistra, quota e abbonamento a destra; lo storico dei pagamenti va a pagine che seguono la finestra e lo storico delle quote si apre a richiesta
 - Certificati scaduti e mai presentati si scelgono con un selettore nella stessa scheda
 - Logo della palestra ridisegnato fedele all'originale
 - Già iscritti: dell'abbonamento basta la data di inizio oppure quella di scadenza, l'altra si calcola dalla durata

@@ -1,7 +1,7 @@
 <script lang="ts">
   import Icona from "./Icona.svelte";
   import { resolve } from "$app/paths";
-  import { formattaData, formattaEuro } from "$lib/format";
+  import { formattaData, formattaEuro, formattaIntervalloBreve } from "$lib/format";
   import { ETICHETTE_METODO } from "$lib/metodi-pagamento";
   import type { Pagamento } from "$lib/types";
 
@@ -10,6 +10,7 @@
     totaleElementi,
     totaleImportoCent,
     mostraIscritto = true,
+    mostraDataPagamento = true,
     messaggioVuoto = "Nessun pagamento",
     compatta = false,
     tabella = $bindable(),
@@ -21,6 +22,8 @@
     totaleElementi: number;
     totaleImportoCent: number;
     mostraIscritto?: boolean;
+    /** Senza colonna la data di pagamento compare passando sul periodo (di solito è l'inizio). */
+    mostraDataPagamento?: boolean;
     /** Cosa dire, e cosa fare, quando non ci sono pagamenti. */
     messaggioVuoto?: string;
     /** Righe basse su una riga sola, per stare nella finestra. */
@@ -29,12 +32,25 @@
     tabella?: HTMLTableElement;
     onElimina: (pagamento: Pagamento) => void;
   } = $props();
+
+  /** Tipologia, periodo, metodo, importo e azioni, più le colonne facoltative. */
+  const numeroColonne = $derived(5 + Number(mostraIscritto) + Number(mostraDataPagamento));
+
+  function periodo(pagamento: Pagamento): string {
+    if (compatta) return formattaIntervalloBreve(pagamento.dataInizio, pagamento.dataScadenza);
+    return `${formattaData(pagamento.dataInizio)} – ${formattaData(pagamento.dataScadenza)}`;
+  }
+
+  function descriviPagamento(pagamento: Pagamento): string {
+    if (pagamento.pregresso) return "Pagato prima di usare il programma";
+    return `Pagato il ${formattaData(pagamento.dataPagamento)}`;
+  }
 </script>
 
 <table bind:this={tabella} class="tabella riquadrata" class:compatta>
   <thead>
     <tr>
-      <th>Data</th>
+      {#if mostraDataPagamento}<th>Data</th>{/if}
       {#if mostraIscritto}<th>Iscritto</th>{/if}
       <th>Tipologia</th>
       <th>Periodo</th>
@@ -46,13 +62,15 @@
   <tbody>
     {#each pagamenti as pagamento (pagamento.id)}
       <tr>
-        <td>
-          {#if pagamento.pregresso}
-            <span class="pregresso">Situazione iniziale</span>
-          {:else}
-            {formattaData(pagamento.dataPagamento)}
-          {/if}
-        </td>
+        {#if mostraDataPagamento}
+          <td>
+            {#if pagamento.pregresso}
+              <span class="pregresso">Situazione iniziale</span>
+            {:else}
+              {formattaData(pagamento.dataPagamento)}
+            {/if}
+          </td>
+        {/if}
         {#if mostraIscritto}
           <td class="elastica">
             {#if pagamento.iscrittoEliminato}
@@ -72,7 +90,7 @@
               ><Icona nome="nota" dimensione={15} /></span
             >{/if}
         </td>
-        <td>{formattaData(pagamento.dataInizio)} – {formattaData(pagamento.dataScadenza)}</td>
+        <td title={descriviPagamento(pagamento)}>{periodo(pagamento)}</td>
         {#if pagamento.pregresso}
           <td class="pregresso">—</td>
           <td class="importo pregresso" title="Pagato prima di usare il programma">—</td>
@@ -87,13 +105,13 @@
         </td>
       </tr>
     {:else}
-      <tr><td colspan={mostraIscritto ? 7 : 6} class="vuoto">{messaggioVuoto}</td></tr>
+      <tr><td colspan={numeroColonne} class="vuoto">{messaggioVuoto}</td></tr>
     {/each}
   </tbody>
   {#if pagamenti.length > 0}
     <tfoot>
       <tr>
-        <td colspan={mostraIscritto ? 5 : 4}>Totale ({totaleElementi} pagamenti)</td>
+        <td colspan={numeroColonne - 2}>Totale ({totaleElementi} pagamenti)</td>
         <td class="importo">{formattaEuro(totaleImportoCent)}</td>
         <td></td>
       </tr>

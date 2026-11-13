@@ -50,6 +50,11 @@ export function formattaDataBreve(dataIso: string, oggi: string = oggiIso()): st
   return `${giorno}/${mese}`;
 }
 
+/** "05/04 – 04/10/2026": l'anno dell'inizio solo se diverso da quello della fine. */
+export function formattaIntervalloBreve(inizioIso: string, fineIso: string): string {
+  return `${formattaDataBreve(inizioIso, fineIso)} – ${formattaData(fineIso)}`;
+}
+
 /** Data di oggi in formato ISO, secondo il fuso orario locale. */
 export function oggiIso(adesso: Date = new Date()): string {
   const mese = String(adesso.getMonth() + 1).padStart(2, "0");

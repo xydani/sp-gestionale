@@ -5,6 +5,7 @@
   import { aggiornaConteggioScadenze } from "$lib/promemoria.svelte";
   import { eliminaConAnnulla } from "$lib/eliminazione-differita";
   import { formattaData } from "$lib/format";
+  import { seguiFinestra } from "$lib/righe-visibili";
   import type { Iscritto, Pagamento, PaginaPagamenti } from "$lib/types";
   import BadgeStato from "./BadgeStato.svelte";
   import FormPagamento from "./FormPagamento.svelte";
@@ -30,11 +31,20 @@
     totaleImportoCent: 0,
   });
 
+  /** Sotto lo storico: le pagine, il bordo della scheda e il margine della pagina. */
+  const SPAZIO_SOTTO_PX = 85;
+  let tabella = $state<HTMLTableElement>();
+  /** Righe che stanno nella finestra; null finché non sono misurate. */
+  let righePerPagina = $state<number | null>(null);
+  let caricato = $state(false);
+
   async function carica(numeroPagina = 1) {
     storico = await elencaPagamenti(
       { dal: null, al: null, metodo: null, iscrittoId: iscritto.id },
       numeroPagina,
+      righePerPagina ?? undefined,
     );
+    caricato = true;
   }
 
   async function registrato() {
@@ -63,7 +73,17 @@
     aggiornaConteggioScadenze();
   }
 
-  onMount(() => carica());
+  // Lo storico si carica appena si sa quante righe stanno nella finestra
+  onMount(() => {
+    if (!tabella) return;
+    return seguiFinestra(tabella, SPAZIO_SOTTO_PX, {
+      numeroPagina: () => storico.numero,
+      carica: (numero, righe) => {
+        righePerPagina = righe;
+        carica(numero);
+      },
+    });
+  });
 </script>
 
 <section class="scheda" id="sezione-abbonamento">
@@ -95,23 +115,27 @@
   {/if}
 
   <TabellaPagamenti
+    bind:tabella
+    compatta
+    mostraDataPagamento={false}
     pagamenti={storico.elementi}
     totaleElementi={storico.totaleElementi}
     totaleImportoCent={storico.totaleImportoCent}
     mostraIscritto={false}
     onElimina={elimina}
   />
-  {#if storico.totaleElementi > storico.elementiPerPagina}
+  {#if caricato && storico.totaleElementi > storico.elementiPerPagina}
     <Paginazione pagina={storico} onCambia={carica} />
   {/if}
 </section>
 
 <style>
+  /* Più raccolta delle schede normali: la scheda iscritto deve stare nella finestra */
   .scheda {
     display: grid;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-    padding: 1.5rem;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding: 1.1rem 1.25rem;
     background: var(--colore-superficie);
     border: 1px solid var(--colore-bordo);
     border-radius: var(--raggio-grande);
