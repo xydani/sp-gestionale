@@ -2,6 +2,8 @@
 
 ## [Non rilasciato]
 
+## [0.2.0] - 2026-11-13
+
 - Interfaccia ripensata per vedere tutto senza scorrere, adattandosi da sola a schermo, dimensione della finestra e del testo:
   - gli elenchi (dashboard, Scadenze, Iscritti, Pagamenti, storico dei pagamenti, Incassi, Statistiche) mostrano le righe che stanno nella finestra e il resto si sfoglia a pagine
   - dashboard più compatta, con già scaduti e prossime scadenze affiancati: i già scaduti compaiono solo se ci sono, divisi per tipo; le prossime scadenze hanno il bordo giallo e date brevi come «domani · 14/11»
