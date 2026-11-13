@@ -9,6 +9,8 @@
 - Incassi più raccolti: metodi di pagamento e andamento per periodo affiancati, con i periodi a pagine che seguono la finestra
 - Impostazioni divise in schede: Palestra, Aspetto, Password, Backup e Programma; dalla dashboard «Fai un backup» apre direttamente la scheda Backup
 - Statistiche divise in schede (Rinnovi, Iscritti attivi, Incassi, Vendite) con il periodo in comune; chi non ha rinnovato e le vendite mese per mese vanno a pagine
+- Il modulo «Nuovo iscritto» è su due colonne (persona a sinistra, quota e abbonamento a destra) e sta nella finestra; contatti e certificato medico sono in un'unica sezione
+- Nella configurazione iniziale opzioni e logo stanno affiancati
 - Certificati scaduti e mai presentati si scelgono con un selettore nella stessa scheda
 - Logo della palestra ridisegnato fedele all'originale
 - Già iscritti: dell'abbonamento basta la data di inizio oppure quella di scadenza, l'altra si calcola dalla durata

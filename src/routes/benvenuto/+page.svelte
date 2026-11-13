@@ -55,25 +55,28 @@
   }
 </script>
 
-<div class="pagina-stretta">
+<div class="pagina">
   <h1>Configurazione iniziale</h1>
   <p class="passo">{descriviPasso(passo)}</p>
 
   {#if passo === 0}
-    <SezioneLogo />
-    <section class="scheda">
-      <p>
-        Prima di iniziare controlla queste opzioni. I valori proposti vanno bene nella maggior parte
-        dei casi e potrai sempre cambiarli dalla pagina Impostazioni.
-      </p>
-      {#if impostazioni}
-        <FormImpostazioni
-          iniziale={impostazioni}
-          etichettaConferma="Avanti"
-          onSalva={salvaOpzioni}
-        />
-      {/if}
-    </section>
+    <!-- Opzioni e logo affiancati, così il primo passo sta nella finestra -->
+    <div class="colonne">
+      <section class="scheda">
+        <p>
+          Prima di iniziare controlla queste opzioni. I valori proposti vanno bene nella maggior
+          parte dei casi e potrai sempre cambiarli dalla pagina Impostazioni.
+        </p>
+        {#if impostazioni}
+          <FormImpostazioni
+            iniziale={impostazioni}
+            etichettaConferma="Avanti"
+            onSalva={salvaOpzioni}
+          />
+        {/if}
+      </section>
+      <SezioneLogo />
+    </div>
   {:else}
     <p class="introduzione">
       Questi sono gli abbonamenti proposti quando si registra un pagamento. Correggi i prezzi,
@@ -96,8 +99,21 @@
     font-weight: 500;
   }
 
-  :global(.scheda) + .scheda {
-    margin-top: 1.25rem;
+  .pagina {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .colonne {
+    display: grid;
+    gap: 1.25rem;
+    align-items: start;
+  }
+
+  @media (min-width: 1100px) {
+    .colonne {
+      grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    }
   }
 
   .introduzione {
