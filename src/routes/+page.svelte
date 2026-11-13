@@ -4,6 +4,7 @@
   import { leggiRiepilogoDashboard, messaggioErrore } from "$lib/api";
   import { mostraAvviso } from "$lib/avvisi.svelte";
   import CassaDiOggi from "$lib/components/CassaDiOggi.svelte";
+  import ElencoScadenze from "$lib/components/ElencoScadenze.svelte";
   import FinestraRinnovo from "$lib/components/FinestraRinnovo.svelte";
   import RiquadroNumero from "$lib/components/RiquadroNumero.svelte";
   import {
@@ -25,6 +26,10 @@
     iscrizione: "Iscrizione annuale",
     certificato: "Certificato medico",
   };
+
+  /** In dashboard bastano i più recenti: l'elenco completo è nella pagina Scadenze. */
+  const SCADUTI_MOSTRATI = 5;
+  const GRUPPI_SCADUTI: TipoScadenza[] = ["abbonamento", "iscrizione", "certificato"];
 
   const oggi = oggiIso();
   const meseCorrente = nomeMese(oggi);
@@ -209,6 +214,16 @@
       <a class="tutte" href={resolve("/scadenze")}>Tutte le scadenze →</a>
     {/if}
   </section>
+
+  <section class="scaduti">
+    <h2>Già scaduti <span class="nota">(i più recenti)</span></h2>
+    {#each GRUPPI_SCADUTI as tipo (tipo)}
+      <div class="gruppo">
+        <h3>{ETICHETTE_TIPO_SCADENZA[tipo]}</h3>
+        <ElencoScadenze {tipo} stato="scaduto" massimo={SCADUTI_MOSTRATI} onCambiato={carica} />
+      </div>
+    {/each}
+  </section>
 {/if}
 
 {#if daRinnovare}
@@ -276,6 +291,17 @@
 
   .distanza {
     color: var(--colore-testo-secondario);
+  }
+
+  .scaduti {
+    display: grid;
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+
+  .scaduti h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
   }
 
   .azione {
