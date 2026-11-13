@@ -235,7 +235,7 @@
           <tbody>
             {#each prossimeMostrate as scadenza (scadenza.tipo + scadenza.iscrittoId)}
               <tr>
-                <td>
+                <td class="elastica">
                   <a
                     href={resolve("/iscritti/[id]", { id: String(scadenza.iscrittoId) })}
                     title="{scadenza.cognome} {scadenza.nome}"

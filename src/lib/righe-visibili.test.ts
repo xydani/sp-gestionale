@@ -11,7 +11,7 @@ import {
 const PORTATILE: MisureTabella = {
   altezzaFinestra: 738,
   inizioTabella: 230,
-  altezzaIntestazione: 33,
+  altezzaFissa: 33,
   altezzaRiga: 42,
   spazioSotto: 60,
 };

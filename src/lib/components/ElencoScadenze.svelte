@@ -4,7 +4,7 @@
   import { elencaIscritti, messaggioErrore } from "$lib/api";
   import { mostraAvviso } from "$lib/avvisi.svelte";
   import { descriviScadenza, formattaData } from "$lib/format";
-  import { osservaRigheVisibili, paginaDopoCambioRighe } from "$lib/righe-visibili";
+  import { seguiFinestra } from "$lib/righe-visibili";
   import { REGOLE_SCADENZA, filtroScadenze, type StatoScadenza } from "$lib/scadenze";
   import type { Iscritto, Pagina, TipoScadenza } from "$lib/types";
   import { eRinnovabile } from "$lib/rinnovo";
@@ -73,17 +73,15 @@
     }
   }
 
-  /** Con un'altra altezza disponibile si ricarica restando all'incirca dove si era. */
-  function cambiaRighePerPagina(righe: number) {
-    const numero =
-      righePerPagina === null ? 1 : paginaDopoCambioRighe(pagina.numero, righePerPagina, righe);
-    righePerPagina = righe;
-    carica(numero);
-  }
-
   onMount(() => {
     if (!tabella) return;
-    return osservaRigheVisibili(tabella, SPAZIO_SOTTO_PX, cambiaRighePerPagina);
+    return seguiFinestra(tabella, SPAZIO_SOTTO_PX, {
+      numeroPagina: () => pagina.numero,
+      carica: (numero, righe) => {
+        righePerPagina = righe;
+        carica(numero);
+      },
+    });
   });
 </script>
 
@@ -99,7 +97,7 @@
   <tbody>
     {#each pagina.elementi as iscritto (iscritto.id)}
       <tr>
-        <td>
+        <td class="elastica">
           <a
             href={resolve("/iscritti/[id]", { id: String(iscritto.id) })}
             title="{iscritto.cognome} {iscritto.nome}"

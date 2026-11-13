@@ -11,6 +11,8 @@
     totaleImportoCent,
     mostraIscritto = true,
     messaggioVuoto = "Nessun pagamento",
+    compatta = false,
+    tabella = $bindable(),
     onElimina,
   }: {
     /** Pagamenti della pagina corrente. */
@@ -21,11 +23,15 @@
     mostraIscritto?: boolean;
     /** Cosa dire, e cosa fare, quando non ci sono pagamenti. */
     messaggioVuoto?: string;
+    /** Righe basse su una riga sola, per stare nella finestra. */
+    compatta?: boolean;
+    /** La tabella disegnata, per misurare quante righe stanno nella finestra. */
+    tabella?: HTMLTableElement;
     onElimina: (pagamento: Pagamento) => void;
   } = $props();
 </script>
 
-<table class="tabella riquadrata">
+<table bind:this={tabella} class="tabella riquadrata" class:compatta>
   <thead>
     <tr>
       <th>Data</th>
@@ -48,7 +54,7 @@
           {/if}
         </td>
         {#if mostraIscritto}
-          <td>
+          <td class="elastica">
             {#if pagamento.iscrittoEliminato}
               <span class="eliminato">Iscritto eliminato</span>
             {:else}
@@ -59,7 +65,8 @@
             {/if}
           </td>
         {/if}
-        <td>
+        <!-- Senza la colonna dell'iscritto è la tipologia a prendere lo spazio che resta -->
+        <td class:elastica={!mostraIscritto}>
           {pagamento.tipologiaNome}
           {#if pagamento.note}<span class="nota" title={pagamento.note}
               ><Icona nome="nota" dimensione={15} /></span

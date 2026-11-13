@@ -10,6 +10,7 @@
   import { eliminaConAnnulla } from "$lib/eliminazione-differita";
   import { OPZIONI_METODO } from "$lib/metodi-pagamento";
   import { filtriPagamenti } from "$lib/filtri.svelte";
+  import { seguiFinestra } from "$lib/righe-visibili";
   import type { Pagamento, PaginaPagamenti } from "$lib/types";
 
   let pagina = $state<PaginaPagamenti>({
@@ -20,6 +21,12 @@
     totaleImportoCent: 0,
   });
   let nuovoPagamentoAperto = $state(false);
+  /** Sotto la tabella: le pagine e il margine. */
+  const SPAZIO_SOTTO_PX = 80;
+  let tabella = $state<HTMLTableElement>();
+  /** Righe che stanno nella finestra; null finché non sono misurate. */
+  let righePerPagina = $state<number | null>(null);
+  let caricato = $state(false);
 
   const filtriAttivi = $derived(
     Boolean(filtriPagamenti.dal || filtriPagamenti.al || filtriPagamenti.metodo),
@@ -41,7 +48,9 @@
           iscrittoId: null,
         },
         numeroPagina,
+        righePerPagina ?? undefined,
       );
+      caricato = true;
     } catch (errore) {
       mostraAvviso("errore", messaggioErrore(errore));
     }
@@ -74,7 +83,17 @@
     carica();
   }
 
-  onMount(() => carica());
+  // La prima pagina si carica appena si sa quante righe stanno nella finestra
+  onMount(() => {
+    if (!tabella) return;
+    return seguiFinestra(tabella, SPAZIO_SOTTO_PX, {
+      numeroPagina: () => pagina.numero,
+      carica: (numero, righe) => {
+        righePerPagina = righe;
+        carica(numero);
+      },
+    });
+  });
 </script>
 
 <div class="intestazione">
@@ -122,15 +141,16 @@
   <button type="button" class="pulsante-testo" onclick={tuttoLoStorico}>Tutto lo storico</button>
 </div>
 
-<Paginazione {pagina} onCambia={carica} />
 <TabellaPagamenti
+  bind:tabella
+  compatta
   pagamenti={pagina.elementi}
   totaleElementi={pagina.totaleElementi}
   totaleImportoCent={pagina.totaleImportoCent}
   {messaggioVuoto}
   onElimina={elimina}
 />
-{#if pagina.totaleElementi > pagina.elementiPerPagina}
+{#if caricato}
   <Paginazione {pagina} onCambia={carica} />
 {/if}
 

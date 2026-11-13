@@ -251,7 +251,7 @@ progress {
 }
 
 /* Il nome prende lo spazio che resta e si accorcia, invece di allargare la tabella */
-.tabella.compatta td:first-child {
+.tabella.compatta td.elastica {
   width: 100%;
   max-width: 0;
   overflow: hidden;

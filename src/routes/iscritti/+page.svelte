@@ -11,11 +11,14 @@
   import Paginazione from "$lib/components/Paginazione.svelte";
   import { formattaData } from "$lib/format";
   import { filtriIscritti, senzaFiltriIscritti } from "$lib/filtri.svelte";
+  import { seguiFinestra } from "$lib/righe-visibili";
   import { ritarda } from "$lib/ritarda";
   import { opzioniStato } from "$lib/stato-validita";
   import type { Iscritto, Pagina } from "$lib/types";
 
   const PAUSA_RICERCA_MS = 200;
+  /** Sotto la tabella: le pagine e il margine. */
+  const SPAZIO_SOTTO_PX = 80;
 
   let pagina = $state<Pagina<Iscritto>>({
     elementi: [],
@@ -26,6 +29,9 @@
   /** Un solo modulo di inserimento aperto alla volta. */
   let moduloAperto = $state<"nuovo" | "gia-iscritto" | null>(null);
   let caricamento = $state(true);
+  let tabella = $state<HTMLTableElement>();
+  /** Righe che stanno nella finestra; null finché non sono misurate. */
+  let righePerPagina = $state<number | null>(null);
 
   // Conta i caricamenti: una risposta lenta non deve sovrascrivere quella di una ricerca successiva
   let ultimoCaricamento = 0;
@@ -44,6 +50,7 @@
           soloDaCompletare: filtriIscritti.soloDaCompletare,
         },
         numeroPagina,
+        righePerPagina ?? undefined,
       );
       if (questoCaricamento === ultimoCaricamento) pagina = risultato;
     } catch (errore) {
@@ -73,7 +80,17 @@
     await carica();
   }
 
-  onMount(() => carica());
+  // La prima pagina si carica appena si sa quante righe stanno nella finestra
+  onMount(() => {
+    if (!tabella) return;
+    return seguiFinestra(tabella, SPAZIO_SOTTO_PX, {
+      numeroPagina: () => pagina.numero,
+      carica: (numero, righe) => {
+        righePerPagina = righe;
+        carica(numero);
+      },
+    });
+  });
 </script>
 
 <div class="intestazione">
@@ -156,11 +173,7 @@
   </label>
 </div>
 
-{#if !caricamento}
-  <Paginazione {pagina} onCambia={carica} />
-{/if}
-
-<table class="tabella riquadrata">
+<table bind:this={tabella} class="tabella riquadrata compatta">
   <thead>
     <tr>
       <th>Cognome e nome</th>
@@ -176,7 +189,7 @@
         class:archiviato={iscritto.archiviato}
         onclick={() => goto(resolve("/iscritti/[id]", { id: String(iscritto.id) }))}
       >
-        <td>
+        <td class="elastica">
           <a href={resolve("/iscritti/[id]", { id: String(iscritto.id) })}
             >{iscritto.cognome} {iscritto.nome}</a
           >
@@ -210,7 +223,7 @@
   </tbody>
 </table>
 
-{#if pagina.totaleElementi > pagina.elementiPerPagina}
+{#if !caricamento}
   <Paginazione {pagina} onCambia={carica} />
 {/if}
 
@@ -246,6 +259,7 @@
     flex-wrap: wrap;
     gap: 0.75rem;
     align-items: center;
+    margin-bottom: 1rem;
   }
 
   .ricerca {

@@ -15,7 +15,8 @@ export interface MisureTabella {
   altezzaFinestra: number;
   /** Dove inizia la tabella, dall'alto della pagina. */
   inizioTabella: number;
-  altezzaIntestazione: number;
+  /** Intestazione ed eventuale riga dei totali: ci sono comunque, con qualsiasi numero di righe. */
+  altezzaFissa: number;
   altezzaRiga: number;
   /** Spazio da lasciare sotto la tabella: pagine, collegamenti, margine della pagina. */
   spazioSotto: number;
@@ -23,7 +24,7 @@ export interface MisureTabella {
 
 export function calcolaRigheVisibili(misure: MisureTabella): number {
   const spazioPerLeRighe =
-    misure.altezzaFinestra - misure.inizioTabella - misure.altezzaIntestazione - misure.spazioSotto;
+    misure.altezzaFinestra - misure.inizioTabella - misure.altezzaFissa - misure.spazioSotto;
   const righe = Math.floor(spazioPerLeRighe / Math.max(misure.altezzaRiga, 1));
   return Math.min(Math.max(righe, RIGHE_MINIME), RIGHE_MASSIME);
 }
@@ -41,13 +42,14 @@ export function paginaDopoCambioRighe(
 /** Misure di una tabella già disegnata; senza righe se ne usa una stimata. */
 export function misuraTabella(tabella: HTMLTableElement, spazioSotto: number): MisureTabella {
   const intestazione = tabella.tHead?.getBoundingClientRect().height ?? 0;
+  const piede = tabella.tFoot?.getBoundingClientRect().height ?? 0;
   const primaRiga = tabella.tBodies[0]?.rows[0];
   const altezzaRiga = primaRiga?.getBoundingClientRect().height || ALTEZZA_RIGA_STIMATA_PX;
   return {
     altezzaFinestra: window.innerHeight,
     // Dall'alto della pagina, anche se in quel momento è scorsa
     inizioTabella: tabella.getBoundingClientRect().top + window.scrollY,
-    altezzaIntestazione: intestazione,
+    altezzaFissa: intestazione + piede,
     altezzaRiga,
     spazioSotto,
   };
@@ -78,4 +80,31 @@ export function osservaRigheVisibili(
     osservatore.disconnect();
     window.removeEventListener("resize", ricalcola);
   };
+}
+
+/** Cosa serve a un elenco a pagine per seguire la finestra. */
+export interface ElencoAPagine {
+  /** La pagina che si sta guardando. */
+  numeroPagina: () => number;
+  /** Carica la pagina indicata con quel numero di righe. */
+  carica: (numeroPagina: number, righePerPagina: number) => void;
+}
+
+/**
+ * Collega la misura delle righe a un elenco a pagine: al primo calcolo carica la prima pagina,
+ * ai successivi resta sulla pagina con la prima riga che si vedeva. Restituisce la funzione per
+ * smettere di seguire la tabella.
+ */
+export function seguiFinestra(
+  tabella: HTMLTableElement,
+  spazioSotto: number,
+  elenco: ElencoAPagine,
+): () => void {
+  let righePrima: number | null = null;
+  return osservaRigheVisibili(tabella, spazioSotto, (righe) => {
+    const numero =
+      righePrima === null ? 1 : paginaDopoCambioRighe(elenco.numeroPagina(), righePrima, righe);
+    righePrima = righe;
+    elenco.carica(numero, righe);
+  });
 }

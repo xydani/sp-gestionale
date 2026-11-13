@@ -154,11 +154,14 @@ export function registraPagamento(dati: DatiPagamento): Promise<Pagamento> {
   return invoke<Pagamento>("registra_pagamento", { dati });
 }
 
+/** Senza `elementiPerPagina` le pagine sono da 50, il massimo. */
 export function elencaPagamenti(
   filtro: FiltroPagamenti,
   numeroPagina = 1,
+  elementiPerPagina?: number,
 ): Promise<PaginaPagamenti> {
-  return invoke<PaginaPagamenti>("elenca_pagamenti", { filtro, pagina: { numero: numeroPagina } });
+  const pagina = { numero: numeroPagina, elementiPerPagina };
+  return invoke<PaginaPagamenti>("elenca_pagamenti", { filtro, pagina });
 }
 
 export function eliminaPagamento(id: number): Promise<void> {
