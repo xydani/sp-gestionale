@@ -15,7 +15,7 @@ use super::pagamenti::{DatiPagamento, registra_pagamento, trova_tipologia_in_ven
 use crate::domain::anno_sportivo::{
     MESE_INIZIO_ANNO_SPORTIVO_PREDEFINITO, anno_sportivo_contenente,
 };
-use crate::domain::date::calcola_data_inizio_da_scadenza;
+use crate::domain::date::{Durata, calcola_data_inizio_da_scadenza, calcola_data_scadenza};
 use crate::domain::pagamento::MetodoPagamento;
 use crate::domain::testo::testo_facoltativo;
 use crate::domain::validazione::{
@@ -37,7 +37,12 @@ pub struct DatiIscrittoGiaAttivo {
     #[serde(default)]
     pub certificato_presentato: bool,
     pub tipologia_id: i64,
-    pub data_scadenza_abbonamento: NaiveDate,
+    /// Basta una delle due date: l'altra si ricava dalla durata della tipologia.
+    /// Se ci sono entrambe conta l'inizio.
+    #[serde(default)]
+    pub data_inizio_abbonamento: Option<NaiveDate>,
+    #[serde(default)]
+    pub data_scadenza_abbonamento: Option<NaiveDate>,
     pub importo_abbonamento_cent: i64,
     /// La quota dell'anno sportivo in corso è già stata pagata.
     pub quota_pagata: bool,
@@ -111,8 +116,29 @@ fn controlla_anagrafica_essenziale(
     Ok(())
 }
 
-/// L'inizio si ricava dalla scadenza e dalla durata della tipologia; il pagamento
-/// è datato a quel giorno. Il rinnovo successivo partirà dal giorno dopo la scadenza.
+/// Inizio e scadenza dell'abbonamento in corso a partire dalla data indicata.
+fn periodo_abbonamento(
+    dati: &DatiIscrittoGiaAttivo,
+    durata: Durata,
+) -> Result<(NaiveDate, NaiveDate), ErroreDatabase> {
+    let periodo = match (dati.data_inizio_abbonamento, dati.data_scadenza_abbonamento) {
+        (Some(inizio), _) => {
+            calcola_data_scadenza(inizio, durata).map(|scadenza| (inizio, scadenza))
+        }
+        (None, Some(scadenza)) => {
+            calcola_data_inizio_da_scadenza(scadenza, durata).map(|inizio| (inizio, scadenza))
+        }
+        (None, None) => {
+            return Err(ErroreDatabase::non_valido(
+                "Indicare quando è iniziato o quando scade l'abbonamento",
+            ));
+        }
+    };
+    periodo.map_err(|errore| ErroreDatabase::non_valido(errore.to_string()))
+}
+
+/// La data mancante tra inizio e scadenza si ricava dalla durata della tipologia; il pagamento
+/// è datato al giorno di inizio. Il rinnovo successivo partirà dal giorno dopo la scadenza.
 fn registra_abbonamento_in_corso(
     connessione: &Connection,
     iscritto_id: i64,
@@ -120,9 +146,7 @@ fn registra_abbonamento_in_corso(
     oggi: NaiveDate,
 ) -> Result<(), ErroreDatabase> {
     let tipologia = trova_tipologia_in_vendita(connessione, dati.tipologia_id)?;
-    let data_scadenza = dati.data_scadenza_abbonamento;
-    let data_inizio = calcola_data_inizio_da_scadenza(data_scadenza, tipologia.durata())
-        .map_err(|errore| ErroreDatabase::non_valido(errore.to_string()))?;
+    let (data_inizio, data_scadenza) = periodo_abbonamento(dati, tipologia.durata())?;
     controlla_abbonamento_pregresso(data_inizio, data_scadenza, oggi)
         .map_err(ErroreDatabase::non_valido)?;
     let pagamento = DatiPagamento {

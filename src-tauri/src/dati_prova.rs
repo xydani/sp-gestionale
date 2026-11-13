@@ -261,8 +261,10 @@ fn inserisci_iscritto_gia_attivo(
         data_scadenza_certificato: None,
         certificato_presentato: false,
         tipologia_id: tipologia.id,
-        data_scadenza_abbonamento: oggi
-            + Days::new(casuale.tra(0, GIORNI_MASSIMI_SCADENZA_GIA_ATTIVI)),
+        data_inizio_abbonamento: None,
+        data_scadenza_abbonamento: Some(
+            oggi + Days::new(casuale.tra(0, GIORNI_MASSIMI_SCADENZA_GIA_ATTIVI)),
+        ),
         importo_abbonamento_cent: tipologia.prezzo_cent,
         quota_pagata: true,
         quota_cent: QUOTA_ISCRIZIONE_CENT,

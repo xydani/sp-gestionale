@@ -186,11 +186,9 @@ pub fn controlla_abbonamento_pregresso(
     oggi: NaiveDate,
 ) -> EsitoControllo {
     if data_inizio > oggi {
-        return Err(
-            "La scadenza è più lontana della durata dell'abbonamento scelto: \
-             controllare la data o la tipologia"
-                .into(),
-        );
+        return Err("Così l'abbonamento inizierebbe dopo oggi: \
+             controllare le date o la durata della tipologia scelta"
+            .into());
     }
     if data_scadenza < oggi - Months::new(MESI_MASSIMI_SCADENZA_PREGRESSA_PASSATA) {
         return Err(format!(

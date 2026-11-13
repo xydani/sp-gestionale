@@ -42,7 +42,8 @@ fn dati_minimi() -> DatiIscrittoGiaAttivo {
         data_scadenza_certificato: None,
         certificato_presentato: false,
         tipologia_id: MENSILE,
-        data_scadenza_abbonamento: data("2026-11-25"),
+        data_inizio_abbonamento: None,
+        data_scadenza_abbonamento: Some(data("2026-11-25")),
         importo_abbonamento_cent: 4500,
         quota_pagata: true,
         quota_cent: 3000,
@@ -196,7 +197,7 @@ fn una_scadenza_oltre_la_durata_non_salva_nulla() {
     let database = DatabaseTemporaneo::nuovo();
     let mut connessione = database.crea_con_schema();
     let dati = DatiIscrittoGiaAttivo {
-        data_scadenza_abbonamento: data("2027-03-01"),
+        data_scadenza_abbonamento: Some(data("2027-03-01")),
         ..dati_minimi()
     };
 
@@ -255,4 +256,78 @@ fn il_filtro_trova_gli_iscritti_da_completare_finche_non_si_completano() {
             .unwrap()
             .is_empty()
     );
+}
+
+fn abbonamento_registrato(dati: &DatiIscrittoGiaAttivo) -> (NaiveDate, NaiveDate, NaiveDate) {
+    let database = DatabaseTemporaneo::nuovo();
+    let mut connessione = database.crea_con_schema();
+    let iscritto = registra_iscritto_gia_attivo(&mut connessione, dati, RIFERIMENTO).unwrap();
+    let filtro = FiltroPagamenti {
+        iscritto_id: Some(iscritto.id),
+        ..Default::default()
+    };
+    let pagamento = elenca_pagamenti(&connessione, &filtro).unwrap().remove(0);
+    (
+        pagamento.data_inizio,
+        pagamento.data_scadenza,
+        pagamento.data_pagamento,
+    )
+}
+
+#[test]
+fn con_la_sola_data_di_inizio_la_scadenza_si_ricava_dalla_durata() {
+    let dati = DatiIscrittoGiaAttivo {
+        data_inizio_abbonamento: Some(data("2026-10-31")),
+        data_scadenza_abbonamento: None,
+        ..dati_minimi()
+    };
+
+    let (inizio, scadenza, pagato_il) = abbonamento_registrato(&dati);
+
+    // Come per un pagamento nuovo: dal 31 ottobre il mensile copre fino al 30 novembre
+    assert_eq!((inizio, scadenza), (data("2026-10-31"), data("2026-11-30")));
+    assert_eq!(pagato_il, inizio);
+}
+
+#[test]
+fn con_entrambe_le_date_conta_l_inizio() {
+    let dati = DatiIscrittoGiaAttivo {
+        data_inizio_abbonamento: Some(data("2026-11-01")),
+        data_scadenza_abbonamento: Some(data("2026-11-20")),
+        ..dati_minimi()
+    };
+
+    let (inizio, scadenza, _) = abbonamento_registrato(&dati);
+
+    assert_eq!((inizio, scadenza), (data("2026-11-01"), data("2026-11-30")));
+}
+
+#[test]
+fn senza_inizio_ne_scadenza_non_salva_nulla() {
+    let database = DatabaseTemporaneo::nuovo();
+    let mut connessione = database.crea_con_schema();
+    let dati = DatiIscrittoGiaAttivo {
+        data_scadenza_abbonamento: None,
+        ..dati_minimi()
+    };
+
+    let errore = registra_iscritto_gia_attivo(&mut connessione, &dati, RIFERIMENTO).unwrap_err();
+
+    assert!(errore.to_string().contains("iniziato o quando scade"));
+    assert_eq!(conta(&connessione, "iscritti"), 0);
+}
+
+#[test]
+fn un_inizio_futuro_non_salva_nulla() {
+    let database = DatabaseTemporaneo::nuovo();
+    let mut connessione = database.crea_con_schema();
+    let dati = DatiIscrittoGiaAttivo {
+        data_inizio_abbonamento: Some(data("2026-11-11")),
+        ..dati_minimi()
+    };
+
+    let errore = registra_iscritto_gia_attivo(&mut connessione, &dati, RIFERIMENTO).unwrap_err();
+
+    assert!(errore.to_string().contains("dopo oggi"));
+    assert_eq!(conta(&connessione, "iscritti"), 0);
 }
