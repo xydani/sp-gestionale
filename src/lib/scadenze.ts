@@ -1,5 +1,6 @@
 import type {
   ConteggioInScadenza,
+  ConteggioStati,
   FiltroIscritti,
   Iscritto,
   OrdinamentoIscritti,
@@ -44,11 +45,45 @@ export const REGOLE_SCADENZA: Record<TipoScadenza, RegoleScadenza> = {
 
 export const TIPI_SCADENZA = Object.keys(REGOLE_SCADENZA) as TipoScadenza[];
 
-/** Sezioni della pagina per ogni tipo: per i certificati anche quelli mai presentati. */
-export function statiDaMostrare(tipo: TipoScadenza): StatoScadenza[] {
-  return tipo === "certificato"
-    ? ["in_scadenza", "scaduto", "nessuno"]
-    : ["in_scadenza", "scaduto"];
+/** Le due colonne della pagina Scadenze. */
+export type ColonnaScadenze = "scaduto" | "in_scadenza";
+
+/** Una scheda di colonna: un tipo e gli stati da elencare, uno sotto l'altro. */
+export interface SchedaScadenze {
+  tipo: TipoScadenza;
+  etichetta: string;
+  stati: StatoScadenza[];
+}
+
+const ETICHETTE_SCHEDA: Record<TipoScadenza, string> = {
+  abbonamento: "Abbonamenti",
+  iscrizione: "Iscrizioni",
+  certificato: "Certificati",
+};
+
+/** Una scheda per tipo; tra gli scaduti i certificati comprendono anche quelli mai presentati. */
+export function schedeColonna(colonna: ColonnaScadenze): SchedaScadenze[] {
+  return TIPI_SCADENZA.map((tipo) => ({
+    tipo,
+    etichetta: ETICHETTE_SCHEDA[tipo],
+    stati: colonna === "scaduto" && tipo === "certificato" ? ["scaduto", "nessuno"] : [colonna],
+  }));
+}
+
+/** Quanti iscritti ci sono in una scheda, dai conteggi della dashboard. */
+export function numeroNellaScheda(scheda: SchedaScadenze, riepilogo: RiepilogoDashboard): number {
+  const conteggi: Record<TipoScadenza, ConteggioStati> = {
+    abbonamento: riepilogo.abbonamenti,
+    iscrizione: riepilogo.iscrizioni,
+    certificato: riepilogo.certificati,
+  };
+  const stati = conteggi[scheda.tipo];
+  const numeri: Record<StatoScadenza, number> = {
+    in_scadenza: stati.inScadenza,
+    scaduto: stati.scaduti,
+    nessuno: stati.assenti,
+  };
+  return scheda.stati.reduce((totale, stato) => totale + numeri[stato], 0);
 }
 
 /**

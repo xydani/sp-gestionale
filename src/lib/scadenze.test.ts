@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { filtroScadenze, gruppiConScaduti, gruppoDaMostrare, statiDaMostrare } from "./scadenze";
+import {
+  filtroScadenze,
+  gruppiConScaduti,
+  gruppoDaMostrare,
+  numeroNellaScheda,
+  schedeColonna,
+} from "./scadenze";
 import type { ConteggioStati, RiepilogoDashboard } from "./types";
 
 describe("filtroScadenze", () => {
@@ -19,10 +25,35 @@ describe("filtroScadenze", () => {
   });
 });
 
-describe("statiDaMostrare", () => {
-  it("mostra i mancanti solo per i certificati", () => {
-    expect(statiDaMostrare("certificato")).toContain("nessuno");
-    expect(statiDaMostrare("abbonamento")).not.toContain("nessuno");
+describe("schedeColonna", () => {
+  it("una scheda per tipo, ognuna con il suo stato", () => {
+    const schede = schedeColonna("in_scadenza");
+    expect(schede.map((scheda) => scheda.tipo)).toEqual([
+      "abbonamento",
+      "iscrizione",
+      "certificato",
+    ]);
+    expect(schede.every((scheda) => scheda.stati.join() === "in_scadenza")).toBe(true);
+  });
+
+  it("tra gli scaduti i certificati comprendono quelli mai presentati", () => {
+    expect(schedeColonna("scaduto")[2].stati).toEqual(["scaduto", "nessuno"]);
+    expect(schedeColonna("scaduto")[0].stati).toEqual(["scaduto"]);
+  });
+});
+
+describe("numeroNellaScheda", () => {
+  const conteggi: RiepilogoDashboard = {
+    ...riepilogo(4, 2, 1),
+    certificati: { attivi: 0, inScadenza: 3, scaduti: 1, assenti: 9 },
+  };
+
+  it("prende il conteggio del tipo e dello stato della scheda", () => {
+    const [abbonamenti, , certificati] = schedeColonna("scaduto");
+    expect(numeroNellaScheda(abbonamenti, conteggi)).toBe(4);
+    expect(numeroNellaScheda(schedeColonna("in_scadenza")[2], conteggi)).toBe(3);
+    // Scaduti più mai presentati
+    expect(numeroNellaScheda(certificati, conteggi)).toBe(10);
   });
 });
 

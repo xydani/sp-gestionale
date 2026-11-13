@@ -16,6 +16,7 @@
     stato,
     massimo,
     compatto = false,
+    elementiPerPagina,
     onCambiato,
   }: {
     tipo: TipoScadenza;
@@ -24,6 +25,8 @@
     massimo?: number;
     /** Righe più basse, per stare in poco spazio. */
     compatto?: boolean;
+    /** Pagine più corte, per non dover scorrere; di base 50. */
+    elementiPerPagina?: number;
     /** Dopo un rinnovo, per aggiornare il resto della pagina. */
     onCambiato?: () => void;
   } = $props();
@@ -56,7 +59,7 @@
 
   async function carica(numeroPagina = 1) {
     try {
-      pagina = await elencaIscritti(filtroScadenze(tipo, stato), numeroPagina);
+      pagina = await elencaIscritti(filtroScadenze(tipo, stato), numeroPagina, elementiPerPagina);
     } catch (errore) {
       mostraAvviso("errore", messaggioErrore(errore));
     }
