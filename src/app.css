@@ -243,6 +243,24 @@ progress {
   border-bottom: 1px solid var(--colore-bordo);
 }
 
+/* Righe basse e su una sola riga, per gli elenchi affiancati della dashboard */
+.tabella.compatta th,
+.tabella.compatta td {
+  padding: 0.4rem 0.6rem;
+  white-space: nowrap;
+}
+
+/* I nomi lunghi si accorciano invece di allargare la tabella */
+.tabella.compatta td:first-child {
+  max-width: 13rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tabella.compatta .pulsante.piccolo {
+  padding-block: 0.2rem;
+}
+
 .tabella tbody tr:last-child td {
   border-bottom: none;
 }

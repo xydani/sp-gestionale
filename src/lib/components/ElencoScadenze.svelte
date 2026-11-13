@@ -15,12 +15,15 @@
     tipo,
     stato,
     massimo,
+    compatto = false,
     onCambiato,
   }: {
     tipo: TipoScadenza;
     stato: StatoScadenza;
     /** Se indicato, solo le prime righe e un collegamento all'elenco completo (es. in dashboard). */
     massimo?: number;
+    /** Righe più basse, per stare in poco spazio. */
+    compatto?: boolean;
     /** Dopo un rinnovo, per aggiornare il resto della pagina. */
     onCambiato?: () => void;
   } = $props();
@@ -62,9 +65,14 @@
   onMount(() => carica());
 </script>
 
-<table class="tabella riquadrata {stato}">
+<table class="tabella riquadrata {stato}" class:compatta={compatto}>
   <thead>
-    <tr><th>Cognome e nome</th><th>Telefono</th><th>Scadenza</th><th></th><th></th></tr>
+    <tr>
+      <th>Cognome e nome</th>
+      <th>Telefono</th>
+      <th colspan={compatto ? 1 : 2}>Scadenza</th>
+      <th></th>
+    </tr>
   </thead>
   <tbody>
     {#each righe as iscritto (iscritto.id)}
@@ -76,11 +84,15 @@
           </a>
         </td>
         <td>{iscritto.telefono ?? "—"}</td>
-        {#if dataScadenza(iscritto)}
+        {#if !dataScadenza(iscritto)}
+          <td colspan={compatto ? 1 : 2} class="distanza">Non presentato</td>
+        {:else if compatto}
+          <td class="distanza" title={formattaData(dataScadenza(iscritto))}>
+            {descriviScadenza(dataScadenza(iscritto))}
+          </td>
+        {:else}
           <td>{formattaData(dataScadenza(iscritto))}</td>
           <td class="distanza">{descriviScadenza(dataScadenza(iscritto))}</td>
-        {:else}
-          <td colspan="2" class="distanza">Non presentato</td>
         {/if}
         <td class="azione">
           {#if eRinnovabile(tipo)}
@@ -102,7 +114,7 @@
         </td>
       </tr>
     {:else}
-      <tr><td colspan="5" class="vuoto">Nessuno</td></tr>
+      <tr><td colspan={compatto ? 4 : 5} class="vuoto">Nessuno</td></tr>
     {/each}
   </tbody>
 </table>

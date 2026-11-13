@@ -7,17 +7,20 @@
     valore,
     tono = "neutro",
     href,
+    compatto = false,
     dettaglio,
   }: {
     etichetta: string;
     valore: string;
     tono?: "neutro" | "attivo" | "in_scadenza" | "scaduto";
     href?: string;
+    /** Più basso e con il numero più piccolo, per le righe di riquadri (es. dashboard). */
+    compatto?: boolean;
     dettaglio?: Snippet;
   } = $props();
 </script>
 
-<svelte:element this={href ? "a" : "div"} {href} class="riquadro {tono}">
+<svelte:element this={href ? "a" : "div"} {href} class="riquadro {tono}" class:compatto>
   <span class="etichetta">
     {#if tono !== "neutro"}<span class="indicatore" aria-hidden="true"></span>{/if}
     {etichetta}
@@ -38,6 +41,19 @@
     box-shadow: var(--ombra-scheda);
     color: inherit;
     text-decoration: none;
+  }
+
+  .compatto {
+    gap: 0.2rem;
+    padding: 0.7rem 0.9rem;
+  }
+
+  .compatto .valore {
+    font-size: 1.5rem;
+  }
+
+  .compatto .dettaglio {
+    font-size: 0.8rem;
   }
 
   a.riquadro:hover {
