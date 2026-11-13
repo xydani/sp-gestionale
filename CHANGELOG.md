@@ -17,6 +17,7 @@
 - Dashboard più compatta: scaduti e prossime scadenze affiancati e visibili senza scorrere
 - I già scaduti compaiono in dashboard solo se ci sono, divisi in schede per tipo con il loro numero
 - Nelle prossime scadenze i certificati hanno il pulsante «Aggiorna» per aprire la scheda
+- Nella scheda iscritto il certificato medico ha una sezione sua, separata dall'anagrafica, con il modulo per registrarlo o aggiornarlo
 
 ## [0.1.6] - 2026-11-13
 

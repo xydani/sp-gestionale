@@ -3,7 +3,7 @@ import { formattaData } from "./format";
 import type { Iscritto, StatoValidita } from "./types";
 
 /** Dove si sistema ciò che manca: la sezione da aprire nella scheda. */
-export type AzioneMancanza = "iscrizione" | "abbonamento" | "anagrafica";
+export type AzioneMancanza = "iscrizione" | "abbonamento" | "certificato" | "anagrafica";
 
 export interface Mancanza {
   testo: string;
@@ -30,7 +30,7 @@ export function cosaManca(iscritto: Iscritto): Mancanza[] {
   if (certificato) {
     mancanze.push({
       testo: certificato,
-      azione: "anagrafica",
+      azione: "certificato",
       urgente: iscritto.statoCertificato !== "in_scadenza",
     });
   }

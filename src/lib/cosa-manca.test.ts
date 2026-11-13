@@ -34,7 +34,7 @@ describe("cosaManca", () => {
     expect(mancanze.map((mancanza) => mancanza.azione)).toEqual([
       "iscrizione",
       "abbonamento",
-      "anagrafica",
+      "certificato",
       "anagrafica",
     ]);
     expect(mancanze[0]).toMatchObject({ testo: "Quota annuale scaduta", urgente: true });

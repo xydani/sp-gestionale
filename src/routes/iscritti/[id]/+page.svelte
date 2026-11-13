@@ -11,10 +11,10 @@
     trovaIscritto,
   } from "$lib/api";
   import { mostraAvviso } from "$lib/avvisi.svelte";
-  import BadgeStato from "$lib/components/BadgeStato.svelte";
   import FormIscritto from "$lib/components/FormIscritto.svelte";
   import { confermaEliminazioneIscritto } from "$lib/conferma";
   import SezioneAbbonamento from "$lib/components/SezioneAbbonamento.svelte";
+  import SezioneCertificato from "$lib/components/SezioneCertificato.svelte";
   import SezioneIscrizione from "$lib/components/SezioneIscrizione.svelte";
   import StrisciaCosaManca from "$lib/components/StrisciaCosaManca.svelte";
   import type { AzioneMancanza } from "$lib/cosa-manca";
@@ -28,11 +28,13 @@
   let errore = $state<string | null>(null);
   let rinnovoIscrizioneAperto = $state(false);
   let rinnovoAbbonamentoAperto = $state(false);
+  let certificatoAperto = $state(false);
 
   const SEZIONI_AZIONE: Record<AzioneMancanza, string> = {
     anagrafica: "sezione-anagrafica",
     iscrizione: "sezione-iscrizione",
     abbonamento: "sezione-abbonamento",
+    certificato: "sezione-certificato",
   };
 
   /** Dalla striscia «Da sistemare»: apre il modulo giusto e ci porta la vista. */
@@ -40,6 +42,7 @@
     if (azione === "anagrafica") inModifica = true;
     if (azione === "iscrizione") rinnovoIscrizioneAperto = true;
     if (azione === "abbonamento") rinnovoAbbonamentoAperto = true;
+    if (azione === "certificato") certificatoAperto = true;
     await tick();
     const sezione = document.getElementById(SEZIONI_AZIONE[azione]);
     sezione?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -122,6 +125,7 @@
                 dataNascita: iscritto.dataNascita ?? "",
                 luogoNascita: iscritto.luogoNascita ?? "",
               }}
+              conCertificato={false}
               etichettaConferma="Salva modifiche"
               onConferma={salvaModifiche}
               onAnnulla={() => (inModifica = false)}
@@ -137,17 +141,6 @@
               <dd>{iscritto.telefono ?? "—"}</dd>
               <dt>Email</dt>
               <dd>{iscritto.email ?? "—"}</dd>
-              <dt>Certificato medico</dt>
-              <dd class="certificato">
-                {#if iscritto.dataScadenzaCertificato}
-                  <BadgeStato stato={iscritto.statoCertificato} />
-                  scade il {formattaData(iscritto.dataScadenzaCertificato)}
-                {:else if iscritto.certificatoPresentato}
-                  <BadgeStato stato="attivo" /> presentato, scadenza non indicata
-                {:else}
-                  <BadgeStato stato="nessuno" /> non presentato
-                {/if}
-              </dd>
               <dt>Note</dt>
               <dd class="note">{iscritto.note ?? "—"}</dd>
             </dl>
@@ -166,6 +159,11 @@
             </div>
           {/if}
         </section>
+        <SezioneCertificato
+          {iscritto}
+          bind:formAperto={certificatoAperto}
+          onAggiornato={(aggiornato) => (iscritto = aggiornato)}
+        />
       </div>
       <div class="colonna">
         {#key iscritto.id}
@@ -200,12 +198,6 @@
 
   .colonna {
     min-width: 0;
-  }
-
-  .certificato {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
   }
 
   .indietro {

@@ -1,5 +1,5 @@
 import { formattaData } from "./format";
-import type { Iscritto } from "./types";
+import type { DatiIscritto, Iscritto } from "./types";
 
 /** Avviso da mostrare sul certificato medico, oppure null se è valido. */
 export function avvisoCertificato(
@@ -18,4 +18,27 @@ export function avvisoCertificato(
     case "attivo":
       return null;
   }
+}
+
+export interface DatiCertificato {
+  certificatoPresentato: boolean;
+  /** Vuota se non indicata. */
+  dataScadenzaCertificato: string;
+}
+
+/** I dati da salvare cambiando solo il certificato: l'anagrafica resta com'è. */
+export function datiConCertificato(iscritto: Iscritto, certificato: DatiCertificato): DatiIscritto {
+  return {
+    nome: iscritto.nome,
+    cognome: iscritto.cognome,
+    dataNascita: iscritto.dataNascita,
+    luogoNascita: iscritto.luogoNascita,
+    telefono: iscritto.telefono,
+    email: iscritto.email,
+    note: iscritto.note,
+    certificatoPresentato: certificato.certificatoPresentato,
+    dataScadenzaCertificato: certificato.certificatoPresentato
+      ? certificato.dataScadenzaCertificato || null
+      : null,
+  };
 }
