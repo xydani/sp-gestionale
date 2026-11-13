@@ -96,7 +96,9 @@ export interface DatiIscrittoGiaAttivo {
   dataScadenzaCertificato: string | null;
   certificatoPresentato: boolean;
   tipologiaId: number;
-  dataScadenzaAbbonamento: string;
+  /** Basta una delle due: l'altra la ricava il programma dalla durata della tipologia. */
+  dataInizioAbbonamento: string | null;
+  dataScadenzaAbbonamento: string | null;
   importoAbbonamentoCent: number;
   /** La quota dell'anno sportivo in corso è già stata pagata. */
   quotaPagata: boolean;

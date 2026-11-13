@@ -9,7 +9,14 @@
   } from "$lib/api";
   import { mostraAvviso } from "$lib/avvisi.svelte";
   import { centesimiInTestoEuro, euroInCentesimi } from "$lib/format";
-  import { limitiScadenzaPregressa, trovaOmonimi } from "$lib/gia-iscritto";
+  import {
+    completaDateAbbonamento,
+    dateDaInviare,
+    limitiInizioPregresso,
+    limitiScadenzaPregressa,
+    trovaOmonimi,
+    type DataIndicata,
+  } from "$lib/gia-iscritto";
   import { OPZIONI_METODO } from "$lib/metodi-pagamento";
   import type {
     DatiIscrittoGiaAttivo,
@@ -48,7 +55,10 @@
   let cognome = $state("");
   let telefono = $state("");
   let tipologiaId = $state<number | null>(null);
+  let inizioAbbonamento = $state("");
   let scadenzaAbbonamento = $state("");
+  /** Quale delle due date è stata scritta a mano: l'altra si calcola dalla durata. */
+  let dataIndicata = $state<DataIndicata | null>(null);
   let importoAbbonamento = $state("");
   let quotaPagata = $state(true);
   let quota = $state("");
@@ -63,6 +73,7 @@
   const certificato = limitiScadenzaCertificato();
   const tipologiaScelta = $derived(tipologie.find((tipologia) => tipologia.id === tipologiaId));
   const limitiScadenza = $derived(limitiScadenzaPregressa(tipologiaScelta));
+  const limitiInizio = $derived(limitiInizioPregresso(tipologiaScelta));
 
   onMount(async () => {
     try {
@@ -79,6 +90,24 @@
   function proponiImportoAbbonamento() {
     const scelta = tipologie.find((tipologia) => tipologia.id === tipologiaId);
     if (scelta) importoAbbonamento = centesimiInTestoEuro(scelta.prezzoCent);
+  }
+
+  function cambiaTipologia() {
+    proponiImportoAbbonamento();
+    completaAltraData();
+  }
+
+  function indicaData(quale: DataIndicata) {
+    dataIndicata = quale;
+    completaAltraData();
+  }
+
+  function completaAltraData() {
+    const scelta = tipologie.find((tipologia) => tipologia.id === tipologiaId);
+    const date = { inizioIso: inizioAbbonamento, scadenzaIso: scadenzaAbbonamento };
+    const complete = completaDateAbbonamento(date, dataIndicata, scelta);
+    inizioAbbonamento = complete.inizioIso;
+    scadenzaAbbonamento = complete.scadenzaIso;
   }
 
   /** Avvisa, senza bloccare, se esiste già qualcuno con lo stesso nome e cognome. */
@@ -113,7 +142,10 @@
       dataScadenzaCertificato: certificatoPresentato ? scadenzaCertificato || null : null,
       certificatoPresentato,
       tipologiaId,
-      dataScadenzaAbbonamento: scadenzaAbbonamento,
+      ...dateDaInviare(
+        { inizioIso: inizioAbbonamento, scadenzaIso: scadenzaAbbonamento },
+        dataIndicata,
+      ),
       importoAbbonamentoCent,
       quotaPagata,
       quotaCent,
@@ -126,7 +158,9 @@
     nome = "";
     cognome = "";
     telefono = "";
+    inizioAbbonamento = "";
     scadenzaAbbonamento = "";
+    dataIndicata = null;
     certificatoPresentato = false;
     scadenzaCertificato = "";
     omonimi = [];
@@ -170,9 +204,10 @@
 
 <form onsubmit={salva}>
   <p class="spiegazione">
-    Per chi era già iscritto prima del programma. Gli importi entrano negli incassi: la quota a
-    inizio anno sportivo, l'abbonamento nel mese in cui è iniziato. Data e luogo di nascita si
-    completano poi dalla scheda.
+    Per chi era già iscritto prima del programma. Dell'abbonamento basta una data, inizio o
+    scadenza: l'altra si calcola dalla durata. Gli importi entrano negli incassi: la quota a inizio
+    anno sportivo, l'abbonamento nel mese in cui è iniziato. Data e luogo di nascita si completano
+    poi dalla scheda.
   </p>
 
   <div class="griglia">
@@ -228,12 +263,8 @@
           etichetta: tipologia.nome,
         }))}
         obbligatoria
-        onCambia={proponiImportoAbbonamento}
+        onCambia={cambiaTipologia}
       />
-    </label>
-    <label>
-      Scade il
-      <CampoData bind:valore={scadenzaAbbonamento} {...limitiScadenza} obbligatoria />
     </label>
     <label>
       Importo abbonamento (€)
@@ -242,6 +273,27 @@
         inputmode="decimal"
         required
         use:validita={erroreImportoEuro(importoAbbonamento)}
+      />
+    </label>
+  </div>
+
+  <div class="griglia">
+    <label>
+      Iniziato il
+      <CampoData
+        bind:valore={inizioAbbonamento}
+        {...limitiInizio}
+        obbligatoria={dataIndicata !== "scadenza"}
+        onCambia={() => indicaData("inizio")}
+      />
+    </label>
+    <label>
+      Scade il
+      <CampoData
+        bind:valore={scadenzaAbbonamento}
+        {...limitiScadenza}
+        obbligatoria={dataIndicata !== "inizio"}
+        onCambia={() => indicaData("scadenza")}
       />
     </label>
   </div>

@@ -236,6 +236,7 @@ describe("api iscritti già attivi", () => {
       dataScadenzaCertificato: null,
       certificatoPresentato: false,
       tipologiaId: 1,
+      dataInizioAbbonamento: null,
       dataScadenzaAbbonamento: "2026-11-25",
       importoAbbonamentoCent: 5000,
       quotaPagata: true,
