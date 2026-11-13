@@ -43,6 +43,13 @@ export function formattaData(dataIso: string): string {
   return `${giorno}/${mese}/${anno}`;
 }
 
+/** "10/11" se la data è dell'anno di `oggi`, altrimenti completa: per le colonne strette. */
+export function formattaDataBreve(dataIso: string, oggi: string = oggiIso()): string {
+  if (dataIso.slice(0, 4) !== oggi.slice(0, 4)) return formattaData(dataIso);
+  const [, mese, giorno] = dataIso.split("-");
+  return `${giorno}/${mese}`;
+}
+
 /** Data di oggi in formato ISO, secondo il fuso orario locale. */
 export function oggiIso(adesso: Date = new Date()): string {
   const mese = String(adesso.getMonth() + 1).padStart(2, "0");

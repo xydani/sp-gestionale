@@ -9,6 +9,7 @@ import {
   variazionePercentuale,
   euroInCentesimi,
   formattaData,
+  formattaDataBreve,
   formattaEuro,
   formattaPercentuale,
   formattaPeriodo,
@@ -147,5 +148,16 @@ describe("nomeMeseDaNumero", () => {
     expect(nomeMeseDaNumero(1)).toBe("gennaio");
     expect(nomeMeseDaNumero(9)).toBe("settembre");
     expect(nomeMeseDaNumero(12)).toBe("dicembre");
+  });
+});
+
+describe("formattaDataBreve", () => {
+  it("nell'anno in corso omette l'anno", () => {
+    expect(formattaDataBreve("2026-11-05", "2026-11-13")).toBe("05/11");
+  });
+
+  it("di un altro anno resta completa", () => {
+    expect(formattaDataBreve("2025-12-20", "2026-01-10")).toBe("20/12/2025");
+    expect(formattaDataBreve("2027-01-02", "2026-12-30")).toBe("02/01/2027");
   });
 });
