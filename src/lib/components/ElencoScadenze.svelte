@@ -11,7 +11,19 @@
   import Paginazione from "./Paginazione.svelte";
 
   /** Elenco paginato degli iscritti con una scadenza in arrivo, passata o mancante. */
-  let { tipo, stato }: { tipo: TipoScadenza; stato: StatoScadenza } = $props();
+  let {
+    tipo,
+    stato,
+    massimo,
+    onCambiato,
+  }: {
+    tipo: TipoScadenza;
+    stato: StatoScadenza;
+    /** Se indicato, solo le prime righe e un collegamento all'elenco completo (es. in dashboard). */
+    massimo?: number;
+    /** Dopo un rinnovo, per aggiornare il resto della pagina. */
+    onCambiato?: () => void;
+  } = $props();
 
   let pagina = $state<Pagina<Iscritto>>({
     elementi: [],
@@ -25,8 +37,15 @@
 
   async function chiudiRinnovo(registrato: boolean) {
     daRinnovare = null;
-    if (registrato) await carica(pagina.numero);
+    if (!registrato) return;
+    await carica(pagina.numero);
+    onCambiato?.();
   }
+
+  const righe = $derived(
+    massimo === undefined ? pagina.elementi : pagina.elementi.slice(0, massimo),
+  );
+  const altreRighe = $derived(massimo !== undefined && pagina.totaleElementi > massimo);
 
   function dataScadenza(iscritto: Iscritto): string {
     return REGOLE_SCADENZA[tipo].dataScadenza(iscritto) ?? "";
@@ -48,7 +67,7 @@
     <tr><th>Cognome e nome</th><th>Telefono</th><th>Scadenza</th><th></th><th></th></tr>
   </thead>
   <tbody>
-    {#each pagina.elementi as iscritto (iscritto.id)}
+    {#each righe as iscritto (iscritto.id)}
       <tr>
         <td>
           <a href={resolve("/iscritti/[id]", { id: String(iscritto.id) })}>
@@ -87,7 +106,9 @@
     {/each}
   </tbody>
 </table>
-{#if pagina.totaleElementi > pagina.elementiPerPagina}
+{#if altreRighe}
+  <a class="tutti" href={resolve("/scadenze")}>Tutti ({pagina.totaleElementi}) →</a>
+{:else if massimo === undefined && pagina.totaleElementi > pagina.elementiPerPagina}
   <Paginazione {pagina} onCambia={carica} />
 {/if}
 
@@ -96,6 +117,14 @@
 {/if}
 
 <style>
+  .tutti {
+    display: block;
+    margin-top: 0.5rem;
+    text-align: right;
+    color: var(--colore-primario);
+    text-decoration: none;
+  }
+
   /* Il colore del bordo sinistro indica lo stato */
   table.tabella {
     border-left-width: 4px;
