@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { descriviIntervallo, numeroPagine } from "./paginazione";
+import { descriviIntervallo, numeroPagine, paginaDiElenco } from "./paginazione";
 
 describe("numeroPagine", () => {
   it("arrotonda per eccesso e vale almeno 1", () => {
@@ -20,5 +20,24 @@ describe("descriviIntervallo", () => {
     expect(descriviIntervallo({ numero: 1, elementiPerPagina: 50, totaleElementi: 0 })).toBe(
       "Nessun risultato",
     );
+  });
+});
+
+describe("paginaDiElenco", () => {
+  const giorni = Array.from({ length: 31 }, (_, indice) => indice + 1);
+
+  it("ritaglia la pagina richiesta", () => {
+    const seconda = paginaDiElenco(giorni, 2, 10);
+    expect(seconda.elementi).toEqual([11, 12, 13, 14, 15, 16, 17, 18, 19, 20]);
+    expect(seconda.totaleElementi).toBe(31);
+  });
+
+  it("l'ultima pagina ha solo gli elementi rimasti", () => {
+    expect(paginaDiElenco(giorni, 4, 10).elementi).toEqual([31]);
+  });
+
+  it("una pagina oltre l'ultima diventa l'ultima", () => {
+    expect(paginaDiElenco(giorni, 9, 10).numero).toBe(4);
+    expect(paginaDiElenco([], 3, 10)).toMatchObject({ numero: 1, elementi: [] });
   });
 });
