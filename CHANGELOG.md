@@ -2,6 +2,7 @@
 
 ## [Non rilasciato]
 
+- L'icona del programma riprende lo scudo del logo ridisegnato
 - Quota annuale e inizio dell'anno sportivo si impostano dal Listino, ora «Listino prezzi», insieme agli abbonamenti; anche nella configurazione iniziale stanno nel passo del listino
 - Listino più chiaro: «+ Nuova tipologia» e «Modifica» si aprono in primo piano con i campi etichettati, accanto al prezzo c'è quanto costa al mese e le tipologie disattivate stanno a parte, chiuse
 - Anche «Nuovo iscritto», «Aggiungi già iscritto» e «Registra pagamento» si aprono in primo piano sopra l'elenco

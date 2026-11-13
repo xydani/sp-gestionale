@@ -1,13 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
   <rect x="32" y="32" width="960" height="960" rx="220" fill="#ffffff" />
   <rect x="32.5" y="32.5" width="959" height="959" rx="219.5" fill="none" stroke="#dfe3ee" stroke-width="1" />
-  <!-- Stemma del logo (scudo con i tagli), ingrandito e centrato -->
-  <g transform="translate(512 520) scale(5.6) translate(-65 -71)">
-    <path d="M4 18 H126 V72 L65 124 L4 72 Z" fill="#0e2ab9" />
-    <g fill="none" stroke="#ffffff" stroke-width="8" stroke-linejoin="miter">
-      <path d="M65 18 V88" />
-      <path d="M16 36 H52 L20 74 H50" />
-      <path d="M114 36 H78 L110 74 H80" />
-    </g>
+  <!-- Stemma del logo (le due metà speculari dello scudo), ingrandito e centrato -->
+  <g transform="translate(512 512) scale(5.2) translate(-212 -310.5)" fill="#0e2ab6">
+    <path d="M146 253 H207.5 V312.5 L191 329 L207.5 345.5 V368 L158 319 L186 291 V260 L146 300 Z" />
+    <path d="M278 253 H216.5 V312.5 L233 329 L216.5 345.5 V368 L266 319 L238 291 V260 L278 300 Z" />
   </g>
 </svg>
