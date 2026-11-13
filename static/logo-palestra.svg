@@ -1,16 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 130" role="img" aria-label="Logo della palestra">
-  <g fill="#0e2ab9">
-    <path d="M4 18 H126 V72 L65 124 L4 72 Z" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="143 250 288 126" role="img" aria-label="Logo della palestra">
+  <defs>
+    <clipPath id="riga-dm"><rect x="290" y="253.5" width="140" height="41" /></clipPath>
+    <clipPath id="riga-wl"><rect x="290" y="331.5" width="140" height="41" /></clipPath>
+  </defs>
+  <!-- Scudo: due metà speculari separate da una fessura, con taglio obliquo e rombo vuoto -->
+  <g fill="#0e2ab6">
+    <path d="M146 253 H207.5 V312.5 L191 329 L207.5 345.5 V368 L158 319 L186 291 V260 L146 300 Z" />
+    <path d="M278 253 H216.5 V312.5 L233 329 L216.5 345.5 V368 L266 319 L238 291 V260 L278 300 Z" />
   </g>
-  <g fill="none" stroke="#fff" stroke-width="8" stroke-linejoin="miter" stroke-linecap="butt">
-    <path d="M65 14 V88" />
-    <path d="M16 36 H52 L20 74 H50" />
-    <path d="M114 36 H78 L110 74 H80" />
-  </g>
-  <g fill="none" stroke="#0e2ab9" stroke-width="4.5" stroke-linejoin="miter" stroke-linecap="square">
-    <path d="M148 20 V62 H166 A21 21 0 0 0 166 20 Z" />
-    <path d="M196 62 V20 L216 49 L236 20 V62" />
-    <path d="M146 82 L156 122 L167 90 L178 122 L188 82" />
-    <path d="M203 82 V122 H230" />
+  <g fill="none" stroke="#192a86" stroke-width="5.5" stroke-linejoin="miter" stroke-miterlimit="10">
+    <path d="M299.5 255.5 H338 A7 7 0 0 1 345 262.5 V284.5 A7 7 0 0 1 338 291.5 H299.5 Z" />
+    <g clip-path="url(#riga-dm)">
+      <path d="M362.5 250 V298" />
+      <path d="M423 250 V298" />
+      <path d="M363.1 250.5 L392.75 293.6 L422.4 250.5" />
+    </g>
+    <g clip-path="url(#riga-wl)">
+      <path d="M294 325 L317.4 373.7 L338.4 329 L358.5 374.8 L380.4 325" />
+      <path d="M393.5 331.5 V370 H427.5" />
+    </g>
   </g>
 </svg>

@@ -2,6 +2,7 @@
 
 ## [Non rilasciato]
 
+- Logo della palestra ridisegnato fedele all'originale
 - Già iscritti: dell'abbonamento basta la data di inizio oppure quella di scadenza, l'altra si calcola dalla durata
 - Dashboard più compatta: scaduti e prossime scadenze affiancati e visibili senza scorrere
 - I già scaduti compaiono in dashboard solo se ci sono, divisi in schede per tipo con il loro numero
