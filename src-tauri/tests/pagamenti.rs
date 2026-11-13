@@ -289,9 +289,9 @@ fn le_pagine_contengono_al_massimo_50_pagamenti_e_il_totale_e_su_tutto_il_filtro
     let totale_atteso: i64 = tutti.iter().map(|pagamento| pagamento.importo_cent).sum();
 
     let prima =
-        elenca_pagamenti_paginati(&connessione, &filtro, RichiestaPagina { numero: 1 }).unwrap();
+        elenca_pagamenti_paginati(&connessione, &filtro, RichiestaPagina::numero(1)).unwrap();
     let seconda =
-        elenca_pagamenti_paginati(&connessione, &filtro, RichiestaPagina { numero: 2 }).unwrap();
+        elenca_pagamenti_paginati(&connessione, &filtro, RichiestaPagina::numero(2)).unwrap();
 
     assert_eq!(prima.pagina.elementi.len(), ELEMENTI_PER_PAGINA as usize);
     assert_eq!(prima.pagina.totale_elementi as usize, tutti.len());

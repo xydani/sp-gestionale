@@ -81,11 +81,14 @@ export function impostaTipologiaAttiva(id: number, attiva: boolean): Promise<Tip
   return invoke<TipologiaAbbonamento>("imposta_tipologia_attiva", { id, attiva });
 }
 
+/** Senza `elementiPerPagina` le pagine sono da 50, il massimo. */
 export function elencaIscritti(
   filtro: FiltroIscritti,
   numeroPagina = 1,
+  elementiPerPagina?: number,
 ): Promise<Pagina<Iscritto>> {
-  return invoke<Pagina<Iscritto>>("elenca_iscritti", { filtro, pagina: { numero: numeroPagina } });
+  const pagina = { numero: numeroPagina, elementiPerPagina };
+  return invoke<Pagina<Iscritto>>("elenca_iscritti", { filtro, pagina });
 }
 
 export function trovaIscritto(id: number): Promise<Iscritto> {

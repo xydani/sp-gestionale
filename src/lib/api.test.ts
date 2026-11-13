@@ -94,6 +94,12 @@ describe("api iscritti", () => {
     };
     await api.elencaIscritti(filtro, 3);
     expect(invoke).toHaveBeenCalledWith("elenca_iscritti", { filtro, pagina: { numero: 3 } });
+
+    await api.elencaIscritti(filtro, 2, 10);
+    expect(invoke).toHaveBeenLastCalledWith("elenca_iscritti", {
+      filtro,
+      pagina: { numero: 2, elementiPerPagina: 10 },
+    });
   });
 
   it("archivia un iscritto", async () => {

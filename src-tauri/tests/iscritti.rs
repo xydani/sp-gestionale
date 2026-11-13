@@ -260,7 +260,7 @@ fn con_250_iscritti_le_pagine_sono_da_50() {
             &connessione,
             &filtro,
             RIFERIMENTO,
-            RichiestaPagina { numero },
+            RichiestaPagina::numero(numero),
         )
         .unwrap()
     };
@@ -271,6 +271,24 @@ fn con_250_iscritti_le_pagine_sono_da_50() {
     assert_eq!(pagina(6).numero, 5);
     assert_eq!(pagina(6).elementi[..], tutti[200..250]);
     assert_eq!(pagina(1).totale_elementi, 250);
+}
+
+#[test]
+fn si_possono_chiedere_pagine_piu_corte() {
+    let database = DatabaseTemporaneo::nuovo();
+    let mut connessione = database.crea_con_schema();
+    genera_dati_prova(&mut connessione, 250, OGGI, 11).unwrap();
+    let filtro = FiltroIscritti::default();
+    let tutti = elenca_iscritti(&connessione, &filtro, RIFERIMENTO).unwrap();
+    let richiesta = RichiestaPagina {
+        numero: 3,
+        elementi_per_pagina: 10,
+    };
+
+    let pagina = elenca_iscritti_paginati(&connessione, &filtro, RIFERIMENTO, richiesta).unwrap();
+
+    assert_eq!(pagina.elementi_per_pagina, 10);
+    assert_eq!(pagina.elementi[..], tutti[20..30]);
 }
 
 #[test]

@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use super::ErroreDatabase;
 use super::impostazioni::{CHIAVE_GIORNI_PREAVVISO, leggi_impostazione_numerica};
-use super::paginazione::{ELEMENTI_PER_PAGINA, Pagina, RichiestaPagina};
+use super::paginazione::{Pagina, RichiestaPagina};
 use crate::domain::stato::{
     CondizioneScadenza, GIORNI_PREAVVISO_PREDEFINITI, StatoValidita, calcola_stato_validita,
     condizione_scadenza_per_stato,
@@ -208,7 +208,7 @@ pub fn elenca_iscritti_paginati(
 
     let richiesta = richiesta.limitata_a(totale_elementi);
     let mut parametri_pagina = parametri;
-    parametri_pagina.push(Value::from(i64::from(ELEMENTI_PER_PAGINA)));
+    parametri_pagina.push(Value::from(i64::from(richiesta.dimensione())));
     parametri_pagina.push(Value::from(i64::from(richiesta.scarto())));
     let mut query = connessione.prepare(&format!(
         "{SELEZIONE_ISCRITTI} {clausola_where} {} LIMIT ? OFFSET ?",
@@ -223,7 +223,7 @@ pub fn elenca_iscritti_paginati(
     Ok(Pagina {
         elementi,
         numero: richiesta.numero,
-        elementi_per_pagina: ELEMENTI_PER_PAGINA,
+        elementi_per_pagina: richiesta.dimensione(),
         totale_elementi,
     })
 }

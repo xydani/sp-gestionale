@@ -5,7 +5,7 @@ use rusqlite::types::Value;
 use rusqlite::{Connection, OptionalExtension, Row, params, params_from_iter};
 use serde::{Deserialize, Serialize};
 
-use super::paginazione::{ELEMENTI_PER_PAGINA, Pagina, RichiestaPagina};
+use super::paginazione::{Pagina, RichiestaPagina};
 use super::tipologie::{TipologiaAbbonamento, trova_tipologia};
 use super::{ErroreDatabase, errore_inserimento_per_iscritto};
 use crate::domain::date::calcola_data_scadenza;
@@ -193,7 +193,7 @@ pub fn elenca_pagamenti_paginati(
 
     let richiesta = richiesta.limitata_a(totale_elementi);
     let mut parametri_pagina = parametri;
-    parametri_pagina.push(Value::from(i64::from(ELEMENTI_PER_PAGINA)));
+    parametri_pagina.push(Value::from(i64::from(richiesta.dimensione())));
     parametri_pagina.push(Value::from(i64::from(richiesta.scarto())));
     let mut query = connessione.prepare(&format!(
         "{SELEZIONE_PAGAMENTI} {clausola_where}
@@ -207,7 +207,7 @@ pub fn elenca_pagamenti_paginati(
         pagina: Pagina {
             elementi,
             numero: richiesta.numero,
-            elementi_per_pagina: ELEMENTI_PER_PAGINA,
+            elementi_per_pagina: richiesta.dimensione(),
             totale_elementi,
         },
         totale_importo_cent,
