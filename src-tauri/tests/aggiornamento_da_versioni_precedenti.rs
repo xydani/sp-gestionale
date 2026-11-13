@@ -179,7 +179,7 @@ fn allo_sblocco_un_archivio_vecchio_viene_salvato_e_poi_aggiornato() {
 /// Impronte delle migrazioni già rilasciate. Chi aggiorna saltando versioni le esegue
 /// tutte in fila: se una cambiasse, gli archivi creati prima e dopo non coinciderebbero.
 /// Una modifica dello schema va in una migrazione nuova, da aggiungere qui dopo il rilascio.
-const MIGRAZIONI_RILASCIATE: [(&str, u64); 7] = [
+const MIGRAZIONI_RILASCIATE: [(&str, u64); 8] = [
     ("0001_init.sql", 0xff798d23f0c04256),
     ("0002_iscrizioni_e_anagrafica.sql", 0x25dbc95ec8d08b86),
     ("0003_promemoria.sql", 0x1d8adf4514259c5c),
@@ -187,6 +187,7 @@ const MIGRAZIONI_RILASCIATE: [(&str, u64); 7] = [
     ("0005_certificato_medico.sql", 0xf69df582a30a052a),
     ("0006_eliminazione_iscritti.sql", 0xe3d0873fd5e91c0c),
     ("0007_situazione_iniziale.sql", 0x64ace4f1586f634f),
+    ("0008_certificato_senza_scadenza.sql", 0x62aef471a28f167c),
 ];
 
 /// FNV-1a a 64 bit: semplice e stabile tra versioni di Rust (a differenza di `DefaultHasher`).
