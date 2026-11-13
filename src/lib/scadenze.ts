@@ -3,6 +3,7 @@ import type {
   FiltroIscritti,
   Iscritto,
   OrdinamentoIscritti,
+  RiepilogoDashboard,
   TipoScadenza,
 } from "./types";
 
@@ -69,4 +70,30 @@ export function filtroScadenze(tipo: TipoScadenza, stato: StatoScadenza): Filtro
     statoCertificato: tipo === "certificato" ? stato : null,
     ordinamento: ordinamento[stato],
   };
+}
+
+export interface GruppoScaduti {
+  tipo: TipoScadenza;
+  numero: number;
+}
+
+/** Tipi con almeno uno scaduto, in ordine fisso: in dashboard si mostrano solo questi. */
+export function gruppiConScaduti(riepilogo: RiepilogoDashboard): GruppoScaduti[] {
+  const numeri: Record<TipoScadenza, number> = {
+    abbonamento: riepilogo.abbonamenti.scaduti,
+    iscrizione: riepilogo.iscrizioni.scaduti,
+    certificato: riepilogo.certificati.scaduti,
+  };
+  return TIPI_SCADENZA.map((tipo) => ({ tipo, numero: numeri[tipo] })).filter(
+    (gruppo) => gruppo.numero > 0,
+  );
+}
+
+/** Il gruppo scelto se ha ancora scaduti, altrimenti il primo che ne ha (o nessuno). */
+export function gruppoDaMostrare(
+  gruppi: GruppoScaduti[],
+  scelto: TipoScadenza | null,
+): TipoScadenza | null {
+  if (gruppi.some((gruppo) => gruppo.tipo === scelto)) return scelto;
+  return gruppi[0]?.tipo ?? null;
 }

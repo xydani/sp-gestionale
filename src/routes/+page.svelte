@@ -9,7 +9,7 @@
   import RiquadroNumero from "$lib/components/RiquadroNumero.svelte";
   import {
     descriviScadenza,
-    formattaData,
+    formattaDataBreve,
     formattaEuro,
     nomeMese,
     oggiIso,
@@ -17,19 +17,29 @@
   } from "$lib/format";
   import { aggiornaConteggioScadenze } from "$lib/promemoria.svelte";
   import { eRinnovabile, type TipoRinnovabile } from "$lib/rinnovo";
+  import { gruppiConScaduti, gruppoDaMostrare } from "$lib/scadenze";
   import type { RiepilogoDashboard, TipoScadenza } from "$lib/types";
 
   let riepilogo = $state<RiepilogoDashboard | null>(null);
 
+  /** Brevi, perché gli elenchi della dashboard stanno affiancati. */
   const ETICHETTE_TIPO_SCADENZA: Record<TipoScadenza, string> = {
     abbonamento: "Abbonamento",
-    iscrizione: "Iscrizione annuale",
-    certificato: "Certificato medico",
+    iscrizione: "Iscrizione",
+    certificato: "Certificato",
+  };
+  const ETICHETTE_GRUPPO_SCADUTI: Record<TipoScadenza, string> = {
+    abbonamento: "Abbonamenti",
+    iscrizione: "Iscrizioni",
+    certificato: "Certificati",
   };
 
   /** In dashboard bastano i più recenti: l'elenco completo è nella pagina Scadenze. */
-  const SCADUTI_MOSTRATI = 5;
-  const GRUPPI_SCADUTI: TipoScadenza[] = ["abbonamento", "iscrizione", "certificato"];
+  const SCADUTI_MOSTRATI = 8;
+
+  const gruppiScaduti = $derived(riepilogo ? gruppiConScaduti(riepilogo) : []);
+  let gruppoScelto = $state<TipoScadenza | null>(null);
+  const gruppoMostrato = $derived(gruppoDaMostrare(gruppiScaduti, gruppoScelto));
 
   const oggi = oggiIso();
   const meseCorrente = nomeMese(oggi);
@@ -84,7 +94,7 @@
   onMount(carica);
 </script>
 
-<h1>Dashboard</h1>
+<h1 class="titolo">Dashboard</h1>
 
 {#if riepilogo && riepilogo.iscritti === 0}
   <section class="per-iniziare">
@@ -108,6 +118,7 @@
 {#if riepilogo}
   <div class="riquadri">
     <RiquadroNumero
+      compatto
       etichetta="Iscritti"
       valore={String(riepilogo.iscritti)}
       href={resolve("/iscritti")}
@@ -117,13 +128,19 @@
       {/snippet}
     </RiquadroNumero>
 
-    <RiquadroNumero etichetta="Abbonamenti attivi" valore={String(abbonamentiValidi)} tono="attivo">
+    <RiquadroNumero
+      compatto
+      etichetta="Abbonamenti attivi"
+      valore={String(abbonamentiValidi)}
+      tono="attivo"
+    >
       {#snippet dettaglio()}
-        {riepilogo!.abbonamenti.assenti} iscritti senza abbonamento
+        {riepilogo!.abbonamenti.assenti} senza abbonamento
       {/snippet}
     </RiquadroNumero>
 
     <RiquadroNumero
+      compatto
       etichetta="In scadenza"
       valore={String(totaleInScadenza)}
       tono="in_scadenza"
@@ -136,94 +153,112 @@
     </RiquadroNumero>
 
     <RiquadroNumero
-      etichetta="Abbonamenti scaduti"
-      valore={String(riepilogo.abbonamenti.scaduti)}
-      tono="scaduto"
-      href={resolve("/scadenze")}
-    >
-      {#snippet dettaglio()}
-        {riepilogo!.iscrizioni.scaduti} iscrizioni annuali scadute
-      {/snippet}
-    </RiquadroNumero>
-
-    <RiquadroNumero
+      compatto
       etichetta="Certificati da sistemare"
       valore={String(certificatiDaSistemare)}
       tono={certificatiDaSistemare > 0 ? "scaduto" : "attivo"}
       href={resolve("/scadenze")}
     >
       {#snippet dettaglio()}
-        {riepilogo!.certificati.assenti} non presentati · {riepilogo!.certificati.scaduti} scaduti
+        {riepilogo!.certificati.assenti} mancanti · {riepilogo!.certificati.scaduti} scaduti
       {/snippet}
     </RiquadroNumero>
 
     <RiquadroNumero
+      compatto
       etichetta="Incassi di {meseCorrente}"
       valore={formattaEuro(riepilogo.incassiMese.totaleCent)}
       href={resolve("/pagamenti")}
     >
       {#snippet dettaglio()}
-        Abbonamenti {formattaEuro(riepilogo!.incassiMese.abbonamentiCent)} · Iscrizioni
-        {formattaEuro(riepilogo!.incassiMese.iscrizioniCent)}
         {#if variazioneIncassi}
-          <br />{variazioneIncassi} rispetto al mese precedente
+          {variazioneIncassi} sul mese prima
+        {:else}
+          Abbonamenti e quote
         {/if}
       {/snippet}
     </RiquadroNumero>
   </div>
 
-  <CassaDiOggi aggiornamento={rinnoviRegistrati} />
-
-  <section class="prossime">
-    <h2>Prossime scadenze <span class="nota">(30 giorni)</span></h2>
-    {#if riepilogo.prossimeScadenze.length === 0}
-      <p class="vuoto">Nessuna scadenza nei prossimi 30 giorni.</p>
-    {:else}
-      <table class="tabella riquadrata">
-        <thead>
-          <tr><th>Cognome e nome</th><th>Cosa scade</th><th>Data</th><th></th><th></th></tr>
-        </thead>
-        <tbody>
-          {#each riepilogo.prossimeScadenze as scadenza (scadenza.tipo + scadenza.iscrittoId)}
-            <tr>
-              <td>
-                <a href={resolve("/iscritti/[id]", { id: String(scadenza.iscrittoId) })}>
-                  {scadenza.cognome}
-                  {scadenza.nome}
-                </a>
-              </td>
-              <td>{ETICHETTE_TIPO_SCADENZA[scadenza.tipo]}</td>
-              <td>{formattaData(scadenza.dataScadenza)}</td>
-              <td class="distanza">{descriviScadenza(scadenza.dataScadenza, oggi)}</td>
-              <td class="azione">
-                {#if eRinnovabile(scadenza.tipo)}
-                  {@const tipo = scadenza.tipo}
-                  <button
-                    type="button"
-                    class="pulsante piccolo"
-                    onclick={() => (daRinnovare = { iscrittoId: scadenza.iscrittoId, tipo })}
-                  >
-                    Rinnova
-                  </button>
-                {/if}
-              </td>
-            </tr>
+  <div class="pannelli" class:affiancati={gruppiScaduti.length > 0}>
+    {#if gruppoMostrato}
+      <section class="pannello">
+        <h2>Già scaduti <span class="nota">(i più recenti)</span></h2>
+        <div class="segmenti" role="group" aria-label="Tipo di scadenza">
+          {#each gruppiScaduti as gruppo (gruppo.tipo)}
+            <button
+              type="button"
+              aria-pressed={gruppo.tipo === gruppoMostrato}
+              onclick={() => (gruppoScelto = gruppo.tipo)}
+            >
+              {ETICHETTE_GRUPPO_SCADUTI[gruppo.tipo]} ({gruppo.numero})
+            </button>
           {/each}
-        </tbody>
-      </table>
-      <a class="tutte" href={resolve("/scadenze")}>Tutte le scadenze →</a>
+        </div>
+        {#key gruppoMostrato}
+          <ElencoScadenze
+            tipo={gruppoMostrato}
+            stato="scaduto"
+            massimo={SCADUTI_MOSTRATI}
+            compatto
+            onCambiato={carica}
+          />
+        {/key}
+      </section>
     {/if}
-  </section>
 
-  <section class="scaduti">
-    <h2>Già scaduti <span class="nota">(i più recenti)</span></h2>
-    {#each GRUPPI_SCADUTI as tipo (tipo)}
-      <div class="gruppo">
-        <h3>{ETICHETTE_TIPO_SCADENZA[tipo]}</h3>
-        <ElencoScadenze {tipo} stato="scaduto" massimo={SCADUTI_MOSTRATI} onCambiato={carica} />
-      </div>
-    {/each}
-  </section>
+    <section class="pannello">
+      <h2>Prossime scadenze <span class="nota">(30 giorni)</span></h2>
+      {#if riepilogo.prossimeScadenze.length === 0}
+        <p class="vuoto">Nessuna scadenza nei prossimi 30 giorni.</p>
+      {:else}
+        <table class="tabella riquadrata compatta">
+          <thead>
+            <tr><th>Cognome e nome</th><th>Cosa scade</th><th>Quando</th><th></th></tr>
+          </thead>
+          <tbody>
+            {#each riepilogo.prossimeScadenze as scadenza (scadenza.tipo + scadenza.iscrittoId)}
+              <tr>
+                <td>
+                  <a href={resolve("/iscritti/[id]", { id: String(scadenza.iscrittoId) })}>
+                    {scadenza.cognome}
+                    {scadenza.nome}
+                  </a>
+                </td>
+                <td>{ETICHETTE_TIPO_SCADENZA[scadenza.tipo]}</td>
+                <td>
+                  {descriviScadenza(scadenza.dataScadenza, oggi)}
+                  <span class="distanza">· {formattaDataBreve(scadenza.dataScadenza, oggi)}</span>
+                </td>
+                <td class="azione">
+                  {#if eRinnovabile(scadenza.tipo)}
+                    {@const tipo = scadenza.tipo}
+                    <button
+                      type="button"
+                      class="pulsante piccolo"
+                      onclick={() => (daRinnovare = { iscrittoId: scadenza.iscrittoId, tipo })}
+                    >
+                      Rinnova
+                    </button>
+                  {:else}
+                    <a
+                      class="pulsante piccolo secondario"
+                      href={resolve("/iscritti/[id]", { id: String(scadenza.iscrittoId) })}
+                    >
+                      Aggiorna
+                    </a>
+                  {/if}
+                </td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+        <a class="tutte" href={resolve("/scadenze")}>Tutte le scadenze →</a>
+      {/if}
+    </section>
+  </div>
+
+  <CassaDiOggi aggiornamento={rinnoviRegistrati} />
 {/if}
 
 {#if daRinnovare}
@@ -235,6 +270,10 @@
 {/if}
 
 <style>
+  .titolo {
+    margin: 0 0 0.9rem;
+  }
+
   .per-iniziare {
     margin-bottom: 2rem;
     padding: 1.25rem 1.5rem;
@@ -258,14 +297,33 @@
 
   .riquadri {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-    gap: 1rem;
-    margin-bottom: 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
   }
 
-  .prossime {
+  /* Scaduti e prossime scadenze affiancati: tutto ciò che va fatto è visibile senza scorrere */
+  .pannelli {
     display: grid;
-    gap: 0.75rem;
+    gap: 1.25rem;
+    align-items: start;
+    margin-bottom: 1.5rem;
+  }
+
+  @media (min-width: 1100px) {
+    .pannelli.affiancati {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .pannello {
+    display: grid;
+    gap: 0.6rem;
+    min-width: 0;
+  }
+
+  .segmenti {
+    justify-self: start;
   }
 
   h2 {
@@ -291,17 +349,6 @@
 
   .distanza {
     color: var(--colore-testo-secondario);
-  }
-
-  .scaduti {
-    display: grid;
-    gap: 1rem;
-    margin-top: 2rem;
-  }
-
-  .scaduti h3 {
-    margin: 0 0 0.5rem;
-    font-size: 1rem;
   }
 
   .azione {

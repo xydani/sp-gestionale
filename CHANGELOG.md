@@ -2,6 +2,10 @@
 
 ## [Non rilasciato]
 
+- Dashboard più compatta: scaduti e prossime scadenze affiancati e visibili senza scorrere anche su un portatile da 15"
+- I già scaduti compaiono in dashboard solo se ci sono, divisi in schede per tipo con il loro numero
+- Nelle prossime scadenze i certificati hanno il pulsante «Aggiorna» per aprire la scheda
+
 ## [0.1.6] - 2026-11-13
 
 - La password deve avere almeno 8 caratteri (prima 12)
