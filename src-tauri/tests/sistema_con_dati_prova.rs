@@ -263,3 +263,48 @@ fn gli_iscritti_inventati_superano_i_controlli_dell_anagrafica() {
         }
     }
 }
+
+/// Abbastanza righe per vedere in dashboard e in Scadenze ogni tipo, passato e vicino.
+const MINIMO_PER_TIPO: i64 = 10;
+
+/// Quanti iscritti hanno la scadenza di ogni tipo già passata e quanti nei prossimi 30 giorni.
+fn scaduti_e_in_arrivo(connessione: &Connection, sql_scadenze: &str) -> (i64, i64) {
+    let scaduti = conta(
+        connessione,
+        &format!("SELECT count(*) FROM ({sql_scadenze}) WHERE scadenza < '2026-11-10'"),
+    );
+    let in_arrivo = conta(
+        connessione,
+        &format!(
+            "SELECT count(*) FROM ({sql_scadenze})
+             WHERE scadenza BETWEEN '2026-11-10' AND '2026-12-10'"
+        ),
+    );
+    (scaduti, in_arrivo)
+}
+
+#[test]
+fn ci_sono_scadenze_passate_e_vicine_di_ogni_tipo() {
+    let (_database, connessione) = database_con_dati_prova();
+    let tipi = [
+        (
+            "abbonamenti",
+            "SELECT ultima_data_scadenza AS scadenza FROM v_ultima_scadenza_iscritti",
+        ),
+        (
+            "iscrizioni",
+            "SELECT ultima_data_fine_iscrizione AS scadenza FROM v_ultima_iscrizione_iscritti",
+        ),
+        (
+            "certificati",
+            "SELECT data_scadenza_certificato AS scadenza FROM iscritti",
+        ),
+    ];
+    for (tipo, sql) in tipi {
+        let (scaduti, in_arrivo) = scaduti_e_in_arrivo(&connessione, sql);
+        assert!(
+            scaduti >= MINIMO_PER_TIPO && in_arrivo >= MINIMO_PER_TIPO,
+            "{tipo}: {scaduti} scaduti, {in_arrivo} nei prossimi 30 giorni"
+        );
+    }
+}

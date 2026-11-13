@@ -113,20 +113,25 @@ const PERCENTUALE_CON_EMAIL: u64 = 60;
 const PERCENTUALE_SENZA_PAGAMENTI: u64 = 8;
 const ANNI_MASSIMI_DI_STORICO: u64 = 3;
 /// Quote di iscritti con casi particolari di iscrizione annuale, per provare stati e avvisi.
-const PERCENTUALE_ISCRIZIONE_IN_SCADENZA: u64 = 5;
+const PERCENTUALE_ISCRIZIONE_IN_SCADENZA: u64 = 10;
+/// Le iscrizioni in scadenza finiscono entro questi giorni: compaiono nelle prossime scadenze.
+const GIORNI_MASSIMI_ISCRIZIONE_IN_SCADENZA: u64 = 30;
 const PERCENTUALE_ISCRIZIONE_NON_RINNOVATA: u64 = 6;
 const PERCENTUALE_SENZA_ISCRIZIONE: u64 = 3;
 const PERCENTUALE_CON_CERTIFICATO: u64 = 80;
 /// Le scadenze dei certificati vanno da due mesi fa a quasi un anno da oggi.
 const GIORNI_CERTIFICATO_PRIMA_DI_OGGI: u64 = 60;
 const GIORNI_CERTIFICATO_DOPO_OGGI: u64 = 330;
+/// Una parte dei certificati scade a ridosso di oggi, per avere sempre scaduti recenti e vicini.
+const PERCENTUALE_CERTIFICATO_VICINO: u64 = 25;
+const GIORNI_CERTIFICATO_VICINO: u64 = 30;
 
 /// Come viene generata l'iscrizione annuale di un iscritto.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum CasoIscrizione {
     /// Un'iscrizione per ogni anno sportivo di attività.
     Regolare,
-    /// L'iscrizione in corso termina entro i giorni di preavviso.
+    /// L'iscrizione in corso termina entro un mese.
     InScadenza,
     /// Manca l'iscrizione dell'anno sportivo in corso, anche se l'abbonamento è attivo.
     NonRinnovata,
@@ -292,12 +297,7 @@ fn inserisci_iscritto(
 
     let mut scadenza_certificato = None;
     if casuale.tra(1, 100) <= PERCENTUALE_CON_CERTIFICATO {
-        let giorni_dal_minimo = casuale.tra(
-            0,
-            GIORNI_CERTIFICATO_PRIMA_DI_OGGI + GIORNI_CERTIFICATO_DOPO_OGGI,
-        );
-        let minimo = oggi - Days::new(GIORNI_CERTIFICATO_PRIMA_DI_OGGI);
-        scadenza_certificato = Some(minimo + Days::new(giorni_dal_minimo));
+        scadenza_certificato = Some(scegli_scadenza_certificato(casuale, oggi));
     }
 
     let luogo_nascita = casuale.scegli(LUOGHI_NASCITA);
@@ -321,6 +321,20 @@ fn inserisci_iscritto(
         ],
     )?;
     Ok(transazione.last_insert_rowid())
+}
+
+/// Per lo più sparse tra due mesi fa e quasi un anno, una parte entro un mese da oggi.
+fn scegli_scadenza_certificato(casuale: &mut GeneratoreCasuale, oggi: NaiveDate) -> NaiveDate {
+    let (giorni_prima, giorni_dopo) = if casuale.tra(1, 100) <= PERCENTUALE_CERTIFICATO_VICINO {
+        (GIORNI_CERTIFICATO_VICINO, GIORNI_CERTIFICATO_VICINO)
+    } else {
+        (
+            GIORNI_CERTIFICATO_PRIMA_DI_OGGI,
+            GIORNI_CERTIFICATO_DOPO_OGGI,
+        )
+    };
+    let minimo = oggi - Days::new(giorni_prima);
+    minimo + Days::new(casuale.tra(0, giorni_prima + giorni_dopo))
 }
 
 /// Abbonamenti uno dopo l'altro, a volte con qualche giorno di pausa, fino a coprire l'attività.
@@ -386,7 +400,7 @@ fn inserisci_iscrizioni(
             break;
         }
         let data_fine = if comprende_oggi && caso == CasoIscrizione::InScadenza {
-            oggi + Days::new(casuale.tra(0, GIORNI_PREAVVISO_PREDEFINITI.into()))
+            oggi + Days::new(casuale.tra(0, GIORNI_MASSIMI_ISCRIZIONE_IN_SCADENZA))
         } else {
             periodo.fine
         };
