@@ -39,7 +39,9 @@
   let telefono = $state(valoriIniziali?.telefono ?? "");
   let email = $state(valoriIniziali?.email ?? "");
   let note = $state(valoriIniziali?.note ?? "");
-  let certificatoPresentato = $state(Boolean(valoriIniziali?.dataScadenzaCertificato));
+  let certificatoPresentato = $state(
+    valoriIniziali?.certificatoPresentato ?? Boolean(valoriIniziali?.dataScadenzaCertificato),
+  );
   let scadenzaCertificato = $state(valoriIniziali?.dataScadenzaCertificato ?? "");
   let inCorso = $state(false);
 
@@ -58,7 +60,8 @@
         telefono: telefono || null,
         email: email || null,
         note: note || null,
-        dataScadenzaCertificato: certificatoPresentato ? scadenzaCertificato : null,
+        dataScadenzaCertificato: certificatoPresentato ? scadenzaCertificato || null : null,
+        certificatoPresentato,
       });
     } finally {
       inCorso = false;
@@ -141,8 +144,8 @@
       </label>
       {#if certificatoPresentato}
         <label>
-          Scade il
-          <CampoData bind:valore={scadenzaCertificato} {...certificato} obbligatoria />
+          Scade il (facoltativo)
+          <CampoData bind:valore={scadenzaCertificato} {...certificato} />
         </label>
       {:else}
         <p class="avviso">Da portare: finché manca, l'iscritto compare tra le scadenze.</p>

@@ -139,6 +139,8 @@
             {#if iscritto.dataScadenzaCertificato}
               <BadgeStato stato={iscritto.statoCertificato} />
               scade il {formattaData(iscritto.dataScadenzaCertificato)}
+            {:else if iscritto.certificatoPresentato}
+              <BadgeStato stato="attivo" /> presentato, scadenza non indicata
             {:else}
               <BadgeStato stato="nessuno" /> non presentato
             {/if}

@@ -7,9 +7,7 @@ describe("validaNuovaPassword", () => {
   });
 
   it("rifiuta una password troppo corta", () => {
-    expect(validaNuovaPassword("corta", "corta")).toBe(
-      "La password deve avere almeno 8 caratteri",
-    );
+    expect(validaNuovaPassword("corta", "corta")).toBe("La password deve avere almeno 8 caratteri");
   });
 
   it("conta i caratteri accentati come singoli caratteri", () => {

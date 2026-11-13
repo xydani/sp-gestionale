@@ -110,7 +110,8 @@
       nome,
       cognome,
       telefono: telefono || null,
-      dataScadenzaCertificato: certificatoPresentato ? scadenzaCertificato : null,
+      dataScadenzaCertificato: certificatoPresentato ? scadenzaCertificato || null : null,
+      certificatoPresentato,
       tipologiaId,
       dataScadenzaAbbonamento: scadenzaAbbonamento,
       importoAbbonamentoCent,
@@ -274,8 +275,8 @@
     </label>
     {#if certificatoPresentato}
       <label>
-        Il certificato scade il
-        <CampoData bind:valore={scadenzaCertificato} {...certificato} obbligatoria />
+        Il certificato scade il (facoltativo)
+        <CampoData bind:valore={scadenzaCertificato} {...certificato} />
       </label>
     {/if}
   </div>

@@ -44,8 +44,10 @@ export interface Iscritto {
   statoIscrizione: StatoValidita;
   ultimaDataScadenzaAbbonamento: string | null;
   statoAbbonamento: StatoValidita;
-  /** Assente se il certificato medico non è stato presentato. */
+  /** Assente se il certificato non è stato presentato o è stato presentato senza scadenza. */
   dataScadenzaCertificato: string | null;
+  /** Anche senza una data di scadenza indicata. */
+  certificatoPresentato: boolean;
   statoCertificato: StatoValidita;
   /** Mancano dati anagrafici obbligatori (data o luogo di nascita). */
   daCompletare: boolean;
@@ -60,8 +62,9 @@ export interface DatiIscritto {
   telefono: string | null;
   email: string | null;
   note: string | null;
-  /** Scadenza del certificato medico; null se non è stato presentato. */
+  /** Scadenza del certificato medico; può mancare anche se è stato presentato. */
   dataScadenzaCertificato: string | null;
+  certificatoPresentato: boolean;
 }
 
 export type OrdinamentoIscritti =
@@ -90,6 +93,7 @@ export interface DatiIscrittoGiaAttivo {
   cognome: string;
   telefono: string | null;
   dataScadenzaCertificato: string | null;
+  certificatoPresentato: boolean;
   tipologiaId: number;
   dataScadenzaAbbonamento: string;
   importoAbbonamentoCent: number;
