@@ -103,6 +103,16 @@ jobs:
               || { echo "latest.json senza $piattaforma"; exit 1; }
           done
 
+      # tauri-action non scrive le note in latest.json se la release esiste già: si prendono dalla release
+      - name: Aggiunge le note a latest.json
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --json body -q .body > note.md
+          jq --rawfile note note.md '.notes = ($note | rtrimstr("\n"))' latest.json > latest-con-note.json
+          mv latest-con-note.json latest.json
+          gh release upload "$GITHUB_REF_NAME" latest.json --repo "$GITHUB_REPOSITORY" --clobber
+
       # Solo la release "latest" è quella in cui l'app cerca latest.json: si promuove a file completi
       - name: Pubblica la release
         env:
