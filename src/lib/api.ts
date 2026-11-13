@@ -101,7 +101,7 @@ export function iscriviNuovoIscritto(dati: DatiNuovoIscritto): Promise<Iscritto>
   return invoke<Iscritto>("iscrivi_nuovo_iscritto", { dati });
 }
 
-/** Inserisce chi era già iscritto: abbonamento e quota pregressi, senza incassi. */
+/** Inserisce chi era già iscritto, con l'abbonamento in corso e la quota come incassi. */
 export function registraIscrittoGiaAttivo(dati: DatiIscrittoGiaAttivo): Promise<Iscritto> {
   return invoke<Iscritto>("registra_iscritto_gia_attivo", { dati });
 }

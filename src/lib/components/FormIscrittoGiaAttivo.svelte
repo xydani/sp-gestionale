@@ -4,13 +4,22 @@
     elencaIscritti,
     elencaTipologie,
     messaggioErrore,
+    proponiIscrizione,
     registraIscrittoGiaAttivo,
   } from "$lib/api";
   import { mostraAvviso } from "$lib/avvisi.svelte";
+  import { centesimiInTestoEuro, euroInCentesimi } from "$lib/format";
   import { limitiScadenzaPregressa, trovaOmonimi } from "$lib/gia-iscritto";
-  import type { DatiIscrittoGiaAttivo, Iscritto, TipologiaAbbonamento } from "$lib/types";
+  import { OPZIONI_METODO } from "$lib/metodi-pagamento";
+  import type {
+    DatiIscrittoGiaAttivo,
+    Iscritto,
+    MetodoPagamento,
+    TipologiaAbbonamento,
+  } from "$lib/types";
   import {
     LUNGHEZZA_MASSIMA_NOME,
+    erroreImportoEuro,
     erroreNomeProprio,
     erroreTelefono,
     limitiScadenzaCertificato,
@@ -20,8 +29,8 @@
   import Tendina from "./Tendina.svelte";
 
   /**
-   * Inserimento rapido di chi era già iscritto prima di usare il programma:
-   * abbonamento e quota risultano pagati ma non sono incassi; l'anagrafica si completa dopo.
+   * Inserimento rapido di chi era già iscritto prima di usare il programma: abbonamento e
+   * quota si registrano con i loro importi, l'anagrafica si completa dopo dalla scheda.
    */
   let {
     onSalvato,
@@ -40,7 +49,10 @@
   let telefono = $state("");
   let tipologiaId = $state<number | null>(null);
   let scadenzaAbbonamento = $state("");
+  let importoAbbonamento = $state("");
   let quotaPagata = $state(true);
+  let quota = $state("");
+  let metodo = $state<MetodoPagamento>("contanti");
   let certificatoPresentato = $state(false);
   let scadenzaCertificato = $state("");
   let omonimi = $state<Iscritto[]>([]);
@@ -56,10 +68,18 @@
     try {
       tipologie = await elencaTipologie(true);
       tipologiaId = tipologie[0]?.id ?? null;
+      proponiImportoAbbonamento();
+      quota = centesimiInTestoEuro((await proponiIscrizione(null)).importoCent);
     } catch (erroreBackend) {
       errore = messaggioErrore(erroreBackend);
     }
   });
+
+  /** Il prezzo del listino per la tipologia scelta, modificabile. */
+  function proponiImportoAbbonamento() {
+    const scelta = tipologie.find((tipologia) => tipologia.id === tipologiaId);
+    if (scelta) importoAbbonamento = centesimiInTestoEuro(scelta.prezzoCent);
+  }
 
   /** Avvisa, senza bloccare, se esiste già qualcuno con lo stesso nome e cognome. */
   async function cercaOmonimi() {
@@ -81,7 +101,11 @@
     }
   }
 
-  function datiInseriti(tipologiaId: number): DatiIscrittoGiaAttivo {
+  function datiInseriti(
+    tipologiaId: number,
+    importoAbbonamentoCent: number,
+    quotaCent: number,
+  ): DatiIscrittoGiaAttivo {
     return {
       nome,
       cognome,
@@ -89,11 +113,14 @@
       dataScadenzaCertificato: certificatoPresentato ? scadenzaCertificato : null,
       tipologiaId,
       dataScadenzaAbbonamento: scadenzaAbbonamento,
+      importoAbbonamentoCent,
       quotaPagata,
+      quotaCent,
+      metodo,
     };
   }
 
-  /** Svuota i dati della persona; tipologia e quota restano, di solito si inseriscono a gruppi. */
+  /** Svuota i dati della persona; tipologia, importi e metodo restano: si inseriscono a gruppi. */
   async function preparaPersonaSuccessiva() {
     nome = "";
     cognome = "";
@@ -112,10 +139,19 @@
       errore = "Scegli l'abbonamento";
       return;
     }
+    const importoAbbonamentoCent = euroInCentesimi(importoAbbonamento);
+    // Senza quota pagata l'importo della quota non conta
+    const quotaCent = quotaPagata ? euroInCentesimi(quota) : 0;
+    if (importoAbbonamentoCent === null || quotaCent === null) {
+      errore = "Importo non valido (esempio: 45 oppure 45,50)";
+      return;
+    }
     const aggiungiAltro = evento.submitter?.getAttribute("name") === AZIONE_AGGIUNGI_ALTRO;
     inCorso = true;
     try {
-      const iscritto = await registraIscrittoGiaAttivo(datiInseriti(tipologiaId));
+      const iscritto = await registraIscrittoGiaAttivo(
+        datiInseriti(tipologiaId, importoAbbonamentoCent, quotaCent),
+      );
       errore = null;
       if (aggiungiAltro) {
         mostraAvviso("successo", `${iscritto.nome} ${iscritto.cognome} inserito`);
@@ -133,8 +169,9 @@
 
 <form onsubmit={salva}>
   <p class="spiegazione">
-    Per chi era già iscritto prima del programma: abbonamento e quota risultano pagati ma non
-    entrano negli incassi. Data e luogo di nascita si completano poi dalla scheda.
+    Per chi era già iscritto prima del programma. Gli importi entrano negli incassi: la quota a
+    inizio anno sportivo, l'abbonamento nel mese in cui è iniziato. Data e luogo di nascita si
+    completano poi dalla scheda.
   </p>
 
   <div class="griglia">
@@ -190,15 +227,43 @@
           etichetta: tipologia.nome,
         }))}
         obbligatoria
+        onCambia={proponiImportoAbbonamento}
       />
     </label>
     <label>
       Scade il
       <CampoData bind:valore={scadenzaAbbonamento} {...limitiScadenza} obbligatoria />
     </label>
+    <label>
+      Importo abbonamento (€)
+      <input
+        bind:value={importoAbbonamento}
+        inputmode="decimal"
+        required
+        use:validita={erroreImportoEuro(importoAbbonamento)}
+      />
+    </label>
+  </div>
+
+  <div class="griglia">
     <label class="spunta">
       <input type="checkbox" bind:checked={quotaPagata} />
       Quota dell'anno sportivo già pagata
+    </label>
+    {#if quotaPagata}
+      <label>
+        Quota (€)
+        <input
+          bind:value={quota}
+          inputmode="decimal"
+          required
+          use:validita={erroreImportoEuro(quota)}
+        />
+      </label>
+    {/if}
+    <label>
+      Pagati con
+      <Tendina bind:valore={metodo} opzioni={OPZIONI_METODO} />
     </label>
   </div>
 

@@ -236,7 +236,10 @@ describe("api iscritti già attivi", () => {
       dataScadenzaCertificato: null,
       tipologiaId: 1,
       dataScadenzaAbbonamento: "2026-11-25",
+      importoAbbonamentoCent: 5000,
       quotaPagata: true,
+      quotaCent: 3000,
+      metodo: "contanti" as const,
     };
     invoke.mockResolvedValue({ id: 7 });
     await expect(api.registraIscrittoGiaAttivo(dati)).resolves.toEqual({ id: 7 });

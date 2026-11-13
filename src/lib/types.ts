@@ -84,7 +84,7 @@ export interface FiltroIscritti {
   soloDaCompletare?: boolean;
 }
 
-/** Inserimento rapido di chi era già iscritto prima di usare il programma. */
+/** Inserimento rapido di chi era già iscritto prima di usare il programma, con gli importi pagati. */
 export interface DatiIscrittoGiaAttivo {
   nome: string;
   cognome: string;
@@ -92,8 +92,13 @@ export interface DatiIscrittoGiaAttivo {
   dataScadenzaCertificato: string | null;
   tipologiaId: number;
   dataScadenzaAbbonamento: string;
+  importoAbbonamentoCent: number;
   /** La quota dell'anno sportivo in corso è già stata pagata. */
   quotaPagata: boolean;
+  /** Usata solo se la quota è stata pagata. */
+  quotaCent: number;
+  /** Come sono stati pagati abbonamento e quota. */
+  metodo: MetodoPagamento;
 }
 
 /** Iscrizione annuale (anno sportivo) con la quota pagata. */
