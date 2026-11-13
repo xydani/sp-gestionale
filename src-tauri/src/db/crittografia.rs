@@ -6,7 +6,7 @@ use rusqlite::{Connection, ErrorCode};
 use super::ErroreDatabase;
 use crate::domain::testo::normalizza_per_ricerca;
 
-pub const LUNGHEZZA_MINIMA_PASSWORD: usize = 12;
+pub const LUNGHEZZA_MINIMA_PASSWORD: usize = 8;
 
 /// Crea un nuovo database criptato con la password indicata.
 pub fn crea_database_criptato(

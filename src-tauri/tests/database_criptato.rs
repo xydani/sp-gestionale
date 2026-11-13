@@ -77,12 +77,18 @@ fn con_la_password_sbagliata_l_apertura_e_rifiutata() {
 #[test]
 fn password_troppo_corta_e_rifiutata_alla_creazione() {
     let database = DatabaseTemporaneo::nuovo();
-    let risultato = crea_database_criptato(&database.percorso, "corta");
+    let risultato = crea_database_criptato(&database.percorso, "7caratt");
     assert!(matches!(
         risultato,
-        Err(ErroreDatabase::PasswordTroppoCorta { minimo: 12 })
+        Err(ErroreDatabase::PasswordTroppoCorta { minimo: 8 })
     ));
     assert!(!database.percorso.exists());
+}
+
+#[test]
+fn bastano_otto_caratteri() {
+    let database = DatabaseTemporaneo::nuovo();
+    assert!(crea_database_criptato(&database.percorso, "8caratte").is_ok());
 }
 
 #[test]

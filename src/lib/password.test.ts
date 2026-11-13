@@ -8,14 +8,14 @@ describe("validaNuovaPassword", () => {
 
   it("rifiuta una password troppo corta", () => {
     expect(validaNuovaPassword("corta", "corta")).toBe(
-      "La password deve avere almeno 12 caratteri",
+      "La password deve avere almeno 8 caratteri",
     );
   });
 
   it("conta i caratteri accentati come singoli caratteri", () => {
-    // 11 e 12 caratteri, ma più byte: conta la lunghezza percepita
-    expect(validaNuovaPassword("àèìòùàèìòùà", "àèìòùàèìòùà")).not.toBeNull();
-    expect(validaNuovaPassword("àèìòùàèìòùàè", "àèìòùàèìòùàè")).toBeNull();
+    // 7 e 8 caratteri, ma più byte: conta la lunghezza percepita
+    expect(validaNuovaPassword("àèìòùàè", "àèìòùàè")).not.toBeNull();
+    expect(validaNuovaPassword("àèìòùàèì", "àèìòùàèì")).toBeNull();
   });
 
   it("rifiuta una conferma diversa", () => {

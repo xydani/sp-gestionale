@@ -1,5 +1,5 @@
 /** Deve coincidere con LUNGHEZZA_MINIMA_PASSWORD in src-tauri/src/db/crittografia.rs */
-export const LUNGHEZZA_MINIMA_PASSWORD = 12;
+export const LUNGHEZZA_MINIMA_PASSWORD = 8;
 
 /** Va detto quando si sceglie la password: dopo, quando la si è persa, è troppo tardi. */
 export const AVVISO_PASSWORD_NON_RECUPERABILE =
