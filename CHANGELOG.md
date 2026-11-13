@@ -16,7 +16,7 @@
 - Già iscritti: dell'abbonamento basta la data di inizio oppure quella di scadenza, l'altra si calcola dalla durata
 - Dashboard più compatta: scaduti e prossime scadenze affiancati e visibili senza scorrere
 - I già scaduti compaiono in dashboard solo se ci sono, divisi in schede per tipo con il loro numero
-- Nelle prossime scadenze i certificati hanno il pulsante «Aggiorna» per aprire la scheda
+- Nelle prossime scadenze i certificati hanno il pulsante «Aggiorna», che apre la scheda con il certificato pronto da aggiornare
 - Nella scheda iscritto il certificato medico ha una sezione sua, separata dall'anagrafica, con il modulo per registrarlo o aggiornarlo
 
 ## [0.1.6] - 2026-11-13

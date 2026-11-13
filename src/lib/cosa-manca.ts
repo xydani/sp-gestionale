@@ -5,6 +5,13 @@ import type { Iscritto, StatoValidita } from "./types";
 /** Dove si sistema ciò che manca: la sezione da aprire nella scheda. */
 export type AzioneMancanza = "iscrizione" | "abbonamento" | "certificato" | "anagrafica";
 
+const AZIONI: AzioneMancanza[] = ["iscrizione", "abbonamento", "certificato", "anagrafica"];
+
+/** La sezione da sistemare chiesta nell'indirizzo (es. `?sistema=certificato`), se valida. */
+export function azioneDaIndirizzo(valore: string | null): AzioneMancanza | null {
+  return AZIONI.find((azione) => azione === valore) ?? null;
+}
+
 export interface Mancanza {
   testo: string;
   azione: AzioneMancanza;

@@ -2,7 +2,7 @@
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
-  import { tick } from "svelte";
+  import { onMount, tick } from "svelte";
   import {
     eliminaIscrittoDefinitivamente,
     impostaIscrittoArchiviato,
@@ -17,7 +17,7 @@
   import SezioneCertificato from "$lib/components/SezioneCertificato.svelte";
   import SezioneIscrizione from "$lib/components/SezioneIscrizione.svelte";
   import StrisciaCosaManca from "$lib/components/StrisciaCosaManca.svelte";
-  import type { AzioneMancanza } from "$lib/cosa-manca";
+  import { azioneDaIndirizzo, type AzioneMancanza } from "$lib/cosa-manca";
   import { formattaData } from "$lib/format";
   import type { DatiIscritto, Iscritto } from "$lib/types";
 
@@ -50,6 +50,14 @@
 
   $effect(() => {
     carica(idIscritto);
+  });
+
+  // Dagli «Aggiorna» delle scadenze (es. `?sistema=certificato`) si arriva col modulo già aperto
+  onMount(async () => {
+    const azione = azioneDaIndirizzo(page.url.searchParams.get("sistema"));
+    if (!azione) return;
+    await carica(idIscritto);
+    await sistema(azione);
   });
 
   /** Ricarica i dati e gli stati dopo ogni modifica di iscrizione o abbonamento. */

@@ -263,7 +263,9 @@
                   {:else}
                     <a
                       class="pulsante piccolo secondario"
-                      href={resolve("/iscritti/[id]", { id: String(scadenza.iscrittoId) })}
+                      href="{resolve('/iscritti/[id]', {
+                        id: String(scadenza.iscrittoId),
+                      })}?sistema=certificato"
                     >
                       Aggiorna
                     </a>

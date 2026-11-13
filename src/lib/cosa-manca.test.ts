@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cosaManca } from "./cosa-manca";
+import { azioneDaIndirizzo, cosaManca } from "./cosa-manca";
 import type { Iscritto } from "./types";
 
 function iscritto(dati: Partial<Iscritto>): Iscritto {
@@ -46,5 +46,14 @@ describe("cosaManca", () => {
 
   it("per un archiviato non segnala nulla", () => {
     expect(cosaManca(iscritto({ archiviato: true, statoAbbonamento: "scaduto" }))).toEqual([]);
+  });
+});
+
+describe("azioneDaIndirizzo", () => {
+  it("riconosce le sezioni della scheda e ignora il resto", () => {
+    expect(azioneDaIndirizzo("certificato")).toBe("certificato");
+    expect(azioneDaIndirizzo("abbonamento")).toBe("abbonamento");
+    expect(azioneDaIndirizzo("altro")).toBeNull();
+    expect(azioneDaIndirizzo(null)).toBeNull();
   });
 });
